@@ -466,7 +466,9 @@ function loadMessages(){
     .collection('messages').orderBy('createdAt','asc')
     .onSnapshot(snap=>{
       snap.docChanges().forEach(ch=>{if(ch.type==='added')renderMsg(ch.doc.data());});
-      container.scrollTop=container.scrollHeight;
+   const changes=snap.docChanges().filter(ch=>ch.type==='added');
+await Promise.all(changes.map(ch=>renderMsg(ch.doc.data())));
+container.scrollTop=container.scrollHeight;
     });
 }
 
