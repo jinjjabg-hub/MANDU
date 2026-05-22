@@ -65,6 +65,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .empty-emoji{font-size:52px;margin-bottom:16px;}
 .empty-title{font-size:16px;font-weight:500;margin-bottom:8px;color:var(--text2);}
 .empty-desc{font-size:13px;line-height:1.6;}
+.invite-btn{margin-top:16px;padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;}
 #create-screen{flex:1;display:none;flex-direction:column;min-height:0;}
 .create-input-wrap{padding:12px 16px;}
 .create-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px 16px;color:var(--text);font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s;}
@@ -103,7 +104,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .settings-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border);}
 .settings-item:first-of-type{border-top:1px solid var(--border);}
 .settings-label{font-size:15px;}
-.settings-value{font-size:14px;color:var(--dim);}
 .toggle{width:48px;height:28px;background:var(--border);border-radius:14px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
 .toggle.on{background:var(--accent);}
 .toggle::after{content:'';position:absolute;width:22px;height:22px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
@@ -129,6 +129,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="header">
     <span class="header-logo">🥟 MANDU</span>
     <div class="header-right">
+      <button class="icon-btn" onclick="copyInviteLink()">🔗</button>
       <button class="icon-btn" onclick="showSettings()">⚙️</button>
       <img class="my-avatar" id="my-avatar" src="" alt="">
     </div>
@@ -152,6 +153,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="settings-item">
       <span class="settings-label">다크 모드</span>
       <div class="toggle on" id="dark-toggle" onclick="toggleTheme()"></div>
+    </div>
+  </div>
+  <div class="settings-section">
+    <div class="settings-section-title">초대</div>
+    <div class="settings-item" style="cursor:pointer;" onclick="copyInviteLink()">
+      <span class="settings-label">🔗 친구 초대 링크 복사</span>
     </div>
   </div>
   <div class="settings-section">
@@ -235,6 +242,15 @@ function toggleTheme(){
   applyTheme(cur==='dark'?'light':'dark');
 }
 initTheme();
+
+function copyInviteLink(){
+  const link='https://jinjjabg-hub.github.io/MANDU/';
+  navigator.clipboard.writeText(link).then(()=>{
+    alert('초대 링크가 복사됐어요!\n친구에게 공유해보세요 🥟');
+  }).catch(()=>{
+    prompt('이 링크를 복사해서 친구에게 공유하세요:',link);
+  });
+}
 
 document.getElementById('loginBtn').onclick=()=>auth.signInWithPopup(provider);
 
@@ -325,7 +341,7 @@ function loadUsers(){
     allUsers=snap.docs.filter(d=>d.id!==currentUser.uid).map(d=>d.data());
     list.innerHTML='';
     if(allUsers.length===0){
-      list.innerHTML=`<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">친구가 없어요</div><div class="empty-desc">링크를 공유해보세요!</div></div>`;
+      list.innerHTML=`<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">친구가 없어요</div><div class="empty-desc">링크를 공유해서 초대해보세요!</div><button class="invite-btn" onclick="copyInviteLink()">🔗 초대 링크 복사</button></div>`;
       return;
     }
     allUsers.forEach(u=>{
