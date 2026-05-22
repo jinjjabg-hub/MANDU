@@ -231,7 +231,30 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .msg-translated .ms{font-size:13px !important;color:var(--primary);}
 .msg-time{font-size:10px;color:var(--outline);flex-shrink:0;padding-bottom:2px;font-weight:500;}
 .read-receipt{font-size:10px;color:var(--primary-container);margin-top:2px;padding:0 4px;text-align:right;min-height:14px;}
-.chat-input-area{padding:10px 14px;background:var(--surface);border-top:1px solid var(--outline-variant);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;}
+<div class="chat-input-area">
+  <button class="icon-btn" id="emoji-toggle-btn" onclick="toggleEmojiPanel()">
+    <span class="ms">sentiment_satisfied</span>
+  </button>
+  <textarea id="msg-input" placeholder="메시지 입력..." rows="1"
+    onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+  <button class="send-btn" onclick="sendMessage()"><span class="ms">send</span></button>
+</div>
+
+<!-- 이모지 패널 (채팅화면 안에) -->
+<div class="emoji-panel" id="emoji-panel" style="display:none;">
+  <div class="emoji-cats">
+    <button class="emoji-cat-btn active" onclick="showCat('popular',this)">🔥 인기</button>
+    <button class="emoji-cat-btn" onclick="showCat('face',this)">😊 표정</button>
+    <button class="emoji-cat-btn" onclick="showCat('gesture',this)">👋 제스처</button>
+    <button class="emoji-cat-btn" onclick="showCat('heart',this)">❤️ 감정</button>
+    <button class="emoji-cat-btn" onclick="showCat('celebrate',this)">🎉 축하</button>
+    <button class="emoji-cat-btn" onclick="showCat('food',this)">🍕 음식</button>
+  </div>
+  <div class="emoji-grid" id="emoji-grid"></div>
+  <div class="emoji-os-hint">
+    💡 PC: <kbd>Win + .</kbd> · Mac: <kbd>⌘ + Ctrl + Space</kbd> 로 전체 이모지 열기
+  </div>
+</div>
 #msg-input{flex:1;background:var(--surface-container-low);border:1.5px solid var(--outline-variant);border-radius:22px;padding:10px 16px;color:var(--on-surface);font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;resize:none;outline:none;min-height:42px;max-height:120px;line-height:1.5;transition:border-color .2s;}
 #msg-input:focus{border-color:var(--primary);}
 #msg-input::placeholder{color:var(--outline);}
@@ -250,6 +273,83 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .pe-save-btn{padding:11px 18px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
 .pe-email{font-size:13px;color:var(--outline);}
 .pe-lang-select{background:var(--surface);border:1.5px solid var(--outline-variant);color:var(--on-surface);border-radius:8px;padding:6px 10px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;cursor:pointer;}
+/* 이모지 패널 */
+.emoji-panel{
+  position:fixed;bottom:76px;left:0;right:0;
+  background:var(--surface);border-top:1.5px solid var(--outline-variant);
+  padding:12px;z-index:200;
+  box-shadow:0 -4px 20px rgba(0,0,0,.1);
+  animation:slideUp .2s ease;
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.emoji-cats{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;}
+.emoji-cats::-webkit-scrollbar{display:none;}
+.emoji-cat-btn{
+  padding:5px 12px;border:1.5px solid var(--outline-variant);
+  border-radius:100px;background:none;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--on-surface-variant);
+  font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;
+  transition:all .15s;
+}
+.emoji-cat-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.emoji-grid{
+  display:grid;grid-template-columns:repeat(8,1fr);
+  gap:4px;max-height:180px;overflow-y:auto;
+}
+.emoji-grid::-webkit-scrollbar{width:3px;}
+.emoji-grid::-webkit-scrollbar-thumb{background:var(--outline-variant);border-radius:2px;}
+.emoji-btn{
+  font-size:24px;padding:6px;border:none;background:none;
+  cursor:pointer;border-radius:8px;transition:background .1s;
+  display:flex;align-items:center;justify-content:center;
+}
+.emoji-btn:hover{background:var(--surface-container);}
+.emoji-os-hint{
+  margin-top:8px;padding-top:8px;border-top:1px solid var(--outline-variant);
+  font-size:11px;color:var(--outline);text-align:center;font-weight:500;
+}
+.emoji-os-hint kbd{
+  background:var(--surface-container);padding:2px 6px;
+  border-radius:4px;font-size:11px;border:1px solid var(--outline-variant);
+}/* 이모지 패널 */
+.emoji-panel{
+  position:fixed;bottom:76px;left:0;right:0;
+  background:var(--surface);border-top:1.5px solid var(--outline-variant);
+  padding:12px;z-index:200;
+  box-shadow:0 -4px 20px rgba(0,0,0,.1);
+  animation:slideUp .2s ease;
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.emoji-cats{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;}
+.emoji-cats::-webkit-scrollbar{display:none;}
+.emoji-cat-btn{
+  padding:5px 12px;border:1.5px solid var(--outline-variant);
+  border-radius:100px;background:none;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--on-surface-variant);
+  font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;
+  transition:all .15s;
+}
+.emoji-cat-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.emoji-grid{
+  display:grid;grid-template-columns:repeat(8,1fr);
+  gap:4px;max-height:180px;overflow-y:auto;
+}
+.emoji-grid::-webkit-scrollbar{width:3px;}
+.emoji-grid::-webkit-scrollbar-thumb{background:var(--outline-variant);border-radius:2px;}
+.emoji-btn{
+  font-size:24px;padding:6px;border:none;background:none;
+  cursor:pointer;border-radius:8px;transition:background .1s;
+  display:flex;align-items:center;justify-content:center;
+}
+.emoji-btn:hover{background:var(--surface-container);}
+.emoji-os-hint{
+  margin-top:8px;padding-top:8px;border-top:1px solid var(--outline-variant);
+  font-size:11px;color:var(--outline);text-align:center;font-weight:500;
+}
+.emoji-os-hint kbd{
+  background:var(--surface-container);padding:2px 6px;
+  border-radius:4px;font-size:11px;border:1px solid var(--outline-variant);
+}
 </style>
 </head>
 <body>
@@ -928,6 +1028,54 @@ function formatTime(ts){
   const d=ts.toDate?ts.toDate():new Date();
   return d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
 }
+/* ── 이모지 패널 ── */
+const EMOJIS = {
+  popular:['😂','❤️','🔥','✨','💯','🥺','😭','👀','🙏','😍','🤣','💀','🥳','😎','👏','🫶','🤝','💪','🎉','🥟'],
+  face:['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🥺','😢','😭','😤','😠','😡','🤬','😈','💀'],
+  gesture:['👋','🤚','🖐','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','🤲','🤝','🙏','💪','🦾'],
+  heart:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','❤️‍🔥','❤️‍🩹','💕','💞','💓','💗','💖','💘','💝','💔','❣️','💟','☮️','✝️','☯️','🫶'],
+  celebrate:['🎉','🎊','🎈','🎁','🎂','🥂','🍾','✨','🌟','⭐','🔥','💥','🎯','🏆','🥇','🥈','🥉','🎖️','🎗️','🎀','🎠','🎡','🎢','🎪'],
+  food:['🍕','🍔','🌮','🌯','🍜','🍱','🥟','🍣','🍙','🍚','🍛','🍝','🍞','🥐','🧇','🥞','☕','🧋','🍺','🍻','🥤','🧃','🍰','🎂','🍫','🍿','🍩']
+};
+
+let emojiPanelOpen = false;
+let currentCat = 'popular';
+
+function toggleEmojiPanel(){
+  emojiPanelOpen = !emojiPanelOpen;
+  const panel = document.getElementById('emoji-panel');
+  panel.style.display = emojiPanelOpen ? 'block' : 'none';
+  if(emojiPanelOpen) showCat('popular', document.querySelector('.emoji-cat-btn'));
+}
+
+function showCat(cat, btn){
+  currentCat = cat;
+  document.querySelectorAll('.emoji-cat-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const grid = document.getElementById('emoji-grid');
+  grid.innerHTML = '';
+  (EMOJIS[cat]||[]).forEach(emoji=>{
+    const b = document.createElement('button');
+    b.className = 'emoji-btn';
+    b.textContent = emoji;
+    b.onclick = ()=> insertEmoji(emoji);
+    grid.appendChild(b);
+  });
+}
+
+function insertEmoji(emoji){
+  const input = document.getElementById('msg-input');
+  const start = input.selectionStart;
+  const end = input.selectionEnd;
+  input.value = input.value.slice(0,start) + emoji + input.value.slice(end);
+  input.selectionStart = input.selectionEnd = start + emoji.length;
+  input.focus();
+  autoResize(input);
+}
+
+// 채팅방 나가면 이모지 패널 닫기
+const _origShowMain = showMain;
+// 패널 닫기 처리 - showMain 내에서 emojiPanelOpen 리셋
 </script>
 </body>
 </html>
