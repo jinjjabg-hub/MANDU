@@ -466,9 +466,8 @@ function loadMessages(){
     .collection('messages').orderBy('createdAt','asc')
     .onSnapshot(snap=>{
       snap.docChanges().forEach(ch=>{if(ch.type==='added')renderMsg(ch.doc.data());});
-  const changes=snap.docChanges().filter(ch=>ch.type==='added');
-for(const ch of changes){await renderMsg(ch.doc.data());}
-container.scrollTop=container.scrollHeight;
+ snap.docChanges().filter(ch=>ch.type==='added').forEach(ch=>renderMsg(ch.doc.data()));
+setTimeout(()=>{container.scrollTop=container.scrollHeight;},500);
 }
 
 async function translate(text,targetLang){
@@ -489,12 +488,23 @@ async function renderMsg(d){
   const myLang=document.getElementById('my-lang').value;
   const w=document.createElement('div');
   w.className='msg-wrap '+(mine?'mine':'theirs');
-  if(!mine){
-    const s=document.createElement('div');
-    s.className='msg-sender';
-    s.textContent=d.displayName||'익명';
-    w.appendChild(s);
+  if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}
+  const row=document.createElement('div');row.className='msg-row';
+  const b=document.createElement('div');b.className='msg-bubble';b.textContent=d.text;
+  const timeEl=document.createElement('div');timeEl.className='msg-time';
+  timeEl.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
+  row.appendChild(b);row.appendChild(timeEl);w.appendChild(row);
+  container.appendChild(w);
+  if(!mine&&myLang){
+    translate(d.text,myLang).then(translated=>{
+      if(translated&&translated!==d.text){
+        b.textContent=translated;
+        const orig=document.createElement('div');orig.className='msg-translated';orig.textContent='원문: '+d.text;
+        w.appendChild(orig);
+      }
+    });
   }
+}
   const row=document.createElement('div');
   row.className='msg-row';
   const timeEl=document.createElement('div');
