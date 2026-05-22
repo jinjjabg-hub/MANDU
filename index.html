@@ -379,16 +379,16 @@ async function renderMsg(d){
   const w=document.createElement('div');
   w.className='msg-wrap '+(mine?'mine':'theirs');
   if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}
-  const b=document.createElement('div');b.className='msg-bubble';b.textContent=d.text;w.appendChild(b);
-  // 번역 (상대방 메시지만)
   if(!mine&&myLang){
     const translated=await translate(d.text,myLang);
     if(translated&&translated!==d.text){
-      const tr=document.createElement('div');
-      tr.className='msg-translated';
-      tr.textContent='🌐 '+translated;
-      w.appendChild(tr);
+      const b=document.createElement('div');b.className='msg-bubble';b.textContent=translated;w.appendChild(b);
+      const orig=document.createElement('div');orig.className='msg-translated';orig.textContent='원문: '+d.text;w.appendChild(orig);
+    }else{
+      const b=document.createElement('div');b.className='msg-bubble';b.textContent=d.text;w.appendChild(b);
     }
+  }else{
+    const b=document.createElement('div');b.className='msg-bubble';b.textContent=d.text;w.appendChild(b);
   }
   const t=document.createElement('div');t.className='msg-time';
   t.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
