@@ -36,12 +36,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .tab-bar{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
 .tab{flex:1;padding:12px;text-align:center;font-size:13px;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-/* 메인 화면 */
 #main-screen{flex:1;display:none;flex-direction:column;min-height:0;}
 .scroll-area{flex:1;overflow-y:auto;}
 .scroll-area::-webkit-scrollbar{width:4px;}
 .scroll-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-/* 채팅방 목록 */
 .room-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
 .room-item:hover{background:var(--surface2);}
 .room-icon{width:48px;height:48px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden;}
@@ -50,7 +48,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .room-name{font-size:15px;font-weight:500;}
 .room-last{font-size:13px;color:var(--dim);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .room-time{font-size:11px;color:var(--dim);flex-shrink:0;}
-/* 사용자 목록 */
 .user-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
 .user-item:hover,.user-item.selected{background:var(--surface2);}
 .user-item.selected .user-item-name::after{content:' ✓';color:var(--accent);}
@@ -62,7 +59,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .fab:hover{transform:scale(1.08);}
 .empty-state{padding:60px 24px;text-align:center;color:var(--dim);}
 .empty-emoji{font-size:48px;margin-bottom:12px;}
-/* 채팅 화면 */
 #chat-screen{flex:1;display:none;flex-direction:column;min-height:0;}
 #messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0;}
 #messages::-webkit-scrollbar{width:4px;}
@@ -75,6 +71,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .msg-bubble{padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;word-break:break-word;}
 .mine .msg-bubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
 .theirs .msg-bubble{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px;}
+.msg-translated{font-size:12px;color:var(--dim);margin-top:4px;padding:0 4px;font-style:italic;}
 .msg-time{font-size:10px;color:var(--dim);margin-top:3px;padding:0 4px;}
 .chat-input-wrap{padding:12px 16px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;}
 #msg-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'Noto Sans KR',sans-serif;resize:none;outline:none;min-height:42px;max-height:120px;line-height:1.5;transition:border-color .2s;}
@@ -82,7 +79,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 #msg-input::placeholder{color:var(--dim);}
 .send-btn{width:42px;height:42px;background:var(--accent);border:none;border-radius:12px;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
 .send-btn:hover{background:#ff8555;}
-/* 그룹 만들기 */
+/* 언어 선택 */
+.lang-bar{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+.lang-label{font-size:12px;color:var(--dim);}
+.lang-select{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 8px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;cursor:pointer;}
 #create-screen{flex:1;display:none;flex-direction:column;min-height:0;}
 .create-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;color:var(--text);font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;margin:16px 0 8px;}
 .create-input:focus{border-color:var(--accent);}
@@ -95,7 +95,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <div id="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
 
-<!-- 로그인 -->
 <div id="login-screen">
   <div class="logo-emoji">🥟</div>
   <div class="logo-title">MANDU</div>
@@ -107,7 +106,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </button>
 </div>
 
-<!-- 메인 (채팅목록 + 친구목록) -->
 <div id="main-screen">
   <div class="header">
     <span class="header-logo">🥟</span>
@@ -121,16 +119,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="tab active" id="tab-rooms" onclick="switchTab('rooms')">💬 채팅</div>
     <div class="tab" id="tab-friends" onclick="switchTab('friends')">👥 친구</div>
   </div>
-  <div class="scroll-area" id="rooms-panel">
-    <div id="room-list"></div>
-  </div>
-  <div class="scroll-area" id="friends-panel" style="display:none;">
-    <div id="user-list"></div>
-  </div>
-  <button class="fab" id="fab-btn" onclick="showCreate()">+</button>
+  <div class="scroll-area" id="rooms-panel"><div id="room-list"></div></div>
+  <div class="scroll-area" id="friends-panel" style="display:none;"><div id="user-list"></div></div>
+  <button class="fab" onclick="showCreate()">+</button>
 </div>
 
-<!-- 그룹 만들기 -->
 <div id="create-screen">
   <div class="header">
     <button class="back-btn" onclick="showMain()">←</button>
@@ -144,12 +137,26 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <button class="create-done-btn" onclick="createRoom()">채팅방 만들기</button>
 </div>
 
-<!-- 채팅 -->
 <div id="chat-screen">
   <div class="header">
     <button class="back-btn" onclick="showMain()">←</button>
-    <div class="room-icon" id="chat-icon" style="width:32px;height:32px;font-size:16px;margin-right:4px;"></div>
+    <div class="room-icon" id="chat-icon" style="width:32px;height:32px;font-size:16px;margin-right:4px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--surface2);"></div>
     <span class="header-title" id="chat-title"></span>
+  </div>
+  <div class="lang-bar">
+    <span class="lang-label">🌐 내 언어:</span>
+    <select class="lang-select" id="my-lang" onchange="saveLang()">
+      <option value="ko">한국어</option>
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+      <option value="zh">中文</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="de">Deutsch</option>
+      <option value="vi">Tiếng Việt</option>
+      <option value="th">ภาษาไทย</option>
+    </select>
+    <span class="lang-label" style="margin-left:4px;">→ 번역 자동으로!</span>
   </div>
   <div id="messages"></div>
   <div class="chat-input-wrap">
@@ -160,6 +167,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 </div>
 
 <script>
+const TRANSLATE_KEY='AIzaSyBiZvDPaZAts3C6iiXkUw3TsiUBiqjWA3g';
+
 firebase.initializeApp({
   apiKey:"AIzaSyAZoWSGSA81daZydNgzegct2aaeFbDajr0",
   authDomain:"mandu-e7c3c.firebaseapp.com",
@@ -171,8 +180,8 @@ firebase.initializeApp({
 const auth=firebase.auth();
 const db=firebase.firestore();
 const provider=new firebase.auth.GoogleAuthProvider();
-let currentUser=null, currentRoomId=null, unsubscribeMsg=null;
-let selectedUsers=[], allUsers=[];
+let currentUser=null,currentRoomId=null,unsubscribeMsg=null;
+let selectedUsers=[],allUsers=[];
 
 document.getElementById('loginBtn').onclick=()=>auth.signInWithPopup(provider);
 document.getElementById('logoutBtn').onclick=()=>auth.signOut();
@@ -187,6 +196,8 @@ auth.onAuthStateChanged(async user=>{
       lastSeen:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
     document.getElementById('my-avatar').src=user.photoURL||'';
+    const savedLang=localStorage.getItem('mandu_lang_'+user.uid);
+    if(savedLang)document.getElementById('my-lang').value=savedLang;
     showMain();
   } else {
     currentUser=null;
@@ -194,10 +205,13 @@ auth.onAuthStateChanged(async user=>{
   }
 });
 
+function saveLang(){
+  if(currentUser)localStorage.setItem('mandu_lang_'+currentUser.uid,document.getElementById('my-lang').value);
+}
+
 function show(id){
   ['login-screen','main-screen','chat-screen','create-screen'].forEach(s=>{
-    const el=document.getElementById(s);
-    el.style.display='none';
+    document.getElementById(s).style.display='none';
   });
   const el=document.getElementById(id);
   el.style.display='flex';
@@ -207,8 +221,7 @@ function show(id){
 function showMain(){
   if(unsubscribeMsg){unsubscribeMsg();unsubscribeMsg=null;}
   show('main-screen');
-  loadRooms();
-  loadUsers();
+  loadRooms();loadUsers();
 }
 
 function switchTab(tab){
@@ -218,26 +231,27 @@ function switchTab(tab){
   document.getElementById('friends-panel').style.display=tab==='friends'?'block':'none';
 }
 
-// 채팅방 목록
 function loadRooms(){
   const list=document.getElementById('room-list');
-  db.collection('rooms')
-    .where('members','array-contains',currentUser.uid)
-    .orderBy('lastMessageTime','desc')
+  db.collection('rooms').where('members','array-contains',currentUser.uid)
     .onSnapshot(snap=>{
       list.innerHTML='';
       if(snap.empty){
-        list.innerHTML=`<div class="empty-state"><div class="empty-emoji">🥟</div><p>아직 채팅방이 없어요</p><p style="font-size:12px;margin-top:4px;">+ 버튼으로 채팅방을 만들어보세요!</p></div>`;
+        list.innerHTML=`<div class="empty-state"><div class="empty-emoji">🥟</div><p>+ 버튼으로 채팅방을 만들어보세요!</p></div>`;
         return;
       }
-      snap.forEach(doc=>{
+      const docs=snap.docs.sort((a,b)=>{
+        const at=a.data().lastMessageTime;const bt=b.data().lastMessageTime;
+        if(!at)return 1;if(!bt)return -1;
+        return bt.toMillis()-at.toMillis();
+      });
+      docs.forEach(doc=>{
         const r=doc.data();
-        const item=document.createElement('div');
-        item.className='room-item';
         const isGroup=r.type==='group';
-        const icon=isGroup?'👥':(r.memberPhotos&&r.memberPhotos[currentUser.uid]?'':'👤');
         const name=isGroup?r.name:(r.memberNames&&Object.entries(r.memberNames).find(([k])=>k!==currentUser.uid)?.[1]||'채팅방');
         const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).find(([k])=>k!==currentUser.uid)?.[1]:'';
+        const item=document.createElement('div');
+        item.className='room-item';
         item.innerHTML=`
           <div class="room-icon">${photo?`<img src="${photo}" alt="">`:(isGroup?'👥':'👤')}</div>
           <div class="room-info">
@@ -248,33 +262,9 @@ function loadRooms(){
         item.onclick=()=>openRoom(doc.id,name,photo,isGroup);
         list.appendChild(item);
       });
-    },()=>{
-      // index 없을 때 단순 쿼리로 폴백
-      db.collection('rooms').where('members','array-contains',currentUser.uid)
-        .onSnapshot(snap=>{
-          list.innerHTML='';
-          if(snap.empty){list.innerHTML=`<div class="empty-state"><div class="empty-emoji">🥟</div><p>+ 버튼으로 채팅방을 만들어보세요!</p></div>`;return;}
-          snap.forEach(doc=>{
-            const r=doc.data();
-            const item=document.createElement('div');
-            item.className='room-item';
-            const isGroup=r.type==='group';
-            const name=isGroup?r.name:(r.memberNames&&Object.entries(r.memberNames).find(([k])=>k!==currentUser.uid)?.[1]||'채팅방');
-            const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).find(([k])=>k!==currentUser.uid)?.[1]:'';
-            item.innerHTML=`
-              <div class="room-icon">${photo?`<img src="${photo}" alt="">`:(isGroup?'👥':'👤')}</div>
-              <div class="room-info">
-                <div class="room-name">${name}</div>
-                <div class="room-last">${r.lastMessage||'대화를 시작해보세요'}</div>
-              </div>`;
-            item.onclick=()=>openRoom(doc.id,name,photo,isGroup);
-            list.appendChild(item);
-          });
-        });
     });
 }
 
-// 친구 목록
 function loadUsers(){
   const list=document.getElementById('user-list');
   db.collection('users').onSnapshot(snap=>{
@@ -299,22 +289,18 @@ function loadUsers(){
   });
 }
 
-// 1:1 채팅 시작
 async function startDM(partner){
   const ids=[currentUser.uid,partner.uid].sort();
   const roomId=ids.join('_');
   await db.collection('rooms').doc(roomId).set({
-    type:'direct',
-    members:ids,
+    type:'direct',members:ids,
     memberNames:{[currentUser.uid]:currentUser.displayName,[partner.uid]:partner.displayName},
     memberPhotos:{[currentUser.uid]:currentUser.photoURL||'',[partner.uid]:partner.photoURL||''},
-    lastMessage:'',
-    lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
+    lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
   openRoom(roomId,partner.displayName,partner.photoURL,false);
 }
 
-// 그룹 만들기 화면
 function showCreate(){
   selectedUsers=[];
   show('create-screen');
@@ -323,12 +309,9 @@ function showCreate(){
   allUsers.forEach(u=>{
     const item=document.createElement('div');
     item.className='user-item';
-    item.id='sel_'+u.uid;
     item.innerHTML=`
       <img class="user-avatar-md" src="${u.photoURL||''}" onerror="this.style.display='none'" alt="">
-      <div class="user-info">
-        <div class="user-item-name">${u.displayName||'익명'}</div>
-      </div>`;
+      <div class="user-info"><div class="user-item-name">${u.displayName||'익명'}</div></div>`;
     item.onclick=()=>{
       const idx=selectedUsers.findIndex(x=>x.uid===u.uid);
       if(idx>=0){selectedUsers.splice(idx,1);item.classList.remove('selected');}
@@ -338,13 +321,9 @@ function showCreate(){
   });
 }
 
-// 채팅방 만들기
 async function createRoom(){
   if(selectedUsers.length===0){alert('대화 상대를 선택하세요!');return;}
-  if(selectedUsers.length===1){
-    await startDM(selectedUsers[0]);return;
-  }
-  // 그룹
+  if(selectedUsers.length===1){await startDM(selectedUsers[0]);return;}
   const name=document.getElementById('group-name').value.trim()||'그룹 채팅';
   const members=[currentUser.uid,...selectedUsers.map(u=>u.uid)];
   const memberNames={[currentUser.uid]:currentUser.displayName};
@@ -352,19 +331,19 @@ async function createRoom(){
   selectedUsers.forEach(u=>{memberNames[u.uid]=u.displayName;memberPhotos[u.uid]=u.photoURL||'';});
   const ref=await db.collection('rooms').add({
     type:'group',name,members,memberNames,memberPhotos,
-    lastMessage:'',
-    lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
+    lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
   });
   openRoom(ref.id,name,'',true);
 }
 
-// 채팅방 열기
 function openRoom(roomId,name,photo,isGroup){
   currentRoomId=roomId;
   document.getElementById('chat-title').textContent=name;
   const icon=document.getElementById('chat-icon');
-  icon.innerHTML=photo?`<img src="${photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:(isGroup?'👥':'👤');
+  icon.innerHTML=photo?`<img src="${photo}" alt="" style="width:100%;height:100%;object-fit:cover;">`:(isGroup?'👥':'👤');
   show('chat-screen');
+  const savedLang=localStorage.getItem('mandu_lang_'+(currentUser?currentUser.uid:''));
+  if(savedLang)document.getElementById('my-lang').value=savedLang;
   loadMessages();
 }
 
@@ -380,13 +359,37 @@ function loadMessages(){
     });
 }
 
-function renderMsg(d){
+async function translate(text,targetLang){
+  if(!text||!targetLang)return '';
+  try{
+    const res=await fetch(`https://translation.googleapis.com/language/translate/v2?key=${TRANSLATE_KEY}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({q:text,target:targetLang,format:'text'})
+    });
+    const data=await res.json();
+    return data.data?.translations?.[0]?.translatedText||'';
+  }catch(e){return '';}
+}
+
+async function renderMsg(d){
   const container=document.getElementById('messages');
   const mine=d.uid===currentUser.uid;
+  const myLang=document.getElementById('my-lang').value;
   const w=document.createElement('div');
   w.className='msg-wrap '+(mine?'mine':'theirs');
   if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}
   const b=document.createElement('div');b.className='msg-bubble';b.textContent=d.text;w.appendChild(b);
+  // 번역 (상대방 메시지만)
+  if(!mine&&myLang){
+    const translated=await translate(d.text,myLang);
+    if(translated&&translated!==d.text){
+      const tr=document.createElement('div');
+      tr.className='msg-translated';
+      tr.textContent='🌐 '+translated;
+      w.appendChild(tr);
+    }
+  }
   const t=document.createElement('div');t.className='msg-time';
   t.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
   w.appendChild(t);container.appendChild(w);
