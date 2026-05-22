@@ -131,7 +131,7 @@ const provider=new firebase.auth.GoogleAuthProvider();
 let currentUser=null, currentRoomId=null, unsubscribe=null;
 
 // 버튼
-document.getElementById('loginBtn').onclick=()=>auth.signInWithRedirect(provider);
+document.getElementById('loginBtn').onclick=()=>auth.signInWithPopup(provider);
 document.getElementById('logoutBtn').onclick=()=>{auth.signOut();};
 document.getElementById('backBtn').onclick=()=>showUserList();
 
