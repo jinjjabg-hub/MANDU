@@ -11,10 +11,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 <style>
 :root{
-  --primary:#6b38d4;--primary-dark:#5516be;--primary-container:#8455ef;
+  --primary:#6b38d4;--primary-container:#8455ef;
   --primary-fixed:#e9ddff;--primary-fixed-dim:#d0bcff;
-  --on-primary:#fff;--on-primary-container:#fffbff;
-  --secondary-container:#e4e0f5;--on-secondary-container:#464555;
+  --on-primary:#fff;
+  --secondary-container:#e4e0f5;
   --background:#f8f9ff;--surface:#fff;
   --surface-container:#e6eeff;--surface-container-low:#eff4ff;
   --surface-container-high:#dee9fc;
@@ -48,13 +48,39 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .google-btn:hover{box-shadow:0 4px 20px rgba(0,0,0,.12);transform:translateY(-1px);}
 .google-btn img{width:20px;}
 
+/* 게스트 이름 입력 화면 */
+#guest-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px;background:var(--background);}
+.guest-host-card{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-container) 100%);border-radius:24px;padding:24px;color:#fff;text-align:center;width:100%;max-width:320px;}
+.guest-host-avatar{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.4);overflow:hidden;margin:0 auto 12px;}
+.guest-host-avatar img{width:100%;height:100%;object-fit:cover;}
+.guest-host-name{font-size:20px;font-weight:700;margin-bottom:4px;}
+.guest-host-sub{font-size:13px;opacity:.8;}
+.guest-input-wrap{width:100%;max-width:320px;}
+.guest-input-label{font-size:13px;font-weight:600;color:var(--on-surface-variant);margin-bottom:8px;display:block;}
+.guest-input{width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:14px;padding:14px 16px;color:var(--on-surface);font-size:16px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border-color .2s;}
+.guest-input:focus{border-color:var(--primary);}
+.guest-input::placeholder{color:var(--outline);}
+.guest-start-btn{width:100%;max-width:320px;padding:15px;background:var(--primary);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:opacity .2s;}
+.guest-start-btn:hover{opacity:.9;}
+.guest-login-hint{font-size:12px;color:var(--outline);text-align:center;}
+.guest-login-hint span{color:var(--primary);cursor:pointer;font-weight:600;}
+
+/* 게스트 업그레이드 배너 */
+#upgrade-banner{display:none;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-container) 100%);padding:14px 16px;flex-shrink:0;}
+.upgrade-inner{display:flex;align-items:center;gap:12px;}
+.upgrade-text{flex:1;color:#fff;}
+.upgrade-title{font-size:13px;font-weight:700;}
+.upgrade-sub{font-size:11px;opacity:.85;margin-top:1px;}
+.upgrade-btn{background:rgba(255,255,255,.25);color:#fff;border:1.5px solid rgba(255,255,255,.5);border-radius:100px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;transition:all .2s;}
+.upgrade-btn:hover{background:rgba(255,255,255,.4);}
+.upgrade-close{color:rgba(255,255,255,.7);background:none;border:none;cursor:pointer;padding:4px;}
+
 /* Main */
 #main-screen{flex:1;display:none;flex-direction:column;min-height:0;}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
 .top-brand{display:flex;align-items:center;gap:8px;}
-.top-brand-icon{font-size:22px;}
 .top-brand-name{font-size:20px;font-weight:800;color:var(--primary);letter-spacing:2px;}
-.top-actions{display:flex;gap:4px;}
+.top-actions{display:flex;gap:4px;align-items:center;}
 .icon-btn{width:40px;height:40px;border:none;background:none;border-radius:100px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--on-surface-variant);transition:background .15s;}
 .icon-btn:hover{background:var(--surface-container);}
 .icon-btn .ms{font-size:22px;}
@@ -69,7 +95,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .scroll-area::-webkit-scrollbar-thumb{background:var(--outline-variant);border-radius:2px;}
 
 /* Bottom Nav */
-.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--outline-variant);padding:8px 4px 20px;flex-shrink:0;box-shadow:0 -4px 12px rgba(107,56,212,.06);}
+.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--outline-variant);padding:8px 4px 20px;flex-shrink:0;}
 .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border:none;background:none;cursor:pointer;border-radius:14px;transition:all .2s;color:var(--on-surface-variant);font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;}
 .nav-tab.active{background:var(--secondary-container);color:var(--primary);}
 .nav-tab .ms{font-size:22px;}
@@ -113,30 +139,33 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .phc-lang .ms{font-size:14px !important;}
 .phc-edit{width:36px;height:36px;border:none;cursor:pointer;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
 
+/* 내 링크 카드 */
+.my-link-card{margin:0 20px 16px;background:var(--surface);border:1.5px solid var(--primary);border-radius:16px;padding:16px;cursor:pointer;transition:all .2s;}
+.my-link-card:hover{background:var(--primary-fixed);}
+.my-link-inner{display:flex;align-items:center;gap:12px;}
+.my-link-icon{width:40px;height:40px;background:var(--primary-fixed);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.my-link-icon .ms{color:var(--primary);font-size:20px !important;}
+.my-link-info{flex:1;}
+.my-link-title{font-size:14px;font-weight:700;color:var(--primary);}
+.my-link-sub{font-size:12px;color:var(--outline);margin-top:2px;}
+
 /* Groups scroll */
 .groups-scroll{padding:6px 20px 12px;display:flex;gap:12px;overflow-x:auto;}
 .groups-scroll::-webkit-scrollbar{display:none;}
 .group-card{min-width:150px;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:16px;padding:14px;cursor:pointer;transition:all .2s;flex-shrink:0;}
-.group-card:hover{border-color:var(--primary);box-shadow:0 4px 16px rgba(107,56,212,.1);}
-.gc-avatars{display:flex;margin-bottom:10px;}
-.gc-avatars img{width:28px;height:28px;border-radius:50%;border:2px solid var(--surface);margin-left:-6px;object-fit:cover;}
-.gc-avatars img:first-child{margin-left:0;}
-.gc-more{width:28px;height:28px;border-radius:50%;border:2px solid var(--surface);background:var(--secondary-container);color:var(--primary);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-left:-6px;flex-shrink:0;}
+.group-card:hover{border-color:var(--primary);}
 .gc-name{font-size:13px;font-weight:700;margin-bottom:2px;}
 .gc-sub{font-size:11px;color:var(--outline);}
-.gc-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;background:var(--primary-fixed);color:var(--primary);border-radius:100px;margin-top:6px;}
 .group-add-card{min-width:100px;border:2px dashed var(--outline-variant);border-radius:16px;padding:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--primary);transition:all .2s;flex-shrink:0;}
 .group-add-card:hover{border-color:var(--primary);background:var(--primary-fixed);}
 
 /* User list items */
 .user-item{display:flex;align-items:center;gap:14px;padding:12px 20px;cursor:pointer;border-bottom:1px solid var(--outline-variant);transition:background .15s;}
-.user-item:active{background:var(--surface-container-low);}
-.user-item.selected{background:var(--surface-container-low);}
+.user-item:active,.user-item.selected{background:var(--surface-container-low);}
 .user-info{flex:1;}
 .user-name{font-size:15px;font-weight:700;}
 .user-status{font-size:12px;color:var(--on-surface-variant);margin-top:2px;font-weight:500;}
 .user-status.online{color:#22c55e;}
-.user-actions{display:flex;gap:4px;}
 .act-btn{width:36px;height:36px;border:none;background:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--primary);transition:background .15s;}
 .act-btn:hover{background:var(--primary-fixed);}
 .act-btn .ms{font-size:20px;}
@@ -145,11 +174,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 
 /* Discover */
 .discover-placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;text-align:center;}
-.discover-icon{font-size:64px !important;color:var(--primary-fixed-dim);}
-.discover-title{font-size:20px;font-weight:700;color:var(--on-surface-variant);}
-.discover-sub{font-size:14px;color:var(--outline);line-height:1.7;}
 
-/* Settings panel */
+/* Settings */
 .settings-profile-card{margin:16px 20px;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:20px;padding:20px;}
 .spc-row{display:flex;align-items:center;gap:14px;}
 .spc-avatar{width:60px;height:60px;border-radius:50%;border:2px solid var(--primary);overflow:hidden;flex-shrink:0;}
@@ -189,7 +215,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .empty-desc{font-size:13px;line-height:1.6;}
 .empty-btn{margin-top:16px;padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:100px;font-size:14px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;}
 
-/* Create screen */
+/* Create */
 #create-screen{flex:1;display:none;flex-direction:column;min-height:0;}
 .screen-hd{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
 .back-btn{width:40px;height:40px;border:none;background:none;color:var(--on-surface-variant);cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -201,7 +227,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .section-lbl{font-size:10px;font-weight:700;color:var(--outline);letter-spacing:1.5px;text-transform:uppercase;padding:8px 20px 4px;}
 .create-done-btn{margin:12px 20px 24px;padding:15px;width:calc(100% - 40px);background:var(--primary);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
 
-/* Chat screen */
+/* Chat */
 #chat-screen{flex:1;display:none;flex-direction:column;min-height:0;}
 .chat-hd{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
 .chat-hd-av{width:38px;height:38px;border-radius:50%;background:var(--surface-container);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;border:1.5px solid var(--outline-variant);flex-shrink:0;}
@@ -231,30 +257,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .msg-translated .ms{font-size:13px !important;color:var(--primary);}
 .msg-time{font-size:10px;color:var(--outline);flex-shrink:0;padding-bottom:2px;font-weight:500;}
 .read-receipt{font-size:10px;color:var(--primary-container);margin-top:2px;padding:0 4px;text-align:right;min-height:14px;}
-<div class="chat-input-area">
-  <button class="icon-btn" id="emoji-toggle-btn" onclick="toggleEmojiPanel()">
-    <span class="ms">sentiment_satisfied</span>
-  </button>
-  <textarea id="msg-input" placeholder="메시지 입력..." rows="1"
-    onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-  <button class="send-btn" onclick="sendMessage()"><span class="ms">send</span></button>
-</div>
-
-<!-- 이모지 패널 (채팅화면 안에) -->
-<div class="emoji-panel" id="emoji-panel" style="display:none;">
-  <div class="emoji-cats">
-    <button class="emoji-cat-btn active" onclick="showCat('popular',this)">🔥 인기</button>
-    <button class="emoji-cat-btn" onclick="showCat('face',this)">😊 표정</button>
-    <button class="emoji-cat-btn" onclick="showCat('gesture',this)">👋 제스처</button>
-    <button class="emoji-cat-btn" onclick="showCat('heart',this)">❤️ 감정</button>
-    <button class="emoji-cat-btn" onclick="showCat('celebrate',this)">🎉 축하</button>
-    <button class="emoji-cat-btn" onclick="showCat('food',this)">🍕 음식</button>
-  </div>
-  <div class="emoji-grid" id="emoji-grid"></div>
-  <div class="emoji-os-hint">
-    💡 PC: <kbd>Win + .</kbd> · Mac: <kbd>⌘ + Ctrl + Space</kbd> 로 전체 이모지 열기
-  </div>
-</div>
+.chat-input-area{padding:10px 14px;background:var(--surface);border-top:1px solid var(--outline-variant);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;}
 #msg-input{flex:1;background:var(--surface-container-low);border:1.5px solid var(--outline-variant);border-radius:22px;padding:10px 16px;color:var(--on-surface);font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;resize:none;outline:none;min-height:42px;max-height:120px;line-height:1.5;transition:border-color .2s;}
 #msg-input:focus{border-color:var(--primary);}
 #msg-input::placeholder{color:var(--outline);}
@@ -262,7 +265,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .send-btn:active{transform:scale(.92);}
 .send-btn .ms{font-size:20px !important;font-variation-settings:'FILL' 1,'wght' 400;}
 
-/* Profile screen */
+/* Profile */
 #profile-screen{flex:1;display:none;flex-direction:column;min-height:0;overflow-y:auto;}
 .pe-hero{display:flex;flex-direction:column;align-items:center;padding:24px 20px;background:var(--surface);border-bottom:1.5px solid var(--outline-variant);gap:14px;}
 .pe-avatar{width:88px;height:88px;border-radius:50%;border:3px solid var(--primary);overflow:hidden;}
@@ -273,83 +276,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .pe-save-btn{padding:11px 18px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
 .pe-email{font-size:13px;color:var(--outline);}
 .pe-lang-select{background:var(--surface);border:1.5px solid var(--outline-variant);color:var(--on-surface);border-radius:8px;padding:6px 10px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;cursor:pointer;}
-/* 이모지 패널 */
-.emoji-panel{
-  position:fixed;bottom:76px;left:0;right:0;
-  background:var(--surface);border-top:1.5px solid var(--outline-variant);
-  padding:12px;z-index:200;
-  box-shadow:0 -4px 20px rgba(0,0,0,.1);
-  animation:slideUp .2s ease;
-}
-@keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-.emoji-cats{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;}
-.emoji-cats::-webkit-scrollbar{display:none;}
-.emoji-cat-btn{
-  padding:5px 12px;border:1.5px solid var(--outline-variant);
-  border-radius:100px;background:none;cursor:pointer;
-  font-size:13px;font-weight:600;color:var(--on-surface-variant);
-  font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;
-  transition:all .15s;
-}
-.emoji-cat-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
-.emoji-grid{
-  display:grid;grid-template-columns:repeat(8,1fr);
-  gap:4px;max-height:180px;overflow-y:auto;
-}
-.emoji-grid::-webkit-scrollbar{width:3px;}
-.emoji-grid::-webkit-scrollbar-thumb{background:var(--outline-variant);border-radius:2px;}
-.emoji-btn{
-  font-size:24px;padding:6px;border:none;background:none;
-  cursor:pointer;border-radius:8px;transition:background .1s;
-  display:flex;align-items:center;justify-content:center;
-}
-.emoji-btn:hover{background:var(--surface-container);}
-.emoji-os-hint{
-  margin-top:8px;padding-top:8px;border-top:1px solid var(--outline-variant);
-  font-size:11px;color:var(--outline);text-align:center;font-weight:500;
-}
-.emoji-os-hint kbd{
-  background:var(--surface-container);padding:2px 6px;
-  border-radius:4px;font-size:11px;border:1px solid var(--outline-variant);
-}/* 이모지 패널 */
-.emoji-panel{
-  position:fixed;bottom:76px;left:0;right:0;
-  background:var(--surface);border-top:1.5px solid var(--outline-variant);
-  padding:12px;z-index:200;
-  box-shadow:0 -4px 20px rgba(0,0,0,.1);
-  animation:slideUp .2s ease;
-}
-@keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-.emoji-cats{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;}
-.emoji-cats::-webkit-scrollbar{display:none;}
-.emoji-cat-btn{
-  padding:5px 12px;border:1.5px solid var(--outline-variant);
-  border-radius:100px;background:none;cursor:pointer;
-  font-size:13px;font-weight:600;color:var(--on-surface-variant);
-  font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;
-  transition:all .15s;
-}
-.emoji-cat-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
-.emoji-grid{
-  display:grid;grid-template-columns:repeat(8,1fr);
-  gap:4px;max-height:180px;overflow-y:auto;
-}
-.emoji-grid::-webkit-scrollbar{width:3px;}
-.emoji-grid::-webkit-scrollbar-thumb{background:var(--outline-variant);border-radius:2px;}
-.emoji-btn{
-  font-size:24px;padding:6px;border:none;background:none;
-  cursor:pointer;border-radius:8px;transition:background .1s;
-  display:flex;align-items:center;justify-content:center;
-}
-.emoji-btn:hover{background:var(--surface-container);}
-.emoji-os-hint{
-  margin-top:8px;padding-top:8px;border-top:1px solid var(--outline-variant);
-  font-size:11px;color:var(--outline);text-align:center;font-weight:500;
-}
-.emoji-os-hint kbd{
-  background:var(--surface-container);padding:2px 6px;
-  border-radius:4px;font-size:11px;border:1px solid var(--outline-variant);
-}
 </style>
 </head>
 <body>
@@ -369,53 +295,75 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </button>
 </div>
 
-<!-- ─── MAIN (탭 구조) ─── -->
+<!-- ─── 게스트 이름 입력 ─── -->
+<div id="guest-screen">
+  <div class="guest-host-card">
+    <div class="guest-host-avatar"><img id="guest-host-photo" src="" alt=""></div>
+    <div class="guest-host-name" id="guest-host-name">—</div>
+    <div class="guest-host-sub">🥟 MANDU로 대화 요청</div>
+  </div>
+  <div class="guest-input-wrap">
+    <label class="guest-input-label">이름을 알려주세요</label>
+    <input class="guest-input" id="guest-name-input" type="text" placeholder="홍길동">
+  </div>
+  <button class="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기 🥟</button>
+  <div class="guest-login-hint">이미 계정이 있으신가요? <span onclick="showLoginFromGuest()">Google 로그인</span></div>
+</div>
+
+<!-- ─── MAIN ─── -->
 <div id="main-screen">
   <div class="top-bar">
     <div class="top-brand">
-      <span class="top-brand-icon">🥟</span>
+      <span style="font-size:22px;">🥟</span>
       <span class="top-brand-name">MANDU</span>
     </div>
     <div class="top-actions">
       <button class="icon-btn"><span class="ms">search</span></button>
-      <button class="icon-btn" onclick="copyInviteLink()"><span class="ms">link</span></button>
-      <div class="my-avatar-btn" id="my-avatar-wrap" onclick="showProfile()">
+      <div class="my-avatar-btn" onclick="showProfile()">
         <img id="my-avatar" src="" alt="">
       </div>
     </div>
   </div>
 
-  <!-- CHATS 패널 -->
+  <!-- CHATS -->
   <div class="panel-content active" id="panel-chats">
     <div class="panel-hd">
       <div class="panel-hd-title">Chats</div>
-      <div class="panel-hd-sub" id="chats-sub">채팅방을 불러오는 중...</div>
+      <div class="panel-hd-sub" id="chats-sub">불러오는 중...</div>
     </div>
     <div class="scroll-area"><div id="room-list"></div></div>
     <button class="fab" onclick="showCreate()"><span class="ms">add</span></button>
   </div>
 
-  <!-- FRIENDS 패널 -->
+  <!-- FRIENDS -->
   <div class="panel-content" id="panel-friends">
-    <div class="scroll-area" id="friends-scroll">
-      <!-- 프로필 히어로 -->
-      <div class="profile-hero-card" id="friends-hero">
+    <div class="scroll-area">
+      <div class="profile-hero-card">
         <div class="phc-inner">
           <div class="phc-avatar"><img id="hero-avatar" src="" alt=""></div>
           <div class="phc-info">
             <div class="phc-name" id="hero-name">—</div>
-            <div class="phc-lang">
-              <span class="ms">language</span>
-              <span id="hero-lang">KO</span>
-            </div>
+            <div class="phc-lang"><span class="ms">language</span><span id="hero-lang">KO</span></div>
           </div>
           <button class="phc-edit" onclick="showProfile()"><span class="ms">edit</span></button>
         </div>
       </div>
-      <!-- 그룹 -->
+
+      <!-- 내 MANDU 링크 -->
+      <div class="my-link-card" onclick="copyMyLink()">
+        <div class="my-link-inner">
+          <div class="my-link-icon"><span class="ms">link</span></div>
+          <div class="my-link-info">
+            <div class="my-link-title">내 MANDU 링크 복사</div>
+            <div class="my-link-sub">멤버카드에 넣을 링크예요</div>
+          </div>
+          <span class="ms" style="color:var(--primary);">content_copy</span>
+        </div>
+      </div>
+
       <div class="panel-hd-row">
         <span class="panel-hd-row-title">Groups</span>
-        <span class="panel-hd-row-action">VIEW ALL</span>
+        <span class="panel-hd-row-action" onclick="showCreate()">+ 만들기</span>
       </div>
       <div class="groups-scroll" id="groups-scroll">
         <div class="group-add-card" onclick="showCreate()">
@@ -423,25 +371,24 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <span style="font-size:11px;font-weight:700;">CREATE</span>
         </div>
       </div>
-      <!-- 친구 목록 -->
+
       <div class="panel-hd-row">
         <span class="panel-hd-row-title">Friends</span>
-        <button class="icon-btn" style="width:32px;height:32px;"><span class="ms" style="font-size:18px;">filter_list</span></button>
       </div>
       <div id="user-list"></div>
     </div>
   </div>
 
-  <!-- DISCOVER 패널 -->
+  <!-- DISCOVER -->
   <div class="panel-content" id="panel-discover">
     <div class="discover-placeholder">
-      <span class="ms discover-icon">explore</span>
-      <div class="discover-title">Discover</div>
-      <div class="discover-sub">전 세계 새로운 친구를 발견하는<br>기능이 곧 출시됩니다! 🌏</div>
+      <span class="ms" style="font-size:64px !important;color:var(--primary-fixed-dim);">explore</span>
+      <div style="font-size:20px;font-weight:700;color:var(--on-surface-variant);">Discover</div>
+      <div style="font-size:14px;color:var(--outline);line-height:1.7;">전 세계 새로운 친구를 발견하는<br>기능이 곧 출시됩니다! 🌏</div>
     </div>
   </div>
 
-  <!-- SETTINGS 패널 -->
+  <!-- SETTINGS -->
   <div class="panel-content" id="panel-settings">
     <div class="scroll-area">
       <div class="settings-profile-card">
@@ -455,27 +402,26 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
         </div>
       </div>
 
+      <div class="settings-section-label">내 링크</div>
+      <div class="settings-card">
+        <div class="settings-row" onclick="copyMyLink()">
+          <div class="settings-icon-wrap"><span class="ms">link</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">내 MANDU 링크</div>
+            <div class="settings-row-sub" id="my-link-display">로그인 후 생성</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">content_copy</span></div>
+        </div>
+      </div>
+
       <div class="settings-section-label">화면</div>
       <div class="settings-card">
         <div class="settings-row" onclick="toggleTheme()">
           <div class="settings-icon-wrap"><span class="ms">dark_mode</span></div>
           <div class="settings-row-info">
             <div class="settings-row-label">다크 모드</div>
-            <div class="settings-row-sub">테마 전환</div>
           </div>
           <div class="toggle" id="dark-toggle"></div>
-        </div>
-      </div>
-
-      <div class="settings-section-label">번역 언어</div>
-      <div class="settings-card">
-        <div class="settings-row">
-          <div class="settings-icon-wrap"><span class="ms">language</span></div>
-          <div class="settings-row-info">
-            <div class="settings-row-label">내 기본 언어</div>
-            <div class="settings-row-sub" id="settings-lang-sub">한국어</div>
-          </div>
-          <div class="settings-chevron"><span class="ms">chevron_right</span></div>
         </div>
       </div>
 
@@ -485,7 +431,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div class="settings-icon-wrap"><span class="ms">share</span></div>
           <div class="settings-row-info">
             <div class="settings-row-label">친구 초대 링크</div>
-            <div class="settings-row-sub">링크 복사하기</div>
+            <div class="settings-row-sub">앱 소개 링크 복사</div>
           </div>
           <div class="settings-chevron"><span class="ms">content_copy</span></div>
         </div>
@@ -496,9 +442,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     </div>
   </div>
 
-  <!-- 하단 탭 -->
   <nav class="bottom-nav">
-    <button class="nav-tab" id="tab-chats" onclick="switchTab('chats')">
+    <button class="nav-tab active" id="tab-chats" onclick="switchTab('chats')">
       <span class="ms">chat_bubble</span>Chats
     </button>
     <button class="nav-tab" id="tab-friends" onclick="switchTab('friends')">
@@ -530,13 +475,23 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 <!-- ─── CHAT ─── -->
 <div id="chat-screen">
   <div class="chat-hd">
-    <button class="back-btn" onclick="showMain()"><span class="ms">arrow_back</span></button>
+    <button class="back-btn" onclick="handleBack()"><span class="ms">arrow_back</span></button>
     <div class="chat-hd-av" id="chat-icon"></div>
     <div class="chat-hd-info">
       <div class="chat-hd-name" id="chat-title"></div>
-      <div class="chat-hd-sub"><span class="ms">translate</span><span id="chat-sub-lang">자동번역 ON</span></div>
+      <div class="chat-hd-sub"><span class="ms">translate</span><span>자동번역 ON</span></div>
     </div>
-    <button class="icon-btn"><span class="ms">more_vert</span></button>
+  </div>
+  <!-- 게스트 업그레이드 배너 -->
+  <div id="upgrade-banner">
+    <div class="upgrade-inner">
+      <div class="upgrade-text">
+        <div class="upgrade-title">🥟 MANDU가 마음에 드셨나요?</div>
+        <div class="upgrade-sub">가입하면 모든 기능을 무료로 사용할 수 있어요!</div>
+      </div>
+      <button class="upgrade-btn" onclick="upgradeToGoogle()">가입하기</button>
+      <button class="upgrade-close" onclick="hideBanner()"><span class="ms" style="font-size:18px !important;">close</span></button>
+    </div>
   </div>
   <div class="lang-bar">
     <span class="lang-label"><span class="ms">translate</span>내 언어</span>
@@ -606,6 +561,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 
 <script>
 const TRANSLATE_KEY='AIzaSyBiZvDPaZAts3C6iiXkUw3TsiUBiqjWA3g';
+const BASE_URL='https://jinjjabg-hub.github.io/MANDU/';
 const LANG_FLAGS={ko:'🇰🇷',en:'🇺🇸',ja:'🇯🇵',zh:'🇨🇳',es:'🇪🇸',fr:'🇫🇷',de:'🇩🇪',vi:'🇻🇳',th:'🇹🇭'};
 const LANG_NAMES={ko:'한국어',en:'English',ja:'日本語',zh:'中文',es:'Español',fr:'Français',de:'Deutsch',vi:'Tiếng Việt',th:'ภาษาไทย'};
 
@@ -625,12 +581,15 @@ let currentUser=null,currentRoomId=null,currentRoomMembers=[];
 let unsubMsg=null,unsubRoom=null,lastMyMsgWrap=null;
 let heartbeatInterval=null,selectedUsers=[],allUsers=[],usersMap={};
 let currentTab='chats';
+let isGuest=false,guestMsgCount=0,hostUID=null;
+
+/* ── URL 파라미터 확인 ── */
+const urlParams=new URLSearchParams(window.location.search);
+hostUID=urlParams.get('host');
+isGuest=!!hostUID;
 
 /* ── 테마 ── */
-function initTheme(){
-  const t=localStorage.getItem('mandu_theme')||'light';
-  applyTheme(t);
-}
+function initTheme(){applyTheme(localStorage.getItem('mandu_theme')||'light');}
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme',t);
   ['dark-toggle','profile-dark-toggle'].forEach(id=>{
@@ -639,9 +598,7 @@ function applyTheme(t){
   });
   localStorage.setItem('mandu_theme',t);
 }
-function toggleTheme(){
-  applyTheme((localStorage.getItem('mandu_theme')||'light')==='dark'?'light':'dark');
-}
+function toggleTheme(){applyTheme((localStorage.getItem('mandu_theme')||'light')==='dark'?'light':'dark');}
 initTheme();
 
 /* ── 토스트 ── */
@@ -653,15 +610,23 @@ function showToast(msg){
 
 /* ── 초대링크 ── */
 function copyInviteLink(){
-  const link='https://jinjjabg-hub.github.io/MANDU/';
+  navigator.clipboard.writeText(BASE_URL)
+    .then(()=>showToast('초대 링크 복사! 🥟'))
+    .catch(()=>prompt('링크 복사:', BASE_URL));
+}
+
+/* ── 내 링크 복사 ── */
+function copyMyLink(){
+  if(!currentUser){showToast('로그인 후 사용 가능해요');return;}
+  const link=BASE_URL+'?host='+currentUser.uid;
   navigator.clipboard.writeText(link)
-    .then(()=>showToast('초대 링크 복사! 친구에게 공유해요 🥟'))
-    .catch(()=>prompt('링크를 복사해서 친구에게 공유하세요:',link));
+    .then(()=>showToast('내 링크 복사! 멤버카드에 넣어보세요 🥟'))
+    .catch(()=>prompt('내 링크:', link));
 }
 
 /* ── 온라인 상태 ── */
 function initOnline(){
-  if(!currentUser)return;
+  if(!currentUser||isGuest)return;
   setOnline();
   heartbeatInterval=setInterval(setOnline,120000);
   document.addEventListener('visibilitychange',()=>document.hidden?setOffline():setOnline());
@@ -670,7 +635,7 @@ function initOnline(){
 function setOnline(){if(!currentUser)return;db.collection('users').doc(currentUser.uid).set({online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
 function setOffline(){if(!currentUser)return;db.collection('users').doc(currentUser.uid).set({online:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
 
-/* ── 읽음 처리 ── */
+/* ── 읽음 ── */
 function markRead(roomId){
   if(!currentUser||!roomId)return;
   db.collection('rooms').doc(roomId).set({readBy:{[currentUser.uid]:firebase.firestore.FieldValue.serverTimestamp()}},{merge:true});
@@ -686,65 +651,176 @@ function updateReadReceipt(readBy){
 
 /* ── 인증 ── */
 document.getElementById('loginBtn').onclick=()=>auth.signInWithPopup(provider);
+
 auth.onAuthStateChanged(async user=>{
   document.getElementById('loading').style.display='none';
   if(user){
     currentUser=user;
+    // 게스트 모드 처리
+    if(isGuest&&user.isAnonymous){
+      // 익명 사용자 → 게스트 채팅방으로
+      await openGuestRoom();
+      return;
+    }
+    // 일반 로그인
+    isGuest=false;
     await db.collection('users').doc(user.uid).set({
       uid:user.uid,displayName:user.displayName,photoURL:user.photoURL,
       email:user.email,online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
-    // 아바타 세팅
-    document.getElementById('my-avatar').src=user.photoURL||'';
-    document.getElementById('hero-avatar').src=user.photoURL||'';
-    document.getElementById('settings-avatar').src=user.photoURL||'';
-    document.getElementById('hero-name').textContent=user.displayName||'—';
-    document.getElementById('settings-name').textContent=user.displayName||'—';
-    document.getElementById('settings-email').textContent=user.email||'';
-    // 저장된 언어
-    const lang=localStorage.getItem('mandu_lang_'+user.uid)||'ko';
-    document.getElementById('my-lang').value=lang;
-    document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+(lang.toUpperCase());
-    document.getElementById('settings-lang-sub').textContent=LANG_NAMES[lang]||'한국어';
-    initOnline();
+    updateUIAfterLogin();
+    // 게스트 모드로 왔다가 로그인한 경우 → 원래 host와 채팅 연결
+    if(hostUID){
+      const hostDoc=await db.collection('users').doc(hostUID).get();
+      if(hostDoc.exists){
+        const hd=hostDoc.data();
+        await startDM(hd);
+        return;
+      }
+    }
     showMain();
   }else{
     if(heartbeatInterval){clearInterval(heartbeatInterval);heartbeatInterval=null;}
-    currentUser=null;show('login-screen');
+    currentUser=null;
+    // 게스트 모드이면 게스트 화면, 아니면 로그인 화면
+    if(isGuest&&hostUID){
+      await loadGuestHostInfo();
+      show('guest-screen');
+    }else{
+      show('login-screen');
+    }
   }
 });
+
+/* ── 게스트: 호스트 정보 로드 ── */
+async function loadGuestHostInfo(){
+  try{
+    const doc=await db.collection('users').doc(hostUID).get();
+    if(doc.exists){
+      const d=doc.data();
+      document.getElementById('guest-host-name').textContent=d.displayName||'—';
+      document.getElementById('guest-host-photo').src=d.photoURL||'';
+    }
+  }catch(e){}
+}
+
+/* ── 게스트: 대화 시작 ── */
+async function startGuestChat(){
+  const name=document.getElementById('guest-name-input').value.trim();
+  if(!name){showToast('이름을 입력해주세요');return;}
+  try{
+    // 익명 로그인
+    const result=await auth.signInAnonymously();
+    const guestUser=result.user;
+    // 게스트 정보 저장
+    await db.collection('users').doc(guestUser.uid).set({
+      uid:guestUser.uid,displayName:name,photoURL:'',
+      email:'',online:true,isGuest:true,
+      lastSeen:firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+    // localStorage에 이름 저장
+    localStorage.setItem('mandu_guest_name',name);
+  }catch(e){
+    showToast('오류가 발생했어요. 다시 시도해주세요.');
+  }
+}
+
+/* ── 게스트: 채팅방 열기 ── */
+async function openGuestRoom(){
+  if(!currentUser||!hostUID)return;
+  try{
+    const hostDoc=await db.collection('users').doc(hostUID).get();
+    if(!hostDoc.exists){showToast('잘못된 링크예요');show('login-screen');return;}
+    const host=hostDoc.data();
+    const guestName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
+    // 채팅방 ID: guest_guestUID_hostUID
+    const roomId='guest_'+currentUser.uid+'_'+hostUID;
+    await db.collection('rooms').doc(roomId).set({
+      type:'direct',members:[currentUser.uid,hostUID],
+      memberNames:{[currentUser.uid]:guestName,[hostUID]:host.displayName},
+      memberPhotos:{[currentUser.uid]:'',[hostUID]:host.photoURL||''},
+      lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),
+      isGuestRoom:true
+    },{merge:true});
+    openRoom(roomId,host.displayName,host.photoURL,false);
+  }catch(e){showToast('오류가 발생했어요');}
+}
+
+/* ── 게스트 → Google 로그인 업그레이드 ── */
+function upgradeToGoogle(){
+  const credential=firebase.auth.GoogleAuthProvider.credential;
+  currentUser.linkWithPopup(provider)
+    .then(result=>{
+      currentUser=result.user;
+      isGuest=false;
+      showToast('가입 완료! 환영해요 🥟');
+      hideBanner();
+      db.collection('users').doc(currentUser.uid).set({
+        uid:currentUser.uid,displayName:currentUser.displayName,
+        photoURL:currentUser.photoURL,email:currentUser.email,
+        online:true,isGuest:false,
+        lastSeen:firebase.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+    })
+    .catch(()=>{
+      // 이미 계정이 있으면 그냥 로그인
+      auth.signInWithPopup(provider);
+    });
+}
+function showLoginFromGuest(){auth.signInWithPopup(provider);}
+function hideBanner(){document.getElementById('upgrade-banner').style.display='none';}
+
+/* ── 배너 표시 (게스트 3번 메시지 후) ── */
+function checkGuestUpgrade(){
+  if(!isGuest)return;
+  guestMsgCount++;
+  if(guestMsgCount===3){
+    document.getElementById('upgrade-banner').style.display='block';
+  }
+}
+
+/* ── UI 업데이트 ── */
+function updateUIAfterLogin(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  document.getElementById('my-avatar').src=currentUser.photoURL||'';
+  document.getElementById('hero-avatar').src=currentUser.photoURL||'';
+  document.getElementById('settings-avatar').src=currentUser.photoURL||'';
+  document.getElementById('hero-name').textContent=currentUser.displayName||'—';
+  document.getElementById('settings-name').textContent=currentUser.displayName||'—';
+  document.getElementById('settings-email').textContent=currentUser.email||'';
+  document.getElementById('my-link-display').textContent=BASE_URL+'?host='+currentUser.uid;
+  const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';
+  document.getElementById('my-lang').value=lang;
+  document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
+  initOnline();
+}
 
 /* ── 언어 ── */
 function saveLang(){
   if(!currentUser)return;
-  const lang=document.getElementById('my-lang').value;
-  localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
+  localStorage.setItem('mandu_lang_'+currentUser.uid,document.getElementById('my-lang').value);
 }
 function saveProfileLang(){
   if(!currentUser)return;
   const lang=document.getElementById('pe-lang').value;
   localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
   document.getElementById('my-lang').value=lang;
-  document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+(lang.toUpperCase());
-  document.getElementById('settings-lang-sub').textContent=LANG_NAMES[lang]||'한국어';
+  document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
   showToast('언어가 변경됐어요!');
 }
 
 /* ── 화면 전환 ── */
-const SCREENS=['login-screen','main-screen','chat-screen','create-screen','profile-screen'];
+const SCREENS=['login-screen','guest-screen','main-screen','chat-screen','create-screen','profile-screen'];
 function show(id){
-  SCREENS.forEach(s=>{
-    const el=document.getElementById(s);
-    el.style.display='none';
-  });
+  SCREENS.forEach(s=>{document.getElementById(s).style.display='none';});
   const el=document.getElementById(id);
-  el.style.display='flex';
-  el.style.flexDirection='column';
+  el.style.display='flex';el.style.flexDirection='column';
 }
 function showMain(){
   if(unsubMsg){unsubMsg();unsubMsg=null;}
   if(unsubRoom){unsubRoom();unsubRoom=null;}
   lastMyMsgWrap=null;
+  document.getElementById('upgrade-banner').style.display='none';
   show('main-screen');
   loadRooms();loadUsers();
   switchTab(currentTab);
@@ -757,15 +833,12 @@ function switchTab(tab){
   });
 }
 function showProfile(){
-  if(!currentUser)return;
+  if(!currentUser||currentUser.isAnonymous)return;
   document.getElementById('pe-photo').src=currentUser.photoURL||'';
   document.getElementById('pe-name').value=currentUser.displayName||'';
   document.getElementById('pe-email').textContent=currentUser.email||'';
   const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';
   document.getElementById('pe-lang').value=lang;
-  const t=localStorage.getItem('mandu_theme')||'light';
-  const tog=document.getElementById('profile-dark-toggle');
-  if(tog)tog.className='toggle '+(t==='dark'?'on':'');
   show('profile-screen');
 }
 async function saveProfile(){
@@ -775,7 +848,17 @@ async function saveProfile(){
   await db.collection('users').doc(currentUser.uid).update({displayName:name});
   document.getElementById('hero-name').textContent=name;
   document.getElementById('settings-name').textContent=name;
-  showToast('프로필이 저장됐어요!');
+  showToast('저장됐어요!');
+}
+
+/* ── 뒤로가기 ── */
+function handleBack(){
+  if(isGuest){
+    // 게스트는 뒤로가면 게스트 화면
+    show('guest-screen');
+  }else{
+    showMain();
+  }
 }
 
 /* ── 채팅방 목록 ── */
@@ -792,12 +875,10 @@ function loadRooms(){
       }
       const docs=snap.docs.sort((a,b)=>{
         const at=a.data().lastMessageTime,bt=b.data().lastMessageTime;
-        if(!at)return 1;if(!bt)return -1;
-        return bt.toMillis()-at.toMillis();
+        if(!at)return 1;if(!bt)return -1;return bt.toMillis()-at.toMillis();
       });
       const unread=docs.filter(d=>{
-        const r=d.data();const readBy=r.readBy||{};
-        const myRead=readBy[currentUser.uid];
+        const r=d.data();const readBy=r.readBy||{};const myRead=readBy[currentUser.uid];
         return r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!myRead||r.lastMessageTime.toMillis()>myRead.toMillis());
       }).length;
       sub.textContent=unread>0?`${unread}개 안읽은 대화`:`${docs.length}개 채팅방`;
@@ -807,11 +888,11 @@ function loadRooms(){
         const name=isGroup?r.name:(r.memberNames&&Object.entries(r.memberNames).find(([k])=>k!==currentUser.uid)?.[1]||'채팅방');
         const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).find(([k])=>k!==currentUser.uid)?.[1]:'';
         const partnerUid=!isGroup?Object.keys(r.memberNames||{}).find(k=>k!==currentUser.uid):null;
-        const readBy=r.readBy||{};
-        const myRead=readBy[currentUser.uid];
+        const readBy=r.readBy||{};const myRead=readBy[currentUser.uid];
         const isUnread=r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!myRead||r.lastMessageTime.toMillis()>myRead.toMillis());
         const isOnline=!isGroup&&partnerUid&&usersMap[partnerUid]?.online===true;
         const partnerLang=partnerUid&&usersMap[partnerUid]?localStorage.getItem('mandu_lang_'+partnerUid)||'':null;
+        const isGuestRoom=r.isGuestRoom;
         const item=document.createElement('div');
         item.className='room-item';
         item.innerHTML=`
@@ -822,10 +903,10 @@ function loadRooms(){
           <div class="room-info">
             <div class="room-name-row">
               <span class="room-name">${name}</span>
-              ${partnerLang?`<span class="country-pill">${(LANG_FLAGS[partnerLang]||'')} ${partnerLang.toUpperCase()}</span>`:''}
+              ${isGuestRoom?'<span class="country-pill">게스트</span>':''}
+              ${partnerLang&&!isGuestRoom?`<span class="country-pill">${LANG_FLAGS[partnerLang]||''} ${partnerLang.toUpperCase()}</span>`:''}
             </div>
             <div class="room-last">${r.lastMessage||'대화를 시작해보세요'}</div>
-            ${r.lastMessage?`<div class="room-last-trans"><span class="ms">translate</span>번역 자동적용</div>`:''}
           </div>
           <div class="room-meta">
             <span class="room-time">${formatTime(r.lastMessageTime)}</span>
@@ -840,16 +921,12 @@ function loadRooms(){
 /* ── 친구 목록 ── */
 function loadUsers(){
   const list=document.getElementById('user-list');
-  const groupsScroll=document.getElementById('groups-scroll');
   db.collection('users').onSnapshot(snap=>{
     snap.docs.forEach(d=>{usersMap[d.id]=d.data();});
-    allUsers=snap.docs.filter(d=>d.id!==currentUser.uid).map(d=>d.data());
-
-    // 그룹 섹션 업데이트 (DM 방 기반)
-    // 친구 목록
+    allUsers=snap.docs.filter(d=>d.id!==currentUser.uid&&!d.data().isGuest).map(d=>d.data());
     list.innerHTML='';
     if(allUsers.length===0){
-      list.innerHTML=`<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">친구가 없어요</div><div class="empty-desc">링크를 공유해서 초대해보세요!</div><button class="empty-btn" onclick="copyInviteLink()">🔗 초대 링크 복사</button></div>`;
+      list.innerHTML=`<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">친구가 없어요</div><div class="empty-desc">링크를 공유해서 초대해보세요!</div><button class="empty-btn" onclick="copyMyLink()">🔗 내 링크 복사</button></div>`;
       return;
     }
     allUsers.forEach(u=>{
@@ -859,18 +936,14 @@ function loadUsers(){
       item.className='user-item';
       item.innerHTML=`
         <div class="av-wrap">
-          <div class="av" style="width:52px;height:52px;">
-            ${u.photoURL?`<img src="${u.photoURL}" alt="">`:'👤'}
-          </div>
+          <div class="av">${u.photoURL?`<img src="${u.photoURL}" alt="">`:'👤'}</div>
           ${isOnline?'<div class="online-dot"></div>':''}
         </div>
         <div class="user-info">
           <div class="user-name">${u.displayName||'익명'} ${lang?LANG_FLAGS[lang]||'':''}</div>
           <div class="user-status ${isOnline?'online':''}">${isOnline?'● 온라인':'○ 오프라인'}</div>
         </div>
-        <div class="user-actions">
-          <button class="act-btn"><span class="ms">chat_bubble</span></button>
-        </div>`;
+        <div><button class="act-btn" onclick="event.stopPropagation();startDM(${JSON.stringify(u).replace(/"/g,"'")})"><span class="ms">chat_bubble</span></button></div>`;
       item.onclick=()=>startDM(u);
       list.appendChild(item);
     });
@@ -900,9 +973,7 @@ function showCreate(){
     const item=document.createElement('div');
     item.className='user-item';
     item.innerHTML=`
-      <div class="av" style="width:52px;height:52px;flex-shrink:0;">
-        ${u.photoURL?`<img src="${u.photoURL}" alt="">`:'👤'}
-      </div>
+      <div class="av">${u.photoURL?`<img src="${u.photoURL}" alt="">`:'👤'}</div>
       <div class="user-info"><div class="user-name">${u.displayName||'익명'}</div></div>
       <span class="ms check-icon">check_circle</span>`;
     item.onclick=()=>{
@@ -1011,7 +1082,8 @@ async function sendMessage(){
   if(!text||!currentUser||!currentRoomId)return;
   input.value='';input.style.height='auto';
   await db.collection('rooms').doc(currentRoomId).collection('messages').add({
-    text,uid:currentUser.uid,displayName:currentUser.displayName,
+    text,uid:currentUser.uid,
+    displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
   await db.collection('rooms').doc(currentRoomId).set({
@@ -1019,6 +1091,8 @@ async function sendMessage(){
     lastMessageUid:currentUser.uid
   },{merge:true});
   markRead(currentRoomId);
+  // 게스트 업그레이드 체크
+  if(isGuest)checkGuestUpgrade();
 }
 
 function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
@@ -1028,54 +1102,6 @@ function formatTime(ts){
   const d=ts.toDate?ts.toDate():new Date();
   return d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
 }
-/* ── 이모지 패널 ── */
-const EMOJIS = {
-  popular:['😂','❤️','🔥','✨','💯','🥺','😭','👀','🙏','😍','🤣','💀','🥳','😎','👏','🫶','🤝','💪','🎉','🥟'],
-  face:['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🥺','😢','😭','😤','😠','😡','🤬','😈','💀'],
-  gesture:['👋','🤚','🖐','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','🤲','🤝','🙏','💪','🦾'],
-  heart:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','❤️‍🔥','❤️‍🩹','💕','💞','💓','💗','💖','💘','💝','💔','❣️','💟','☮️','✝️','☯️','🫶'],
-  celebrate:['🎉','🎊','🎈','🎁','🎂','🥂','🍾','✨','🌟','⭐','🔥','💥','🎯','🏆','🥇','🥈','🥉','🎖️','🎗️','🎀','🎠','🎡','🎢','🎪'],
-  food:['🍕','🍔','🌮','🌯','🍜','🍱','🥟','🍣','🍙','🍚','🍛','🍝','🍞','🥐','🧇','🥞','☕','🧋','🍺','🍻','🥤','🧃','🍰','🎂','🍫','🍿','🍩']
-};
-
-let emojiPanelOpen = false;
-let currentCat = 'popular';
-
-function toggleEmojiPanel(){
-  emojiPanelOpen = !emojiPanelOpen;
-  const panel = document.getElementById('emoji-panel');
-  panel.style.display = emojiPanelOpen ? 'block' : 'none';
-  if(emojiPanelOpen) showCat('popular', document.querySelector('.emoji-cat-btn'));
-}
-
-function showCat(cat, btn){
-  currentCat = cat;
-  document.querySelectorAll('.emoji-cat-btn').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  const grid = document.getElementById('emoji-grid');
-  grid.innerHTML = '';
-  (EMOJIS[cat]||[]).forEach(emoji=>{
-    const b = document.createElement('button');
-    b.className = 'emoji-btn';
-    b.textContent = emoji;
-    b.onclick = ()=> insertEmoji(emoji);
-    grid.appendChild(b);
-  });
-}
-
-function insertEmoji(emoji){
-  const input = document.getElementById('msg-input');
-  const start = input.selectionStart;
-  const end = input.selectionEnd;
-  input.value = input.value.slice(0,start) + emoji + input.value.slice(end);
-  input.selectionStart = input.selectionEnd = start + emoji.length;
-  input.focus();
-  autoResize(input);
-}
-
-// 채팅방 나가면 이모지 패널 닫기
-const _origShowMain = showMain;
-// 패널 닫기 처리 - showMain 내에서 emojiPanelOpen 리셋
 </script>
 </body>
 </html>
