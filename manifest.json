@@ -1,0 +1,25 @@
+{
+  "name": "MANDU - Translation Messenger",
+  "short_name": "MANDU",
+  "description": "언어가 달라도 대화는 하나로",
+  "start_url": "/MANDU/",
+  "scope": "/MANDU/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f9ff",
+  "theme_color": "#6b38d4",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
