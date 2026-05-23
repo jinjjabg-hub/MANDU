@@ -558,7 +558,38 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   <div class="settings-section-label">계정</div>
   <button class="signout-btn" onclick="auth.signOut()">로그아웃</button>
 </div>
+/* ── 인앱 브라우저 감지 ── */
+function isInAppBrowser(){
+  const ua=navigator.userAgent;
+  return /KAKAO|NAVER|Instagram|FB_IAB|Line|Twitter/i.test(ua)||
+    /WebView/i.test(ua)||
+    (/Android/i.test(ua)&&!/Chrome/i.test(ua));
+}
 
+if(isInAppBrowser()){
+  document.getElementById('loading').style.display='none';
+  document.body.innerHTML=`
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+      height:100dvh;padding:40px;text-align:center;font-family:'Plus Jakarta Sans',sans-serif;
+      background:#f8f9ff;gap:20px;">
+      <div style="font-size:64px;">🥟</div>
+      <div style="font-size:22px;font-weight:800;color:#6b38d4;">MANDU</div>
+      <div style="font-size:15px;font-weight:600;color:#121c2a;">Chrome으로 열어주세요!</div>
+      <div style="font-size:13px;color:#7b7486;line-height:1.8;">
+        카카오톡 브라우저에서는<br>Google 로그인이 되지 않아요.<br><br>
+        아래 버튼을 눌러 Chrome으로 열어주세요.
+      </div>
+      <button onclick="location.href='intent://'+location.href.replace(/https?:\\/\\//,'')+'#Intent;scheme=https;package=com.android.chrome;end';"
+        style="background:#6b38d4;color:#fff;border:none;border-radius:100px;
+        padding:14px 28px;font-size:15px;font-weight:700;cursor:pointer;
+        font-family:'Plus Jakarta Sans',sans-serif;">
+        Chrome으로 열기
+      </button>
+      <div style="font-size:12px;color:#7b7486;">
+        아이폰: 우측 하단 <b>···</b> → <b>브라우저로 열기</b>
+      </div>
+    </div>`;
+}
 <script>
 const TRANSLATE_KEY='AIzaSyBiZvDPaZAts3C6iiXkUw3TsiUBiqjWA3g';
 const BASE_URL='https://jinjjabg-hub.github.io/MANDU/';
