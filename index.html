@@ -4,6 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MANDU</title>
+<script>
+(function(){
+  var ua=navigator.userAgent||'';
+  var isInApp=/KAKAOTALK|kakao|NAVER|Instagram|FB_IAB|Line|WebView/i.test(ua);
+  if(!isInApp)return;
+  document.addEventListener('DOMContentLoaded',function(){
+    document.body.style.cssText='margin:0;padding:0;font-family:sans-serif;background:#f8f9ff;';
+    document.body.innerHTML=
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;'+
+      'height:100dvh;padding:40px;text-align:center;gap:20px;">'+
+      '<div style="font-size:64px">🥟</div>'+
+      '<div style="font-size:22px;font-weight:800;color:#6b38d4">MANDU</div>'+
+      '<div style="font-size:15px;font-weight:700;color:#121c2a">Chrome으로 열어주세요!</div>'+
+      '<div style="font-size:13px;color:#7b7486;line-height:1.9">'+
+      '카카오 브라우저에서는<br>Google 로그인이 차단돼요.<br><br>'+
+      '📱 안드로이드: 아래 버튼 클릭<br>'+
+      '🍎 아이폰: 우측하단 ··· → 브라우저로 열기</div>'+
+      '<a href="intent://'+location.href.replace(/https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end"'+
+      ' style="background:#6b38d4;color:#fff;border-radius:100px;padding:14px 28px;'+
+      'font-size:15px;font-weight:700;text-decoration:none;display:inline-block">'+
+      '🌐 Chrome으로 열기</a>'+
+      '</div>';
+  });
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
@@ -25,18 +50,12 @@
 body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);color:var(--on-surface);height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
 .ms{font-family:'Material Symbols Outlined';font-size:24px;line-height:1;display:inline-block;font-variation-settings:'FILL' 0,'wght' 400;user-select:none;}
 .ms.fill{font-variation-settings:'FILL' 1,'wght' 400;}
-
-/* Loading */
 #loading{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;}
 .dot{width:8px;height:8px;background:var(--primary);border-radius:50%;animation:bounce .8s ease infinite;}
 .dot:nth-child(2){animation-delay:.15s;}.dot:nth-child(3){animation-delay:.3s;}
 @keyframes bounce{0%,100%{transform:translateY(0);opacity:.4;}50%{transform:translateY(-8px);opacity:1;}}
-
-/* Toast */
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(18,28,42,.9);color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
-
-/* Login */
 #login-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:40px;background:var(--background);}
 .login-logo{font-size:72px;animation:float 3s ease-in-out infinite;}
 @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
@@ -47,8 +66,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .google-btn{display:flex;align-items:center;gap:12px;background:#fff;color:#3c4043;border:1px solid var(--outline-variant);border-radius:100px;padding:14px 28px;font-size:15px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.08);transition:all .2s;}
 .google-btn:hover{box-shadow:0 4px 20px rgba(0,0,0,.12);transform:translateY(-1px);}
 .google-btn img{width:20px;}
-
-/* 게스트 이름 입력 화면 */
 #guest-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px;background:var(--background);}
 .guest-host-card{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-container) 100%);border-radius:24px;padding:24px;color:#fff;text-align:center;width:100%;max-width:320px;}
 .guest-host-avatar{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.4);overflow:hidden;margin:0 auto 12px;}
@@ -64,8 +81,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .guest-start-btn:hover{opacity:.9;}
 .guest-login-hint{font-size:12px;color:var(--outline);text-align:center;}
 .guest-login-hint span{color:var(--primary);cursor:pointer;font-weight:600;}
-
-/* 게스트 업그레이드 배너 */
 #upgrade-banner{display:none;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-container) 100%);padding:14px 16px;flex-shrink:0;}
 .upgrade-inner{display:flex;align-items:center;gap:12px;}
 .upgrade-text{flex:1;color:#fff;}
@@ -74,8 +89,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .upgrade-btn{background:rgba(255,255,255,.25);color:#fff;border:1.5px solid rgba(255,255,255,.5);border-radius:100px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;transition:all .2s;}
 .upgrade-btn:hover{background:rgba(255,255,255,.4);}
 .upgrade-close{color:rgba(255,255,255,.7);background:none;border:none;cursor:pointer;padding:4px;}
-
-/* Main */
 #main-screen{flex:1;display:none;flex-direction:column;min-height:0;}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
 .top-brand{display:flex;align-items:center;gap:8px;}
@@ -86,30 +99,22 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .icon-btn .ms{font-size:22px;}
 .my-avatar-btn{width:36px;height:36px;border-radius:50%;border:2px solid var(--primary);overflow:hidden;cursor:pointer;flex-shrink:0;}
 .my-avatar-btn img{width:100%;height:100%;object-fit:cover;}
-
-/* Panels */
 .panel-content{flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden;}
 .panel-content.active{display:flex;}
 .scroll-area{flex:1;overflow-y:auto;}
 .scroll-area::-webkit-scrollbar{width:3px;}
 .scroll-area::-webkit-scrollbar-thumb{background:var(--outline-variant);border-radius:2px;}
-
-/* Bottom Nav */
 .bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--outline-variant);padding:8px 4px 20px;flex-shrink:0;}
 .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border:none;background:none;cursor:pointer;border-radius:14px;transition:all .2s;color:var(--on-surface-variant);font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;}
 .nav-tab.active{background:var(--secondary-container);color:var(--primary);}
 .nav-tab .ms{font-size:22px;}
 .nav-tab.active .ms{font-variation-settings:'FILL' 1,'wght' 400;}
-
-/* Panel headers */
 .panel-hd{padding:16px 20px 4px;}
 .panel-hd-title{font-size:24px;font-weight:800;}
 .panel-hd-sub{font-size:12px;color:var(--on-surface-variant);margin-top:2px;font-weight:500;}
 .panel-hd-row{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 4px;}
 .panel-hd-row-title{font-size:17px;font-weight:700;}
 .panel-hd-row-action{font-size:12px;color:var(--primary);font-weight:600;cursor:pointer;}
-
-/* Chat list items */
 .room-item{display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;border-bottom:1px solid var(--outline-variant);transition:background .15s;}
 .room-item:active{background:var(--surface-container-low);}
 .av-wrap{position:relative;flex-shrink:0;}
@@ -121,13 +126,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .room-name{font-size:15px;font-weight:700;}
 .country-pill{font-size:9px;font-weight:700;padding:2px 7px;background:var(--secondary-container);color:var(--primary);border-radius:100px;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0;}
 .room-last{font-size:13px;color:var(--on-surface-variant);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.room-last-trans{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--outline);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
-.room-last-trans .ms{font-size:13px !important;color:var(--primary);flex-shrink:0;}
 .room-meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
 .room-time{font-size:11px;color:var(--outline);font-weight:500;}
 .unread-badge{background:var(--primary);color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:2px 7px;min-width:20px;text-align:center;}
-
-/* Friends panel */
 .profile-hero-card{margin:16px 20px;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-container) 100%);border-radius:20px;padding:20px;color:#fff;position:relative;overflow:hidden;}
 .profile-hero-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,.1);border-radius:50%;}
 .phc-inner{display:flex;align-items:center;gap:16px;position:relative;}
@@ -138,8 +139,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .phc-lang{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.2);border-radius:100px;padding:4px 12px;font-size:11px;font-weight:700;letter-spacing:.5px;}
 .phc-lang .ms{font-size:14px !important;}
 .phc-edit{width:36px;height:36px;border:none;cursor:pointer;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
-
-/* 내 링크 카드 */
 .my-link-card{margin:0 20px 16px;background:var(--surface);border:1.5px solid var(--primary);border-radius:16px;padding:16px;cursor:pointer;transition:all .2s;}
 .my-link-card:hover{background:var(--primary-fixed);}
 .my-link-inner{display:flex;align-items:center;gap:12px;}
@@ -148,8 +147,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .my-link-info{flex:1;}
 .my-link-title{font-size:14px;font-weight:700;color:var(--primary);}
 .my-link-sub{font-size:12px;color:var(--outline);margin-top:2px;}
-
-/* Groups scroll */
 .groups-scroll{padding:6px 20px 12px;display:flex;gap:12px;overflow-x:auto;}
 .groups-scroll::-webkit-scrollbar{display:none;}
 .group-card{min-width:150px;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:16px;padding:14px;cursor:pointer;transition:all .2s;flex-shrink:0;}
@@ -158,8 +155,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .gc-sub{font-size:11px;color:var(--outline);}
 .group-add-card{min-width:100px;border:2px dashed var(--outline-variant);border-radius:16px;padding:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--primary);transition:all .2s;flex-shrink:0;}
 .group-add-card:hover{border-color:var(--primary);background:var(--primary-fixed);}
-
-/* User list items */
 .user-item{display:flex;align-items:center;gap:14px;padding:12px 20px;cursor:pointer;border-bottom:1px solid var(--outline-variant);transition:background .15s;}
 .user-item:active,.user-item.selected{background:var(--surface-container-low);}
 .user-info{flex:1;}
@@ -171,11 +166,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .act-btn .ms{font-size:20px;}
 .check-icon{color:var(--primary);opacity:0;}
 .user-item.selected .check-icon{opacity:1;}
-
-/* Discover */
 .discover-placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;text-align:center;}
-
-/* Settings */
 .settings-profile-card{margin:16px 20px;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:20px;padding:20px;}
 .spc-row{display:flex;align-items:center;gap:14px;}
 .spc-avatar{width:60px;height:60px;border-radius:50%;border:2px solid var(--primary);overflow:hidden;flex-shrink:0;}
@@ -202,20 +193,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .toggle.on::after{transform:translateX(22px);}
 .signout-btn{display:block;width:calc(100% - 40px);margin:0 20px 32px;padding:14px;background:none;border:1.5px solid #ffcdd2;border-radius:14px;color:var(--error);font-size:15px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all .2s;}
 .signout-btn:hover{background:#ffebee;}
-
-/* FAB */
 .fab{position:fixed;bottom:90px;right:20px;width:56px;height:56px;background:var(--primary);color:#fff;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(107,56,212,.4);transition:all .2s;z-index:100;}
 .fab:active{transform:scale(.94);}
 .fab .ms{font-size:26px !important;font-variation-settings:'FILL' 0,'wght' 600;}
-
-/* Empty */
 .empty-state{padding:60px 24px;text-align:center;color:var(--outline);}
 .empty-emoji{font-size:52px;margin-bottom:16px;}
 .empty-title{font-size:16px;font-weight:600;color:var(--on-surface-variant);margin-bottom:8px;}
 .empty-desc{font-size:13px;line-height:1.6;}
 .empty-btn{margin-top:16px;padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:100px;font-size:14px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;}
-
-/* Create */
 #create-screen{flex:1;display:none;flex-direction:column;min-height:0;}
 .screen-hd{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
 .back-btn{width:40px;height:40px;border:none;background:none;color:var(--on-surface-variant);cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -226,8 +211,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .create-input::placeholder{color:var(--outline);}
 .section-lbl{font-size:10px;font-weight:700;color:var(--outline);letter-spacing:1.5px;text-transform:uppercase;padding:8px 20px 4px;}
 .create-done-btn{margin:12px 20px 24px;padding:15px;width:calc(100% - 40px);background:var(--primary);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
-
-/* Chat */
 #chat-screen{flex:1;display:none;flex-direction:column;min-height:0;}
 .chat-hd{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
 .chat-hd-av{width:38px;height:38px;border-radius:50%;background:var(--surface-container);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;border:1.5px solid var(--outline-variant);flex-shrink:0;}
@@ -264,8 +247,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .send-btn{width:42px;height:42px;background:var(--primary);border:none;border-radius:50%;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
 .send-btn:active{transform:scale(.92);}
 .send-btn .ms{font-size:20px !important;font-variation-settings:'FILL' 1,'wght' 400;}
-
-/* Profile */
 #profile-screen{flex:1;display:none;flex-direction:column;min-height:0;overflow-y:auto;}
 .pe-hero{display:flex;flex-direction:column;align-items:center;padding:24px 20px;background:var(--surface);border-bottom:1.5px solid var(--outline-variant);gap:14px;}
 .pe-avatar{width:88px;height:88px;border-radius:50%;border:3px solid var(--primary);overflow:hidden;}
@@ -279,11 +260,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 </style>
 </head>
 <body>
-
 <div id="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
 <div class="toast" id="toast"></div>
-
-<!-- ─── LOGIN ─── -->
 <div id="login-screen">
   <div class="login-logo">🥟</div>
   <div class="login-brand">MANDU</div>
@@ -294,8 +272,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     Google로 시작하기
   </button>
 </div>
-
-<!-- ─── 게스트 이름 입력 ─── -->
 <div id="guest-screen">
   <div class="guest-host-card">
     <div class="guest-host-avatar"><img id="guest-host-photo" src="" alt=""></div>
@@ -309,8 +285,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   <button class="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기 🥟</button>
   <div class="guest-login-hint">이미 계정이 있으신가요? <span onclick="showLoginFromGuest()">Google 로그인</span></div>
 </div>
-
-<!-- ─── MAIN ─── -->
 <div id="main-screen">
   <div class="top-bar">
     <div class="top-brand">
@@ -324,8 +298,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
       </div>
     </div>
   </div>
-
-  <!-- CHATS -->
   <div class="panel-content active" id="panel-chats">
     <div class="panel-hd">
       <div class="panel-hd-title">Chats</div>
@@ -334,8 +306,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <div class="scroll-area"><div id="room-list"></div></div>
     <button class="fab" onclick="showCreate()"><span class="ms">add</span></button>
   </div>
-
-  <!-- FRIENDS -->
   <div class="panel-content" id="panel-friends">
     <div class="scroll-area">
       <div class="profile-hero-card">
@@ -348,8 +318,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <button class="phc-edit" onclick="showProfile()"><span class="ms">edit</span></button>
         </div>
       </div>
-
-      <!-- 내 MANDU 링크 -->
       <div class="my-link-card" onclick="copyMyLink()">
         <div class="my-link-inner">
           <div class="my-link-icon"><span class="ms">link</span></div>
@@ -360,7 +328,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <span class="ms" style="color:var(--primary);">content_copy</span>
         </div>
       </div>
-
       <div class="panel-hd-row">
         <span class="panel-hd-row-title">Groups</span>
         <span class="panel-hd-row-action" onclick="showCreate()">+ 만들기</span>
@@ -371,15 +338,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <span style="font-size:11px;font-weight:700;">CREATE</span>
         </div>
       </div>
-
       <div class="panel-hd-row">
         <span class="panel-hd-row-title">Friends</span>
       </div>
       <div id="user-list"></div>
     </div>
   </div>
-
-  <!-- DISCOVER -->
   <div class="panel-content" id="panel-discover">
     <div class="discover-placeholder">
       <span class="ms" style="font-size:64px !important;color:var(--primary-fixed-dim);">explore</span>
@@ -387,8 +351,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
       <div style="font-size:14px;color:var(--outline);line-height:1.7;">전 세계 새로운 친구를 발견하는<br>기능이 곧 출시됩니다! 🌏</div>
     </div>
   </div>
-
-  <!-- SETTINGS -->
   <div class="panel-content" id="panel-settings">
     <div class="scroll-area">
       <div class="settings-profile-card">
@@ -401,7 +363,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <button class="spc-edit" onclick="showProfile()"><span class="ms" style="font-size:16px;">edit</span> EDIT</button>
         </div>
       </div>
-
       <div class="settings-section-label">내 링크</div>
       <div class="settings-card">
         <div class="settings-row" onclick="copyMyLink()">
@@ -413,7 +374,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div class="settings-chevron"><span class="ms">content_copy</span></div>
         </div>
       </div>
-
       <div class="settings-section-label">화면</div>
       <div class="settings-card">
         <div class="settings-row" onclick="toggleTheme()">
@@ -424,7 +384,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div class="toggle" id="dark-toggle"></div>
         </div>
       </div>
-
       <div class="settings-section-label">초대</div>
       <div class="settings-card">
         <div class="settings-row" onclick="copyInviteLink()">
@@ -436,29 +395,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div class="settings-chevron"><span class="ms">content_copy</span></div>
         </div>
       </div>
-
       <div class="settings-section-label">계정</div>
       <button class="signout-btn" onclick="auth.signOut()">로그아웃</button>
     </div>
   </div>
-
   <nav class="bottom-nav">
-    <button class="nav-tab active" id="tab-chats" onclick="switchTab('chats')">
-      <span class="ms">chat_bubble</span>Chats
-    </button>
-    <button class="nav-tab" id="tab-friends" onclick="switchTab('friends')">
-      <span class="ms">group</span>Friends
-    </button>
-    <button class="nav-tab" id="tab-discover" onclick="switchTab('discover')">
-      <span class="ms">explore</span>Discover
-    </button>
-    <button class="nav-tab" id="tab-settings" onclick="switchTab('settings')">
-      <span class="ms">settings</span>Settings
-    </button>
+    <button class="nav-tab active" id="tab-chats" onclick="switchTab('chats')"><span class="ms">chat_bubble</span>Chats</button>
+    <button class="nav-tab" id="tab-friends" onclick="switchTab('friends')"><span class="ms">group</span>Friends</button>
+    <button class="nav-tab" id="tab-discover" onclick="switchTab('discover')"><span class="ms">explore</span>Discover</button>
+    <button class="nav-tab" id="tab-settings" onclick="switchTab('settings')"><span class="ms">settings</span>Settings</button>
   </nav>
 </div>
-
-<!-- ─── CREATE ─── -->
 <div id="create-screen">
   <div class="screen-hd">
     <button class="back-btn" onclick="showMain()"><span class="ms">arrow_back</span></button>
@@ -471,8 +418,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   <div class="scroll-area" id="select-user-list"></div>
   <button class="create-done-btn" onclick="createRoom()">채팅방 만들기</button>
 </div>
-
-<!-- ─── CHAT ─── -->
 <div id="chat-screen">
   <div class="chat-hd">
     <button class="back-btn" onclick="handleBack()"><span class="ms">arrow_back</span></button>
@@ -482,7 +427,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
       <div class="chat-hd-sub"><span class="ms">translate</span><span>자동번역 ON</span></div>
     </div>
   </div>
-  <!-- 게스트 업그레이드 배너 -->
   <div id="upgrade-banner">
     <div class="upgrade-inner">
       <div class="upgrade-text">
@@ -509,13 +453,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </div>
   <div id="messages"></div>
   <div class="chat-input-area">
-    <textarea id="msg-input" placeholder="메시지 입력..." rows="1"
-      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <textarea id="msg-input" placeholder="메시지 입력..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <button class="send-btn" onclick="sendMessage()"><span class="ms">send</span></button>
   </div>
 </div>
-
-<!-- ─── PROFILE ─── -->
 <div id="profile-screen">
   <div class="screen-hd">
     <button class="back-btn" onclick="showMain()"><span class="ms">arrow_back</span></button>
@@ -558,581 +499,669 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   <div class="settings-section-label">계정</div>
   <button class="signout-btn" onclick="auth.signOut()">로그아웃</button>
 </div>
-/* ── 인앱 브라우저 감지 ── */
-function isInAppBrowser(){
-  const ua=navigator.userAgent;
-  return /KAKAO|NAVER|Instagram|FB_IAB|Line|Twitter/i.test(ua)||
-    /WebView/i.test(ua)||
-    (/Android/i.test(ua)&&!/Chrome/i.test(ua));
-}
-
-if(isInAppBrowser()){
-  document.getElementById('loading').style.display='none';
-  document.body.innerHTML=`
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-      height:100dvh;padding:40px;text-align:center;font-family:'Plus Jakarta Sans',sans-serif;
-      background:#f8f9ff;gap:20px;">
-      <div style="font-size:64px;">🥟</div>
-      <div style="font-size:22px;font-weight:800;color:#6b38d4;">MANDU</div>
-      <div style="font-size:15px;font-weight:600;color:#121c2a;">Chrome으로 열어주세요!</div>
-      <div style="font-size:13px;color:#7b7486;line-height:1.8;">
-        카카오톡 브라우저에서는<br>Google 로그인이 되지 않아요.<br><br>
-        아래 버튼을 눌러 Chrome으로 열어주세요.
-      </div>
-      <button onclick="location.href='intent://'+location.href.replace(/https?:\\/\\//,'')+'#Intent;scheme=https;package=com.android.chrome;end';"
-        style="background:#6b38d4;color:#fff;border:none;border-radius:100px;
-        padding:14px 28px;font-size:15px;font-weight:700;cursor:pointer;
-        font-family:'Plus Jakarta Sans',sans-serif;">
-        Chrome으로 열기
-      </button>
-      <div style="font-size:12px;color:#7b7486;">
-        아이폰: 우측 하단 <b>···</b> → <b>브라우저로 열기</b>
-      </div>
-    </div>`;
-}
 <script>
 const TRANSLATE_KEY='AIzaSyBiZvDPaZAts3C6iiXkUw3TsiUBiqjWA3g';
 const BASE_URL='https://jinjjabg-hub.github.io/MANDU/';
 const LANG_FLAGS={ko:'🇰🇷',en:'🇺🇸',ja:'🇯🇵',zh:'🇨🇳',es:'🇪🇸',fr:'🇫🇷',de:'🇩🇪',vi:'🇻🇳',th:'🇹🇭'};
 const LANG_NAMES={ko:'한국어',en:'English',ja:'日本語',zh:'中文',es:'Español',fr:'Français',de:'Deutsch',vi:'Tiếng Việt',th:'ภาษาไทย'};
-
-firebase.initializeApp({
-  apiKey:"AIzaSyAZoWSGSA81daZydNgzegct2aaeFbDajr0",
-  authDomain:"mandu-e7c3c.firebaseapp.com",
-  projectId:"mandu-e7c3c",
-  storageBucket:"mandu-e7c3c.firebasestorage.app",
-  messagingSenderId:"196338490174",
-  appId:"1:196338490174:web:78dc77e684945aca362a6f"
-});
+firebase.initializeApp({apiKey:"AIzaSyAZoWSGSA81daZydNgzegct2aaeFbDajr0",authDomain:"mandu-e7c3c.firebaseapp.com",projectId:"mandu-e7c3c",storageBucket:"mandu-e7c3c.firebasestorage.app",messagingSenderId:"196338490174",appId:"1:196338490174:web:78dc77e684945aca362a6f"});
 const auth=firebase.auth();
 const db=firebase.firestore();
 const provider=new firebase.auth.GoogleAuthProvider();
-
 let currentUser=null,currentRoomId=null,currentRoomMembers=[];
 let unsubMsg=null,unsubRoom=null,lastMyMsgWrap=null;
 let heartbeatInterval=null,selectedUsers=[],allUsers=[],usersMap={};
 let currentTab='chats';
 let isGuest=false,guestMsgCount=0,hostUID=null;
-
-/* ── URL 파라미터 확인 ── */
 const urlParams=new URLSearchParams(window.location.search);
 hostUID=urlParams.get('host');
 isGuest=!!hostUID;
-
-/* ── 테마 ── */
 function initTheme(){applyTheme(localStorage.getItem('mandu_theme')||'light');}
-function applyTheme(t){
-  document.documentElement.setAttribute('data-theme',t);
-  ['dark-toggle','profile-dark-toggle'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el)el.className='toggle '+(t==='dark'?'on':'');
-  });
-  localStorage.setItem('mandu_theme',t);
-}
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);['dark-toggle','profile-dark-toggle'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='toggle '+(t==='dark'?'on':'');});localStorage.setItem('mandu_theme',t);}
 function toggleTheme(){applyTheme((localStorage.getItem('mandu_theme')||'light')==='dark'?'light':'dark');}
 initTheme();
-
-/* ── 토스트 ── */
-function showToast(msg){
-  const el=document.getElementById('toast');
-  el.textContent=msg;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2200);
-}
-
-/* ── 초대링크 ── */
-function copyInviteLink(){
-  navigator.clipboard.writeText(BASE_URL)
-    .then(()=>showToast('초대 링크 복사! 🥟'))
-    .catch(()=>prompt('링크 복사:', BASE_URL));
-}
-
-/* ── 내 링크 복사 ── */
-function copyMyLink(){
-  if(!currentUser){showToast('로그인 후 사용 가능해요');return;}
-  const link=BASE_URL+'?host='+currentUser.uid;
-  navigator.clipboard.writeText(link)
-    .then(()=>showToast('내 링크 복사! 멤버카드에 넣어보세요 🥟'))
-    .catch(()=>prompt('내 링크:', link));
-}
-
-/* ── 온라인 상태 ── */
-function initOnline(){
-  if(!currentUser||isGuest)return;
-  setOnline();
-  heartbeatInterval=setInterval(setOnline,120000);
-  document.addEventListener('visibilitychange',()=>document.hidden?setOffline():setOnline());
-  window.addEventListener('beforeunload',setOffline);
-}
+function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2200);}
+function copyInviteLink(){navigator.clipboard.writeText(BASE_URL).then(()=>showToast('초대 링크 복사! 🥟')).catch(()=>prompt('링크 복사:',BASE_URL));}
+function copyMyLink(){if(!currentUser){showToast('로그인 후 사용 가능해요');return;}const link=BASE_URL+'?host='+currentUser.uid;navigator.clipboard.writeText(link).then(()=>showToast('내 링크 복사! 멤버카드에 넣어보세요 🥟')).catch(()=>prompt('내 링크:',link));}
+function initOnline(){if(!currentUser||isGuest)return;setOnline();heartbeatInterval=setInterval(setOnline,120000);document.addEventListener('visibilitychange',()=>document.hidden?setOffline():setOnline());window.addEventListener('beforeunload',setOffline);}
 function setOnline(){if(!currentUser)return;db.collection('users').doc(currentUser.uid).set({online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
 function setOffline(){if(!currentUser)return;db.collection('users').doc(currentUser.uid).set({online:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
-
-/* ── 읽음 ── */
-function markRead(roomId){
-  if(!currentUser||!roomId)return;
-  db.collection('rooms').doc(roomId).set({readBy:{[currentUser.uid]:firebase.firestore.FieldValue.serverTimestamp()}},{merge:true});
-}
-function updateReadReceipt(readBy){
-  if(!lastMyMsgWrap)return;
-  const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
-  const n=others.filter(u=>readBy&&readBy[u]).length;
-  let el=lastMyMsgWrap.querySelector('.read-receipt');
-  if(!el){el=document.createElement('div');el.className='read-receipt';lastMyMsgWrap.appendChild(el);}
-  el.textContent=n>0?`읽음 ${n}`:'';
-}
-
-/* ── 인증 ── */
+function markRead(roomId){if(!currentUser||!roomId)return;db.collection('rooms').doc(roomId).set({readBy:{[currentUser.uid]:firebase.firestore.FieldValue.serverTimestamp()}},{merge:true});}
+function updateReadReceipt(readBy){if(!lastMyMsgWrap)return;const others=currentRoomMembers.filter(u=>u!==currentUser.uid);const n=others.filter(u=>readBy&&readBy[u]).length;let el=lastMyMsgWrap.querySelector('.read-receipt');if(!el){el=document.createElement('div');el.className='read-receipt';lastMyMsgWrap.appendChild(el);}el.textContent=n>0?`읽음 ${n}`:''; }
 document.getElementById('loginBtn').onclick=()=>auth.signInWithPopup(provider);
-
 auth.onAuthStateChanged(async user=>{
   document.getElementById('loading').style.display='none';
   if(user){
     currentUser=user;
-    // 게스트 모드 처리
-    if(isGuest&&user.isAnonymous){
-      // 익명 사용자 → 게스트 채팅방으로
-      await openGuestRoom();
-      return;
-    }
-    // 일반 로그인
+    if(isGuest&&user.isAnonymous){await openGuestRoom();return;}
     isGuest=false;
-    await db.collection('users').doc(user.uid).set({
-      uid:user.uid,displayName:user.displayName,photoURL:user.photoURL,
-      email:user.email,online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
-    },{merge:true});
+    await db.collection('users').doc(user.uid).set({uid:user.uid,displayName:user.displayName,photoURL:user.photoURL,email:user.email,online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
     updateUIAfterLogin();
-    // 게스트 모드로 왔다가 로그인한 경우 → 원래 host와 채팅 연결
-    if(hostUID){
-      const hostDoc=await db.collection('users').doc(hostUID).get();
-      if(hostDoc.exists){
-        const hd=hostDoc.data();
-        await startDM(hd);
-        return;
-      }
-    }
+    if(hostUID){const hostDoc=await db.collection('users').doc(hostUID).get();if(hostDoc.exists){await startDM(hostDoc.data());return;}}
     showMain();
   }else{
     if(heartbeatInterval){clearInterval(heartbeatInterval);heartbeatInterval=null;}
     currentUser=null;
-    // 게스트 모드이면 게스트 화면, 아니면 로그인 화면
-    if(isGuest&&hostUID){
-      await loadGuestHostInfo();
-      show('guest-screen');
-    }else{
-      show('login-screen');
-    }
+    if(isGuest&&hostUID){await loadGuestHostInfo();show('guest-screen');}else{show('login-screen');}
   }
 });
-
-/* ── 게스트: 호스트 정보 로드 ── */
-async function loadGuestHostInfo(){
-  try{
-    const doc=await db.collection('users').doc(hostUID).get();
-    if(doc.exists){
-      const d=doc.data();
-      document.getElementById('guest-host-name').textContent=d.displayName||'—';
-      document.getElementById('guest-host-photo').src=d.photoURL||'';
-    }
-  }catch(e){}
-}
-
-/* ── 게스트: 대화 시작 ── */
-async function startGuestChat(){
-  const name=document.getElementById('guest-name-input').value.trim();
-  if(!name){showToast('이름을 입력해주세요');return;}
-  try{
-    // 익명 로그인
-    const result=await auth.signInAnonymously();
-    const guestUser=result.user;
-    // 게스트 정보 저장
-    await db.collection('users').doc(guestUser.uid).set({
-      uid:guestUser.uid,displayName:name,photoURL:'',
-      email:'',online:true,isGuest:true,
-      lastSeen:firebase.firestore.FieldValue.serverTimestamp()
-    },{merge:true});
-    // localStorage에 이름 저장
-    localStorage.setItem('mandu_guest_name',name);
-  }catch(e){
-    showToast('오류가 발생했어요. 다시 시도해주세요.');
-  }
-}
-
-/* ── 게스트: 채팅방 열기 ── */
-async function openGuestRoom(){
-  if(!currentUser||!hostUID)return;
-  try{
-    const hostDoc=await db.collection('users').doc(hostUID).get();
-    if(!hostDoc.exists){showToast('잘못된 링크예요');show('login-screen');return;}
-    const host=hostDoc.data();
-    const guestName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
-    // 채팅방 ID: guest_guestUID_hostUID
-    const roomId='guest_'+currentUser.uid+'_'+hostUID;
-    await db.collection('rooms').doc(roomId).set({
-      type:'direct',members:[currentUser.uid,hostUID],
-      memberNames:{[currentUser.uid]:guestName,[hostUID]:host.displayName},
-      memberPhotos:{[currentUser.uid]:'',[hostUID]:host.photoURL||''},
-      lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),
-      isGuestRoom:true
-    },{merge:true});
-    openRoom(roomId,host.displayName,host.photoURL,false);
-  }catch(e){showToast('오류가 발생했어요');}
-}
-
-/* ── 게스트 → Google 로그인 업그레이드 ── */
-function upgradeToGoogle(){
-  const credential=firebase.auth.GoogleAuthProvider.credential;
-  currentUser.linkWithPopup(provider)
-    .then(result=>{
-      currentUser=result.user;
-      isGuest=false;
-      showToast('가입 완료! 환영해요 🥟');
-      hideBanner();
-      db.collection('users').doc(currentUser.uid).set({
-        uid:currentUser.uid,displayName:currentUser.displayName,
-        photoURL:currentUser.photoURL,email:currentUser.email,
-        online:true,isGuest:false,
-        lastSeen:firebase.firestore.FieldValue.serverTimestamp()
-      },{merge:true});
-    })
-    .catch(()=>{
-      // 이미 계정이 있으면 그냥 로그인
-      auth.signInWithPopup(provider);
-    });
-}
+async function loadGuestHostInfo(){try{const doc=await db.collection('users').doc(hostUID).get();if(doc.exists){const d=doc.data();document.getElementById('guest-host-name').textContent=d.displayName||'—';document.getElementById('guest-host-photo').src=d.photoURL||'';}}catch(e){}}
+async function startGuestChat(){const name=document.getElementById('guest-name-input').value.trim();if(!name){showToast('이름을 입력해주세요');return;}try{await auth.signInAnonymously();await db.collection('users').doc(auth.currentUser.uid).set({uid:auth.currentUser.uid,displayName:name,photoURL:'',email:'',online:true,isGuest:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});localStorage.setItem('mandu_guest_name',name);}catch(e){showToast('오류가 발생했어요. 다시 시도해주세요.');}}
+async function openGuestRoom(){if(!currentUser||!hostUID)return;try{const hostDoc=await db.collection('users').doc(hostUID).get();if(!hostDoc.exists){showToast('잘못된 링크예요');show('login-screen');return;}const host=hostDoc.data();const guestName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';const roomId='guest_'+currentUser.uid+'_'+hostUID;await db.collection('rooms').doc(roomId).set({type:'direct',members:[currentUser.uid,hostUID],memberNames:{[currentUser.uid]:guestName,[hostUID]:host.displayName},memberPhotos:{[currentUser.uid]:'',[hostUID]:host.photoURL||''},lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),isGuestRoom:true},{merge:true});openRoom(roomId,host.displayName,host.photoURL,false);}catch(e){showToast('오류가 발생했어요');}}
+function upgradeToGoogle(){currentUser.linkWithPopup(provider).then(result=>{currentUser=result.user;isGuest=false;showToast('가입 완료! 환영해요 🥟');hideBanner();db.collection('users').doc(currentUser.uid).set({uid:currentUser.uid,displayName:currentUser.displayName,photoURL:currentUser.photoURL,email:currentUser.email,online:true,isGuest:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}).catch(()=>{auth.signInWithPopup(provider);});}
 function showLoginFromGuest(){auth.signInWithPopup(provider);}
 function hideBanner(){document.getElementById('upgrade-banner').style.display='none';}
-
-/* ── 배너 표시 (게스트 3번 메시지 후) ── */
-function checkGuestUpgrade(){
-  if(!isGuest)return;
-  guestMsgCount++;
-  if(guestMsgCount===3){
-    document.getElementById('upgrade-banner').style.display='block';
-  }
-}
-
-/* ── UI 업데이트 ── */
-function updateUIAfterLogin(){
-  if(!currentUser||currentUser.isAnonymous)return;
-  document.getElementById('my-avatar').src=currentUser.photoURL||'';
-  document.getElementById('hero-avatar').src=currentUser.photoURL||'';
-  document.getElementById('settings-avatar').src=currentUser.photoURL||'';
-  document.getElementById('hero-name').textContent=currentUser.displayName||'—';
-  document.getElementById('settings-name').textContent=currentUser.displayName||'—';
-  document.getElementById('settings-email').textContent=currentUser.email||'';
-  document.getElementById('my-link-display').textContent=BASE_URL+'?host='+currentUser.uid;
-  const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';
-  document.getElementById('my-lang').value=lang;
-  document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
-  initOnline();
-}
-
-/* ── 언어 ── */
-function saveLang(){
-  if(!currentUser)return;
-  localStorage.setItem('mandu_lang_'+currentUser.uid,document.getElementById('my-lang').value);
-}
-function saveProfileLang(){
-  if(!currentUser)return;
-  const lang=document.getElementById('pe-lang').value;
-  localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
-  document.getElementById('my-lang').value=lang;
-  document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
-  showToast('언어가 변경됐어요!');
-}
-
-/* ── 화면 전환 ── */
+function checkGuestUpgrade(){if(!isGuest)return;guestMsgCount++;if(guestMsgCount===3){document.getElementById('upgrade-banner').style.display='block';}}
+function updateUIAfterLogin(){if(!currentUser||currentUser.isAnonymous)return;document.getElementById('my-avatar').src=currentUser.photoURL||'';document.getElementById('hero-avatar').src=currentUser.photoURL||'';document.getElementById('settings-avatar').src=currentUser.photoURL||'';document.getElementById('hero-name').textContent=currentUser.displayName||'—';document.getElementById('settings-name').textContent=currentUser.displayName||'—';document.getElementById('settings-email').textContent=currentUser.email||'';document.getElementById('my-link-display').textContent=BASE_URL+'?host='+currentUser.uid;const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';document.getElementById('my-lang').value=lang;document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();initOnline();}
+function saveLang(){if(!currentUser)return;localStorage.setItem('mandu_lang_'+currentUser.uid,document.getElementById('my-lang').value);}
+function saveProfileLang(){if(!currentUser)return;const lang=document.getElementById('pe-lang').value;localStorage.setItem('mandu_lang_'+currentUser.uid,lang);document.getElementById('my-lang').value=lang;document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();showToast('언어가 변경됐어요!');}
 const SCREENS=['login-screen','guest-screen','main-screen','chat-screen','create-screen','profile-screen'];
-function show(id){
-  SCREENS.forEach(s=>{document.getElementById(s).style.display='none';});
-  const el=document.getElementById(id);
-  el.style.display='flex';el.style.flexDirection='column';
-}
-function showMain(){
-  if(unsubMsg){unsubMsg();unsubMsg=null;}
-  if(unsubRoom){unsubRoom();unsubRoom=null;}
-  lastMyMsgWrap=null;
-  document.getElementById('upgrade-banner').style.display='none';
-  show('main-screen');
-  loadRooms();loadUsers();
-  switchTab(currentTab);
-}
-function switchTab(tab){
-  currentTab=tab;
-  ['chats','friends','discover','settings'].forEach(t=>{
-    document.getElementById('panel-'+t).classList.toggle('active',t===tab);
-    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
-  });
-}
-function showProfile(){
-  if(!currentUser||currentUser.isAnonymous)return;
-  document.getElementById('pe-photo').src=currentUser.photoURL||'';
-  document.getElementById('pe-name').value=currentUser.displayName||'';
-  document.getElementById('pe-email').textContent=currentUser.email||'';
-  const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';
-  document.getElementById('pe-lang').value=lang;
-  show('profile-screen');
-}
-async function saveProfile(){
-  if(!currentUser)return;
-  const name=document.getElementById('pe-name').value.trim();
-  if(!name){showToast('이름을 입력하세요');return;}
-  await db.collection('users').doc(currentUser.uid).update({displayName:name});
-  document.getElementById('hero-name').textContent=name;
-  document.getElementById('settings-name').textContent=name;
-  showToast('저장됐어요!');
-}
-
-/* ── 뒤로가기 ── */
-function handleBack(){
-  if(isGuest){
-    // 게스트는 뒤로가면 게스트 화면
-    show('guest-screen');
-  }else{
-    showMain();
-  }
-}
-
-/* ── 채팅방 목록 ── */
-function loadRooms(){
-  const list=document.getElementById('room-list');
-  const sub=document.getElementById('chats-sub');
-  db.collection('rooms').where('members','array-contains',currentUser.uid)
-    .onSnapshot(snap=>{
-      list.innerHTML='';
-      if(snap.empty){
-        sub.textContent='채팅방이 없어요';
-        list.innerHTML=`<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">채팅방이 없어요</div><div class="empty-desc">+ 버튼으로 만들어보세요!</div></div>`;
-        return;
-      }
-      const docs=snap.docs.sort((a,b)=>{
-        const at=a.data().lastMessageTime,bt=b.data().lastMessageTime;
-        if(!at)return 1;if(!bt)return -1;return bt.toMillis()-at.toMillis();
-      });
-      const unread=docs.filter(d=>{
-        const r=d.data();const readBy=r.readBy||{};const myRead=readBy[currentUser.uid];
-        return r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!myRead||r.lastMessageTime.toMillis()>myRead.toMillis());
-      }).length;
-      sub.textContent=unread>0?`${unread}개 안읽은 대화`:`${docs.length}개 채팅방`;
-      docs.forEach(doc=>{
-        const r=doc.data();
-        const isGroup=r.type==='group';
-        const name=isGroup?r.name:(r.memberNames&&Object.entries(r.memberNames).find(([k])=>k!==currentUser.uid)?.[1]||'채팅방');
-        const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).find(([k])=>k!==currentUser.uid)?.[1]:'';
-        const partnerUid=!isGroup?Object.keys(r.memberNames||{}).find(k=>k!==currentUser.uid):null;
-        const readBy=r.readBy||{};const myRead=readBy[currentUser.uid];
-        const isUnread=r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!myRead||r.lastMessageTime.toMillis()>myRead.toMillis());
-        const isOnline=!isGroup&&partnerUid&&usersMap[partnerUid]?.online===true;
-        const partnerLang=partnerUid&&usersMap[partnerUid]?localStorage.getItem('mandu_lang_'+partnerUid)||'':null;
-        const isGuestRoom=r.isGuestRoom;
-        const item=document.createElement('div');
-        item.className='room-item';
-        item.innerHTML=`
-          <div class="av-wrap">
-            <div class="av">${photo?`<img src="${photo}" alt="">`:(isGroup?'👥':'👤')}</div>
-            ${isOnline?'<div class="online-dot"></div>':''}
-          </div>
-          <div class="room-info">
-            <div class="room-name-row">
-              <span class="room-name">${name}</span>
-              ${isGuestRoom?'<span class="country-pill">게스트</span>':''}
-              ${partnerLang&&!isGuestRoom?`<span class="country-pill">${LANG_FLAGS[partnerLang]||''} ${partnerLang.toUpperCase()}</span>`:''}
-            </div>
-            <div class="room-last">${r.lastMessage||'대화를 시작해보세요'}</div>
-          </div>
-          <div class="room-meta">
-            <span class="room-time">${formatTime(r.lastMessageTime)}</span>
-            ${isUnread?'<span class="unread-badge">N</span>':''}
-          </div>`;
-        item.onclick=()=>openRoom(doc.id,name,photo,isGroup);
-        list.appendChild(item);
-      });
-    });
-}
-
-/* ── 친구 목록 ── */
-function loadUsers(){
-  const list=document.getElementById('user-list');
-  db.collection('users').onSnapshot(snap=>{
-    snap.docs.forEach(d=>{usersMap[d.id]=d.data();});
-    allUsers=snap.docs.filter(d=>d.id!==currentUser.uid&&!d.data().isGuest).map(d=>d.data());
-    list.innerHTML='';
-    if(allUsers.length===0){
-      list.innerHTML=`<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">친구가 없어요</div><div class="empty-desc">링크를 공유해서 초대해보세요!</div><button class="empty-btn" onclick="copyMyLink()">🔗 내 링크 복사</button></div>`;
-      return;
-    }
-    allUsers.forEach(u=>{
-      const isOnline=u.online===true;
-      const lang=localStorage.getItem('mandu_lang_'+u.uid)||'';
-      const item=document.createElement('div');
-      item.className='user-item';
-      item.innerHTML=`
-        <div class="av-wrap">
-          <div class="av">${u.photoURL?`<img src="${u.photoURL}" alt="">`:'👤'}</div>
-          ${isOnline?'<div class="online-dot"></div>':''}
-        </div>
-        <div class="user-info">
-          <div class="user-name">${u.displayName||'익명'} ${lang?LANG_FLAGS[lang]||'':''}</div>
-          <div class="user-status ${isOnline?'online':''}">${isOnline?'● 온라인':'○ 오프라인'}</div>
-        </div>
-        <div><button class="act-btn" onclick="event.stopPropagation();startDM(${JSON.stringify(u).replace(/"/g,"'")})"><span class="ms">chat_bubble</span></button></div>`;
-      item.onclick=()=>startDM(u);
-      list.appendChild(item);
-    });
-  });
-}
-
-/* ── DM ── */
-async function startDM(partner){
-  const ids=[currentUser.uid,partner.uid].sort();
-  const roomId=ids.join('_');
-  await db.collection('rooms').doc(roomId).set({
-    type:'direct',members:ids,
-    memberNames:{[currentUser.uid]:currentUser.displayName,[partner.uid]:partner.displayName},
-    memberPhotos:{[currentUser.uid]:currentUser.photoURL||'',[partner.uid]:partner.photoURL||''},
-    lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
-  openRoom(roomId,partner.displayName,partner.photoURL,false);
-}
-
-/* ── 새 채팅방 ── */
-function showCreate(){
-  selectedUsers=[];
-  show('create-screen');
-  const list=document.getElementById('select-user-list');
-  list.innerHTML='';
-  allUsers.forEach(u=>{
-    const item=document.createElement('div');
-    item.className='user-item';
-    item.innerHTML=`
-      <div class="av">${u.photoURL?`<img src="${u.photoURL}" alt="">`:'👤'}</div>
-      <div class="user-info"><div class="user-name">${u.displayName||'익명'}</div></div>
-      <span class="ms check-icon">check_circle</span>`;
-    item.onclick=()=>{
-      const idx=selectedUsers.findIndex(x=>x.uid===u.uid);
-      if(idx>=0){selectedUsers.splice(idx,1);item.classList.remove('selected');}
-      else{selectedUsers.push(u);item.classList.add('selected');}
-    };
-    list.appendChild(item);
-  });
-}
-async function createRoom(){
-  if(selectedUsers.length===0){showToast('대화 상대를 선택하세요!');return;}
-  if(selectedUsers.length===1){await startDM(selectedUsers[0]);return;}
-  const name=document.getElementById('group-name').value.trim()||'그룹 채팅';
-  const members=[currentUser.uid,...selectedUsers.map(u=>u.uid)];
-  const memberNames={[currentUser.uid]:currentUser.displayName};
-  const memberPhotos={[currentUser.uid]:currentUser.photoURL||''};
-  selectedUsers.forEach(u=>{memberNames[u.uid]=u.displayName;memberPhotos[u.uid]=u.photoURL||'';});
-  const ref=await db.collection('rooms').add({
-    type:'group',name,members,memberNames,memberPhotos,
-    lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
-  });
-  openRoom(ref.id,name,'',true);
-}
-
-/* ── 채팅방 열기 ── */
-function openRoom(roomId,name,photo,isGroup){
-  currentRoomId=roomId;lastMyMsgWrap=null;
-  document.getElementById('chat-title').textContent=name;
-  const icon=document.getElementById('chat-icon');
-  icon.innerHTML=photo?`<img src="${photo}" alt="" style="width:100%;height:100%;object-fit:cover;">`:(isGroup?'👥':'👤');
-  show('chat-screen');
-  const lang=localStorage.getItem('mandu_lang_'+(currentUser?.uid||''));
-  if(lang)document.getElementById('my-lang').value=lang;
-  markRead(roomId);
-  loadMessages();
-  if(unsubRoom)unsubRoom();
-  unsubRoom=db.collection('rooms').doc(roomId).onSnapshot(snap=>{
-    const data=snap.data();if(!data)return;
-    currentRoomMembers=data.members||[];
-    updateReadReceipt(data.readBy||{});
-  });
-}
-
-/* ── 메시지 ── */
-function loadMessages(){
-  const container=document.getElementById('messages');
-  container.innerHTML='';
-  if(unsubMsg)unsubMsg();
-  unsubMsg=db.collection('rooms').doc(currentRoomId)
-    .collection('messages').orderBy('createdAt','asc')
-    .onSnapshot(snap=>{
-      snap.docChanges().filter(c=>c.type==='added').forEach(c=>renderMsg(c.doc.data()));
-      setTimeout(()=>{container.scrollTop=container.scrollHeight;},300);
-    });
-}
-
-async function translate(text,targetLang){
-  if(!text||!targetLang)return '';
-  try{
-    const res=await fetch(`https://translation.googleapis.com/language/translate/v2?key=${TRANSLATE_KEY}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({q:text,target:targetLang,format:'text'})
-    });
-    const data=await res.json();
-    return data.data?.translations?.[0]?.translatedText||'';
-  }catch(e){return '';}
-}
-
-function renderMsg(d){
-  const container=document.getElementById('messages');
-  const mine=d.uid===currentUser.uid;
-  const myLang=document.getElementById('my-lang').value;
-  const w=document.createElement('div');
-  w.className='msg-wrap '+(mine?'mine':'theirs');
-  if(!mine){
-    const s=document.createElement('div');s.className='msg-sender';
-    s.textContent=d.displayName||'익명';w.appendChild(s);
-  }
-  const row=document.createElement('div');row.className='msg-row';
-  const b=document.createElement('div');b.className='msg-bubble';b.textContent=d.text;
-  const timeEl=document.createElement('div');timeEl.className='msg-time';
-  timeEl.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
-  row.appendChild(b);row.appendChild(timeEl);w.appendChild(row);
-  container.appendChild(w);
-  if(mine){
-    if(lastMyMsgWrap){const p=lastMyMsgWrap.querySelector('.read-receipt');if(p)p.remove();}
-    lastMyMsgWrap=w;
-    const r=document.createElement('div');r.className='read-receipt';w.appendChild(r);
-  }
-  if(!mine&&myLang){
-    translate(d.text,myLang).then(t=>{
-      if(t&&t!==d.text){
-        b.textContent=t;
-        const orig=document.createElement('div');orig.className='msg-translated';
-        orig.innerHTML=`<span class="ms">translate</span>${d.text}`;
-        w.appendChild(orig);
-      }
-    });
-  }
-}
-
-async function sendMessage(){
-  const input=document.getElementById('msg-input');
-  const text=input.value.trim();
-  if(!text||!currentUser||!currentRoomId)return;
-  input.value='';input.style.height='auto';
-  await db.collection('rooms').doc(currentRoomId).collection('messages').add({
-    text,uid:currentUser.uid,
-    displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
-    createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  });
-  await db.collection('rooms').doc(currentRoomId).set({
-    lastMessage:text,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),
-    lastMessageUid:currentUser.uid
-  },{merge:true});
-  markRead(currentRoomId);
-  // 게스트 업그레이드 체크
-  if(isGuest)checkGuestUpgrade();
-}
-
+function show(id){SCREENS.forEach(s=>{document.getElementById(s).style.display='none';});const el=document.getElementById(id);el.style.display='flex';el.style.flexDirection='column';}
+function showMain(){if(unsubMsg){unsubMsg();unsubMsg=null;}if(unsubRoom){unsubRoom();unsubRoom=null;}lastMyMsgWrap=null;document.getElementById('upgrade-banner').style.display='none';show('main-screen');loadRooms();loadUsers();switchTab(currentTab);}
+function switchTab(tab){currentTab=tab;['chats','friends','discover','settings'].forEach(t=>{document.getElementById('panel-'+t).classList.toggle('active',t===tab);document.getElementById('tab-'+t).classList.toggle('active',t===tab);});}
+function showProfile(){if(!currentUser||currentUser.isAnonymous)return;document.getElementById('pe-photo').src=currentUser.photoURL||'';document.getElementById('pe-name').value=currentUser.displayName||'';document.getElementById('pe-email').textContent=currentUser.email||'';const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';document.getElementById('pe-lang').value=lang;show('profile-screen');}
+async function saveProfile(){if(!currentUser)return;const name=document.getElementById('pe-name').value.trim();if(!name){showToast('이름을 입력하세요');return;}await db.collection('users').doc(currentUser.uid).update({displayName:name});document.getElementById('hero-name').textContent=name;document.getElementById('settings-name').textContent=name;showToast('저장됐어요!');}
+function handleBack(){if(isGuest){show('guest-screen');}else{showMain();}}
+function loadRooms(){const list=document.getElementById('room-list');const sub=document.getElementById('chats-sub');db.collection('rooms').where('members','array-contains',currentUser.uid).onSnapshot(snap=>{list.innerHTML='';if(snap.empty){sub.textContent='채팅방이 없어요';list.innerHTML='<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">채팅방이 없어요</div><div class="empty-desc">+ 버튼으로 만들어보세요!</div></div>';return;}const docs=snap.docs.sort((a,b)=>{const at=a.data().lastMessageTime,bt=b.data().lastMessageTime;if(!at)return 1;if(!bt)return -1;return bt.toMillis()-at.toMillis();});const unread=docs.filter(d=>{const r=d.data();const readBy=r.readBy||{};const myRead=readBy[currentUser.uid];return r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!myRead||r.lastMessageTime.toMillis()>myRead.toMillis());}).length;sub.textContent=unread>0?`${unread}개 안읽은 대화`:`${docs.length}개 채팅방`;docs.forEach(doc=>{const r=doc.data();const isGroup=r.type==='group';const name=isGroup?r.name:(r.memberNames&&Object.entries(r.memberNames).find(([k])=>k!==currentUser.uid)?.[1]||'채팅방');const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).find(([k])=>k!==currentUser.uid)?.[1]:'';const partnerUid=!isGroup?Object.keys(r.memberNames||{}).find(k=>k!==currentUser.uid):null;const readBy=r.readBy||{};const myRead=readBy[currentUser.uid];const isUnread=r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!myRead||r.lastMessageTime.toMillis()>myRead.toMillis());const isOnline=!isGroup&&partnerUid&&usersMap[partnerUid]?.online===true;const partnerLang=partnerUid&&usersMap[partnerUid]?localStorage.getItem('mandu_lang_'+partnerUid)||'':null;const isGuestRoom=r.isGuestRoom;const item=document.createElement('div');item.className='room-item';item.innerHTML=`<div class="av-wrap"><div class="av">${photo?`<img src="${photo}" alt="">`:(isGroup?'👥':'👤')}</div>${isOnline?'<div class="online-dot"></div>':''}</div><div class="room-info"><div class="room-name-row"><span class="room-name">${name}</span>${isGuestRoom?'<span class="country-pill">게스트</span>':''}${partnerLang&&!isGuestRoom?`<span class="country-pill">${LANG_FLAGS[partnerLang]||''} ${partnerLang.toUpperCase()}</span>`:''}</div><div class="room-last">${r.lastMessage||'대화를 시작해보세요'}</div></div><div class="room-meta"><span class="room-time">${formatTime(r.lastMessageTime)}</span>${isUnread?'<span class="unread-badge">N</span>':''}</div>`;item.onclick=()=>openRoom(doc.id,name,photo,isGroup);list.appendChild(item);});});}
+function loadUsers(){const list=document.getElementById('user-list');db.collection('users').onSnapshot(snap=>{snap.docs.forEach(d=>{usersMap[d.id]=d.data();});allUsers=snap.docs.filter(d=>d.id!==currentUser.uid&&!d.data().isGuest).map(d=>d.data());list.innerHTML='';if(allUsers.length===0){list.innerHTML='<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">친구가 없어요</div><div class="empty-desc">링크를 공유해서 초대해보세요!</div><button class="empty-btn" onclick="copyMyLink()">🔗 내 링크 복사</button></div>';return;}allUsers.forEach(u=>{const isOnline=u.online===true;const lang=localStorage.getItem('mandu_lang_'+u.uid)||'';const item=document.createElement('div');item.className='user-item';item.innerHTML=`<div class="av-wrap"><div class="av">${u.photoURL?`<img src="${u.photoURL}" alt="">`:'👤'}</div>${isOnline?'<div class="online-dot"></div>':''}</div><div class="user-info"><div class="user-name">${u.displayName||'익명'} ${lang?LANG_FLAGS[lang]||'':''}</div><div class="user-status ${isOnline?'online':''}">${isOnline?'● 온라인':'○ 오프라인'}</div></div><div><button class="act-btn"><span class="ms">chat_bubble</span></button></div>`;item.onclick=()=>startDM(u);list.appendChild(item);});});}
+async function startDM(partner){const ids=[currentUser.uid,partner.uid].sort();const roomId=ids.join('_');await db.collection('rooms').doc(roomId).set({type:'direct',members:ids,memberNames:{[currentUser.uid]:currentUser.displayName,[partner.uid]:partner.displayName},memberPhotos:{[currentUser.uid]:currentUser.photoURL||'',[partner.uid]:partner.photoURL||''},lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});openRoom(roomId,partner.displayName,partner.photoURL,false);}
+function showCreate(){selectedUsers=[];show('create-screen');const list=document.getElementById('select-user-list');list.innerHTML='';allUsers.forEach(u=>{const item=document.createElement('div');item.className='user-item';item.innerHTML=`<div class="av">${u.photoURL?`<img src="${u.photoURL}" alt="">`:'👤'}</div><div class="user-info"><div class="user-name">${u.displayName||'익명'}</div></div><span class="ms check-icon">check_circle</span>`;item.onclick=()=>{const idx=selectedUsers.findIndex(x=>x.uid===u.uid);if(idx>=0){selectedUsers.splice(idx,1);item.classList.remove('selected');}else{selectedUsers.push(u);item.classList.add('selected');}};list.appendChild(item);});}
+async function createRoom(){if(selectedUsers.length===0){showToast('대화 상대를 선택하세요!');return;}if(selectedUsers.length===1){await startDM(selectedUsers[0]);return;}const name=document.getElementById('group-name').value.trim()||'그룹 채팅';const members=[currentUser.uid,...selectedUsers.map(u=>u.uid)];const memberNames={[currentUser.uid]:currentUser.displayName};const memberPhotos={[currentUser.uid]:currentUser.photoURL||''};selectedUsers.forEach(u=>{memberNames[u.uid]=u.displayName;memberPhotos[u.uid]=u.photoURL||'';});const ref=await db.collection('rooms').add({type:'group',name,members,memberNames,memberPhotos,lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()});openRoom(ref.id,name,'',true);}
+function openRoom(roomId,name,photo,isGroup){currentRoomId=roomId;lastMyMsgWrap=null;document.getElementById('chat-title').textContent=name;const icon=document.getElementById('chat-icon');icon.innerHTML=photo?`<img src="${photo}" alt="" style="width:100%;height:100%;object-fit:cover;">`:(isGroup?'👥':'👤');show('chat-screen');const lang=localStorage.getItem('mandu_lang_'+(currentUser?.uid||''));if(lang)document.getElementById('my-lang').value=lang;markRead(roomId);loadMessages();if(unsubRoom)unsubRoom();unsubRoom=db.collection('rooms').doc(roomId).onSnapshot(snap=>{const data=snap.data();if(!data)return;currentRoomMembers=data.members||[];updateReadReceipt(data.readBy||{});});}
+function loadMessages(){const container=document.getElementById('messages');container.innerHTML='';if(unsubMsg)unsubMsg();unsubMsg=db.collection('rooms').doc(currentRoomId).collection('messages').orderBy('createdAt','asc').onSnapshot(snap=>{snap.docChanges().filter(c=>c.type==='added').forEach(c=>renderMsg(c.doc.data()));setTimeout(()=>{container.scrollTop=container.scrollHeight;},300);});}
+async function translate(text,targetLang){if(!text||!targetLang)return '';try{const res=await fetch(`https://translation.googleapis.com/language/translate/v2?key=${TRANSLATE_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:text,target:targetLang,format:'text'})});const data=await res.json();return data.data?.translations?.[0]?.translatedText||'';}catch(e){return '';}}
+function renderMsg(d){const container=document.getElementById('messages');const mine=d.uid===currentUser.uid;const myLang=document.getElementById('my-lang').value;const w=document.createElement('div');w.className='msg-wrap '+(mine?'mine':'theirs');if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}const row=document.createElement('div');row.className='msg-row';const b=document.createElement('div');b.className='msg-bubble';b.textContent=d.text;const timeEl=document.createElement('div');timeEl.className='msg-time';timeEl.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';row.appendChild(b);row.appendChild(timeEl);w.appendChild(row);container.appendChild(w);if(mine){if(lastMyMsgWrap){const p=lastMyMsgWrap.querySelector('.read-receipt');if(p)p.remove();}lastMyMsgWrap=w;const r=document.createElement('div');r.className='read-receipt';w.appendChild(r);}if(!mine&&myLang){translate(d.text,myLang).then(t=>{if(t&&t!==d.text){b.textContent=t;const orig=document.createElement('div');orig.className='msg-translated';orig.innerHTML=`<span class="ms">translate</span>${d.text}`;w.appendChild(orig);}});}}
+async function sendMessage(){const input=document.getElementById('msg-input');const text=input.value.trim();if(!text||!currentUser||!currentRoomId)return;input.value='';input.style.height='auto';await db.collection('rooms').doc(currentRoomId).collection('messages').add({text,uid:currentUser.uid,displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',createdAt:firebase.firestore.FieldValue.serverTimestamp()});await db.collection('rooms').doc(currentRoomId).set({lastMessage:text,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid},{merge:true});markRead(currentRoomId);if(isGuest)checkGuestUpgrade();}
 function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
-function formatTime(ts){
-  if(!ts)return '';
-  const d=ts.toDate?ts.toDate():new Date();
-  return d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-}
+function formatTime(ts){if(!ts)return '';const d=ts.toDate?ts.toDate():new Date();return d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});}
 </script>
 </body>
 </html>
+
+이게 현재 코드야.여기에 추가해줘
+
+맞아요! 현재 코드에 카카오 감지 코드만 딱 추가한 완성본이에요. `<title>` 다음에 넣었어요.
+
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MANDU</title>
+<script>
+(function(){
+  var ua=navigator.userAgent||'';
+  var isInApp=/KAKAOTALK|kakao|NAVER|Instagram|FB_IAB|Line|WebView/i.test(ua);
+  if(!isInApp)return;
+  document.addEventListener('DOMContentLoaded',function(){
+    document.body.style.cssText='margin:0;padding:0;font-family:sans-serif;background:#f8f9ff;';
+    document.body.innerHTML=
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;'+
+      'height:100dvh;padding:40px;text-align:center;gap:20px;">'+
+      '<div style="font-size:64px">🥟</div>'+
+      '<div style="font-size:22px;font-weight:800;color:#6b38d4">MANDU</div>'+
+      '<div style="font-size:15px;font-weight:700;color:#121c2a">Chrome으로 열어주세요!</div>'+
+      '<div style="font-size:13px;color:#7b7486;line-height:1.9">'+
+      '카카오 브라우저에서는<br>Google 로그인이 차단돼요.<br><br>'+
+      '📱 안드로이드: 아래 버튼 클릭<br>'+
+      '🍎 아이폰: 우측하단 ··· → 브라우저로 열기</div>'+
+      '<a href="intent://'+location.href.replace(/https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end"'+
+      ' style="background:#6b38d4;color:#fff;border-radius:100px;padding:14px 28px;'+
+      'font-size:15px;font-weight:700;text-decoration:none;display:inline-block">'+
+      '🌐 Chrome으로 열기</a>'+
+      '</div>';
+  });
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --primary:#6b38d4;--primary-container:#8455ef;
+  --primary-fixed:#e9ddff;--primary-fixed-dim:#d0bcff;
+  --on-primary:#fff;
+  --secondary-container:#e4e0f5;
+  --background:#f8f9ff;--surface:#fff;
+  --surface-container:#e6eeff;--surface-container-low:#eff4ff;
+  --surface-container-high:#dee9fc;
+  --on-surface:#121c2a;--on-surface-variant:#494454;
+  --outline:#7b7486;--outline-variant:#cbc3d7;--error:#ba1a1a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);color:var(--on-surface);height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
+.ms{font-family:'Material Symbols Outlined';font-size:24px;line-height:1;display:inline-block;font-variation-settings:'FILL' 0,'wght' 400;user-select:none;}
+.ms.fill{font-variation-settings:'FILL' 1,'wght' 400;}
+#loading{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;}
+.dot{width:8px;height:8px;background:var(--primary);border-radius:50%;animation:bounce .8s ease infinite;}
+.dot:nth-child(2){animation-delay:.15s;}.dot:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,100%{transform:translateY(0);opacity:.4;}50%{transform:translateY(-8px);opacity:1;}}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(18,28,42,.9);color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+#login-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:40px;background:var(--background);}
+.login-logo{font-size:72px;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.login-brand{font-size:32px;font-weight:800;letter-spacing:10px;color:var(--primary);}
+.login-sub{font-size:11px;color:var(--outline);letter-spacing:3px;font-weight:600;}
+.login-desc{text-align:center;color:var(--on-surface-variant);font-size:14px;line-height:1.8;max-width:280px;}
+.login-desc strong{color:var(--primary);}
+.google-btn{display:flex;align-items:center;gap:12px;background:#fff;color:#3c4043;border:1px solid var(--outline-variant);border-radius:100px;padding:14px 28px;font-size:15px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.08);transition:all .2s;}
+.google-btn:hover{box-shadow:0 4px 20px rgba(0,0,0,.12);transform:translateY(-1px);}
+.google-btn img{width:20px;}
+#guest-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px;background:var(--background);}
+.guest-host-card{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-container) 100%);border-radius:24px;padding:24px;color:#fff;text-align:center;width:100%;max-width:320px;}
+.guest-host-avatar{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.4);overflow:hidden;margin:0 auto 12px;}
+.guest-host-avatar img{width:100%;height:100%;object-fit:cover;}
+.guest-host-name{font-size:20px;font-weight:700;margin-bottom:4px;}
+.guest-host-sub{font-size:13px;opacity:.8;}
+.guest-input-wrap{width:100%;max-width:320px;}
+.guest-input-label{font-size:13px;font-weight:600;color:var(--on-surface-variant);margin-bottom:8px;display:block;}
+.guest-input{width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:14px;padding:14px 16px;color:var(--on-surface);font-size:16px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border-color .2s;}
+.guest-input:focus{border-color:var(--primary);}
+.guest-input::placeholder{color:var(--outline);}
+.guest-start-btn{width:100%;max-width:320px;padding:15px;background:var(--primary);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:opacity .2s;}
+.guest-start-btn:hover{opacity:.9;}
+.guest-login-hint{font-size:12px;color:var(--outline);text-align:center;}
+.guest-login-hint span{color:var(--primary);cursor:pointer;font-weight:600;}
+#upgrade-banner{display:none;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-container) 100%);padding:14px 16px;flex-shrink:0;}
+.upgrade-inner{display:flex;align-items:center;gap:12px;}
+.upgrade-text{flex:1;color:#fff;}
+.upgrade-title{font-size:13px;font-weight:700;}
+.upgrade-sub{font-size:11px;opacity:.85;margin-top:1px;}
+.upgrade-btn{background:rgba(255,255,255,.25);color:#fff;border:1.5px solid rgba(255,255,255,.5);border-radius:100px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;transition:all .2s;}
+.upgrade-btn:hover{background:rgba(255,255,255,.4);}
+.upgrade-close{color:rgba(255,255,255,.7);background:none;border:none;cursor:pointer;padding:4px;}
+#main-screen{flex:1;display:none;flex-direction:column;min-height:0;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
+.top-brand{display:flex;align-items:center;gap:8px;}
+.top-brand-name{font-size:20px;font-weight:800;color:var(--primary);letter-spacing:2px;}
+.top-actions{display:flex;gap:4px;align-items:center;}
+.icon-btn{width:40px;height:40px;border:none;background:none;border-radius:100px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--on-surface-variant);transition:background .15s;}
+.icon-btn:hover{background:var(--surface-container);}
+.icon-btn .ms{font-size:22px;}
+.my-avatar-btn{width:36px;height:36px;border-radius:50%;border:2px solid var(--primary);overflow:hidden;cursor:pointer;flex-shrink:0;}
+.my-avatar-btn img{width:100%;height:100%;object-fit:cover;}
+.panel-content{flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden;}
+.panel-content.active{display:flex;}
+.scroll-area{flex:1;overflow-y:auto;}
+.scroll-area::-webkit-scrollbar{width:3px;}
+.scroll-area::-webkit-scrollbar-thumb{background:var(--outline-variant);border-radius:2px;}
+.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--outline-variant);padding:8px 4px 20px;flex-shrink:0;}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border:none;background:none;cursor:pointer;border-radius:14px;transition:all .2s;color:var(--on-surface-variant);font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;}
+.nav-tab.active{background:var(--secondary-container);color:var(--primary);}
+.nav-tab .ms{font-size:22px;}
+.nav-tab.active .ms{font-variation-settings:'FILL' 1,'wght' 400;}
+.panel-hd{padding:16px 20px 4px;}
+.panel-hd-title{font-size:24px;font-weight:800;}
+.panel-hd-sub{font-size:12px;color:var(--on-surface-variant);margin-top:2px;font-weight:500;}
+.panel-hd-row{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 4px;}
+.panel-hd-row-title{font-size:17px;font-weight:700;}
+.panel-hd-row-action{font-size:12px;color:var(--primary);font-weight:600;cursor:pointer;}
+.room-item{display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;border-bottom:1px solid var(--outline-variant);transition:background .15s;}
+.room-item:active{background:var(--surface-container-low);}
+.av-wrap{position:relative;flex-shrink:0;}
+.av{width:52px;height:52px;border-radius:50%;background:var(--surface-container);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid var(--outline-variant);}
+.av img{width:100%;height:100%;object-fit:cover;}
+.online-dot{position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;background:#22c55e;border:2.5px solid var(--surface);}
+.room-info{flex:1;min-width:0;}
+.room-name-row{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.room-name{font-size:15px;font-weight:700;}
+.country-pill{font-size:9px;font-weight:700;padding:2px 7px;background:var(--secondary-container);color:var(--primary);border-radius:100px;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0;}
+.room-last{font-size:13px;color:var(--on-surface-variant);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.room-meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+.room-time{font-size:11px;color:var(--outline);font-weight:500;}
+.unread-badge{background:var(--primary);color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:2px 7px;min-width:20px;text-align:center;}
+.profile-hero-card{margin:16px 20px;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-container) 100%);border-radius:20px;padding:20px;color:#fff;position:relative;overflow:hidden;}
+.profile-hero-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,.1);border-radius:50%;}
+.phc-inner{display:flex;align-items:center;gap:16px;position:relative;}
+.phc-avatar{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,.4);overflow:hidden;flex-shrink:0;}
+.phc-avatar img{width:100%;height:100%;object-fit:cover;}
+.phc-info{flex:1;}
+.phc-name{font-size:18px;font-weight:700;margin-bottom:6px;}
+.phc-lang{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.2);border-radius:100px;padding:4px 12px;font-size:11px;font-weight:700;letter-spacing:.5px;}
+.phc-lang .ms{font-size:14px !important;}
+.phc-edit{width:36px;height:36px;border:none;cursor:pointer;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+.my-link-card{margin:0 20px 16px;background:var(--surface);border:1.5px solid var(--primary);border-radius:16px;padding:16px;cursor:pointer;transition:all .2s;}
+.my-link-card:hover{background:var(--primary-fixed);}
+.my-link-inner{display:flex;align-items:center;gap:12px;}
+.my-link-icon{width:40px;height:40px;background:var(--primary-fixed);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.my-link-icon .ms{color:var(--primary);font-size:20px !important;}
+.my-link-info{flex:1;}
+.my-link-title{font-size:14px;font-weight:700;color:var(--primary);}
+.my-link-sub{font-size:12px;color:var(--outline);margin-top:2px;}
+.groups-scroll{padding:6px 20px 12px;display:flex;gap:12px;overflow-x:auto;}
+.groups-scroll::-webkit-scrollbar{display:none;}
+.group-card{min-width:150px;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:16px;padding:14px;cursor:pointer;transition:all .2s;flex-shrink:0;}
+.group-card:hover{border-color:var(--primary);}
+.gc-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.gc-sub{font-size:11px;color:var(--outline);}
+.group-add-card{min-width:100px;border:2px dashed var(--outline-variant);border-radius:16px;padding:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--primary);transition:all .2s;flex-shrink:0;}
+.group-add-card:hover{border-color:var(--primary);background:var(--primary-fixed);}
+.user-item{display:flex;align-items:center;gap:14px;padding:12px 20px;cursor:pointer;border-bottom:1px solid var(--outline-variant);transition:background .15s;}
+.user-item:active,.user-item.selected{background:var(--surface-container-low);}
+.user-info{flex:1;}
+.user-name{font-size:15px;font-weight:700;}
+.user-status{font-size:12px;color:var(--on-surface-variant);margin-top:2px;font-weight:500;}
+.user-status.online{color:#22c55e;}
+.act-btn{width:36px;height:36px;border:none;background:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--primary);transition:background .15s;}
+.act-btn:hover{background:var(--primary-fixed);}
+.act-btn .ms{font-size:20px;}
+.check-icon{color:var(--primary);opacity:0;}
+.user-item.selected .check-icon{opacity:1;}
+.discover-placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;text-align:center;}
+.settings-profile-card{margin:16px 20px;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:20px;padding:20px;}
+.spc-row{display:flex;align-items:center;gap:14px;}
+.spc-avatar{width:60px;height:60px;border-radius:50%;border:2px solid var(--primary);overflow:hidden;flex-shrink:0;}
+.spc-avatar img{width:100%;height:100%;object-fit:cover;}
+.spc-info{flex:1;}
+.spc-name{font-size:17px;font-weight:700;}
+.spc-email{font-size:12px;color:var(--outline);margin-top:2px;}
+.spc-edit{display:flex;align-items:center;gap:4px;background:none;border:1.5px solid var(--primary);color:var(--primary);border-radius:100px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;}
+.spc-edit:hover{background:var(--primary);color:#fff;}
+.settings-section-label{font-size:10px;font-weight:700;color:var(--outline);letter-spacing:1.5px;text-transform:uppercase;padding:12px 20px 4px;}
+.settings-card{margin:0 20px 16px;background:var(--surface);border-radius:16px;border:1.5px solid var(--outline-variant);overflow:hidden;}
+.settings-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--outline-variant);cursor:pointer;transition:background .15s;}
+.settings-row:last-child{border-bottom:none;}
+.settings-row:hover{background:var(--surface-container-low);}
+.settings-icon-wrap{width:40px;height:40px;border-radius:50%;background:var(--primary-fixed);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.settings-icon-wrap .ms{font-size:20px;}
+.settings-row-info{flex:1;}
+.settings-row-label{font-size:15px;font-weight:600;}
+.settings-row-sub{font-size:12px;color:var(--outline);margin-top:1px;}
+.settings-chevron .ms{font-size:20px;color:var(--outline-variant);}
+.toggle{width:48px;height:26px;border-radius:100px;background:var(--outline-variant);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:var(--primary);}
+.toggle::after{content:'';position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.toggle.on::after{transform:translateX(22px);}
+.signout-btn{display:block;width:calc(100% - 40px);margin:0 20px 32px;padding:14px;background:none;border:1.5px solid #ffcdd2;border-radius:14px;color:var(--error);font-size:15px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all .2s;}
+.signout-btn:hover{background:#ffebee;}
+.fab{position:fixed;bottom:90px;right:20px;width:56px;height:56px;background:var(--primary);color:#fff;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(107,56,212,.4);transition:all .2s;z-index:100;}
+.fab:active{transform:scale(.94);}
+.fab .ms{font-size:26px !important;font-variation-settings:'FILL' 0,'wght' 600;}
+.empty-state{padding:60px 24px;text-align:center;color:var(--outline);}
+.empty-emoji{font-size:52px;margin-bottom:16px;}
+.empty-title{font-size:16px;font-weight:600;color:var(--on-surface-variant);margin-bottom:8px;}
+.empty-desc{font-size:13px;line-height:1.6;}
+.empty-btn{margin-top:16px;padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:100px;font-size:14px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;}
+#create-screen{flex:1;display:none;flex-direction:column;min-height:0;}
+.screen-hd{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
+.back-btn{width:40px;height:40px;border:none;background:none;color:var(--on-surface-variant);cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.screen-title{font-size:17px;font-weight:700;flex:1;}
+.create-field{padding:12px 20px;}
+.create-input{width:100%;background:var(--surface-container-low);border:1.5px solid var(--outline-variant);border-radius:14px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border-color .2s;}
+.create-input:focus{border-color:var(--primary);}
+.create-input::placeholder{color:var(--outline);}
+.section-lbl{font-size:10px;font-weight:700;color:var(--outline);letter-spacing:1.5px;text-transform:uppercase;padding:8px 20px 4px;}
+.create-done-btn{margin:12px 20px 24px;padding:15px;width:calc(100% - 40px);background:var(--primary);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
+#chat-screen{flex:1;display:none;flex-direction:column;min-height:0;}
+.chat-hd{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
+.chat-hd-av{width:38px;height:38px;border-radius:50%;background:var(--surface-container);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;border:1.5px solid var(--outline-variant);flex-shrink:0;}
+.chat-hd-av img{width:100%;height:100%;object-fit:cover;}
+.chat-hd-info{flex:1;min-width:0;}
+.chat-hd-name{font-size:16px;font-weight:700;}
+.chat-hd-sub{font-size:11px;color:var(--outline);font-weight:500;display:flex;align-items:center;gap:3px;}
+.chat-hd-sub .ms{font-size:13px !important;color:var(--primary);}
+.lang-bar{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--surface-container-low);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
+.lang-label{font-size:12px;color:var(--outline);flex-shrink:0;font-weight:500;display:flex;align-items:center;gap:4px;}
+.lang-label .ms{font-size:14px !important;color:var(--primary);}
+.lang-select{background:var(--surface);border:1.5px solid var(--outline-variant);color:var(--on-surface);border-radius:8px;padding:5px 10px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;cursor:pointer;flex:1;max-width:180px;font-weight:600;}
+#messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:4px;min-height:0;}
+#messages::-webkit-scrollbar{width:3px;}
+#messages::-webkit-scrollbar-thumb{background:var(--outline-variant);border-radius:2px;}
+.msg-wrap{display:flex;flex-direction:column;max-width:80%;animation:msgIn .18s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.msg-wrap.mine{align-self:flex-end;align-items:flex-end;}
+.msg-wrap.theirs{align-self:flex-start;align-items:flex-start;}
+.msg-sender{font-size:11px;font-weight:700;color:var(--primary);margin-bottom:3px;padding:0 4px;}
+.msg-row{display:flex;align-items:flex-end;gap:6px;}
+.mine .msg-row{flex-direction:row-reverse;}
+.msg-bubble{padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;}
+.mine .msg-bubble{background:var(--primary);color:#fff;border-bottom-right-radius:4px;}
+.theirs .msg-bubble{background:var(--surface);color:var(--on-surface);border:1.5px solid var(--outline-variant);border-bottom-left-radius:4px;}
+.msg-translated{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--outline);margin-top:4px;padding:0 4px;font-style:italic;line-height:1.4;}
+.msg-translated .ms{font-size:13px !important;color:var(--primary);}
+.msg-time{font-size:10px;color:var(--outline);flex-shrink:0;padding-bottom:2px;font-weight:500;}
+.read-receipt{font-size:10px;color:var(--primary-container);margin-top:2px;padding:0 4px;text-align:right;min-height:14px;}
+.chat-input-area{padding:10px 14px;background:var(--surface);border-top:1px solid var(--outline-variant);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;}
+#msg-input{flex:1;background:var(--surface-container-low);border:1.5px solid var(--outline-variant);border-radius:22px;padding:10px 16px;color:var(--on-surface);font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;resize:none;outline:none;min-height:42px;max-height:120px;line-height:1.5;transition:border-color .2s;}
+#msg-input:focus{border-color:var(--primary);}
+#msg-input::placeholder{color:var(--outline);}
+.send-btn{width:42px;height:42px;background:var(--primary);border:none;border-radius:50%;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.send-btn:active{transform:scale(.92);}
+.send-btn .ms{font-size:20px !important;font-variation-settings:'FILL' 1,'wght' 400;}
+#profile-screen{flex:1;display:none;flex-direction:column;min-height:0;overflow-y:auto;}
+.pe-hero{display:flex;flex-direction:column;align-items:center;padding:24px 20px;background:var(--surface);border-bottom:1.5px solid var(--outline-variant);gap:14px;}
+.pe-avatar{width:88px;height:88px;border-radius:50%;border:3px solid var(--primary);overflow:hidden;}
+.pe-avatar img{width:100%;height:100%;object-fit:cover;}
+.pe-name-row{display:flex;gap:8px;width:100%;max-width:320px;}
+.pe-name-input{flex:1;background:var(--surface-container-low);border:1.5px solid var(--outline-variant);border-radius:12px;padding:11px 14px;color:var(--on-surface);font-size:16px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border-color .2s;text-align:center;}
+.pe-name-input:focus{border-color:var(--primary);}
+.pe-save-btn{padding:11px 18px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
+.pe-email{font-size:13px;color:var(--outline);}
+.pe-lang-select{background:var(--surface);border:1.5px solid var(--outline-variant);color:var(--on-surface);border-radius:8px;padding:6px 10px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+<div class="toast" id="toast"></div>
+<div id="login-screen">
+  <div class="login-logo">🥟</div>
+  <div class="login-brand">MANDU</div>
+  <div class="login-sub">Translation Messenger</div>
+  <div class="login-desc">언어가 달라도 <strong>대화는 하나로</strong></div>
+  <button class="google-btn" id="loginBtn">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+    Google로 시작하기
+  </button>
+</div>
+<div id="guest-screen">
+  <div class="guest-host-card">
+    <div class="guest-host-avatar"><img id="guest-host-photo" src="" alt=""></div>
+    <div class="guest-host-name" id="guest-host-name">—</div>
+    <div class="guest-host-sub">🥟 MANDU로 대화 요청</div>
+  </div>
+  <div class="guest-input-wrap">
+    <label class="guest-input-label">이름을 알려주세요</label>
+    <input class="guest-input" id="guest-name-input" type="text" placeholder="홍길동">
+  </div>
+  <button class="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기 🥟</button>
+  <div class="guest-login-hint">이미 계정이 있으신가요? <span onclick="showLoginFromGuest()">Google 로그인</span></div>
+</div>
+<div id="main-screen">
+  <div class="top-bar">
+    <div class="top-brand">
+      <span style="font-size:22px;">🥟</span>
+      <span class="top-brand-name">MANDU</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn"><span class="ms">search</span></button>
+      <div class="my-avatar-btn" onclick="showProfile()">
+        <img id="my-avatar" src="" alt="">
+      </div>
+    </div>
+  </div>
+  <div class="panel-content active" id="panel-chats">
+    <div class="panel-hd">
+      <div class="panel-hd-title">Chats</div>
+      <div class="panel-hd-sub" id="chats-sub">불러오는 중...</div>
+    </div>
+    <div class="scroll-area"><div id="room-list"></div></div>
+    <button class="fab" onclick="showCreate()"><span class="ms">add</span></button>
+  </div>
+  <div class="panel-content" id="panel-friends">
+    <div class="scroll-area">
+      <div class="profile-hero-card">
+        <div class="phc-inner">
+          <div class="phc-avatar"><img id="hero-avatar" src="" alt=""></div>
+          <div class="phc-info">
+            <div class="phc-name" id="hero-name">—</div>
+            <div class="phc-lang"><span class="ms">language</span><span id="hero-lang">KO</span></div>
+          </div>
+          <button class="phc-edit" onclick="showProfile()"><span class="ms">edit</span></button>
+        </div>
+      </div>
+      <div class="my-link-card" onclick="copyMyLink()">
+        <div class="my-link-inner">
+          <div class="my-link-icon"><span class="ms">link</span></div>
+          <div class="my-link-info">
+            <div class="my-link-title">내 MANDU 링크 복사</div>
+            <div class="my-link-sub">멤버카드에 넣을 링크예요</div>
+          </div>
+          <span class="ms" style="color:var(--primary);">content_copy</span>
+        </div>
+      </div>
+      <div class="panel-hd-row">
+        <span class="panel-hd-row-title">Groups</span>
+        <span class="panel-hd-row-action" onclick="showCreate()">+ 만들기</span>
+      </div>
+      <div class="groups-scroll" id="groups-scroll">
+        <div class="group-add-card" onclick="showCreate()">
+          <span class="ms" style="font-size:28px !important;">add_circle</span>
+          <span style="font-size:11px;font-weight:700;">CREATE</span>
+        </div>
+      </div>
+      <div class="panel-hd-row">
+        <span class="panel-hd-row-title">Friends</span>
+      </div>
+      <div id="user-list"></div>
+    </div>
+  </div>
+  <div class="panel-content" id="panel-discover">
+    <div class="discover-placeholder">
+      <span class="ms" style="font-size:64px !important;color:var(--primary-fixed-dim);">explore</span>
+      <div style="font-size:20px;font-weight:700;color:var(--on-surface-variant);">Discover</div>
+      <div style="font-size:14px;color:var(--outline);line-height:1.7;">전 세계 새로운 친구를 발견하는<br>기능이 곧 출시됩니다! 🌏</div>
+    </div>
+  </div>
+  <div class="panel-content" id="panel-settings">
+    <div class="scroll-area">
+      <div class="settings-profile-card">
+        <div class="spc-row">
+          <div class="spc-avatar"><img id="settings-avatar" src="" alt=""></div>
+          <div class="spc-info">
+            <div class="spc-name" id="settings-name">—</div>
+            <div class="spc-email" id="settings-email">—</div>
+          </div>
+          <button class="spc-edit" onclick="showProfile()"><span class="ms" style="font-size:16px;">edit</span> EDIT</button>
+        </div>
+      </div>
+      <div class="settings-section-label">내 링크</div>
+      <div class="settings-card">
+        <div class="settings-row" onclick="copyMyLink()">
+          <div class="settings-icon-wrap"><span class="ms">link</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">내 MANDU 링크</div>
+            <div class="settings-row-sub" id="my-link-display">로그인 후 생성</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">content_copy</span></div>
+        </div>
+      </div>
+      <div class="settings-section-label">화면</div>
+      <div class="settings-card">
+        <div class="settings-row" onclick="toggleTheme()">
+          <div class="settings-icon-wrap"><span class="ms">dark_mode</span></div>
+          <div class="settings-row-info"><div class="settings-row-label">다크 모드</div></div>
+          <div class="toggle" id="dark-toggle"></div>
+        </div>
+      </div>
+      <div class="settings-section-label">초대</div>
+      <div class="settings-card">
+        <div class="settings-row" onclick="copyInviteLink()">
+          <div class="settings-icon-wrap"><span class="ms">share</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">친구 초대 링크</div>
+            <div class="settings-row-sub">앱 소개 링크 복사</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">content_copy</span></div>
+        </div>
+      </div>
+      <div class="settings-section-label">계정</div>
+      <button class="signout-btn" onclick="auth.signOut()">로그아웃</button>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-tab active" id="tab-chats" onclick="switchTab('chats')"><span class="ms">chat_bubble</span>Chats</button>
+    <button class="nav-tab" id="tab-friends" onclick="switchTab('friends')"><span class="ms">group</span>Friends</button>
+    <button class="nav-tab" id="tab-discover" onclick="switchTab('discover')"><span class="ms">explore</span>Discover</button>
+    <button class="nav-tab" id="tab-settings" onclick="switchTab('settings')"><span class="ms">settings</span>Settings</button>
+  </nav>
+</div>
+<div id="create-screen">
+  <div class="screen-hd">
+    <button class="back-btn" onclick="showMain()"><span class="ms">arrow_back</span></button>
+    <span class="screen-title">새 채팅방</span>
+  </div>
+  <div class="create-field">
+    <input class="create-input" id="group-name" placeholder="채팅방 이름 (여러 명일 때)">
+  </div>
+  <div class="section-lbl">대화 상대 선택</div>
+  <div class="scroll-area" id="select-user-list"></div>
+  <button class="create-done-btn" onclick="createRoom()">채팅방 만들기</button>
+</div>
+<div id="chat-screen">
+  <div class="chat-hd">
+    <button class="back-btn" onclick="handleBack()"><span class="ms">arrow_back</span></button>
+    <div class="chat-hd-av" id="chat-icon"></div>
+    <div class="chat-hd-info">
+      <div class="chat-hd-name" id="chat-title"></div>
+      <div class="chat-hd-sub"><span class="ms">translate</span><span>자동번역 ON</span></div>
+    </div>
+  </div>
+  <div id="upgrade-banner">
+    <div class="upgrade-inner">
+      <div class="upgrade-text">
+        <div class="upgrade-title">🥟 MANDU가 마음에 드셨나요?</div>
+        <div class="upgrade-sub">가입하면 모든 기능을 무료로 사용할 수 있어요!</div>
+      </div>
+      <button class="upgrade-btn" onclick="upgradeToGoogle()">가입하기</button>
+      <button class="upgrade-close" onclick="hideBanner()"><span class="ms" style="font-size:18px !important;">close</span></button>
+    </div>
+  </div>
+  <div class="lang-bar">
+    <span class="lang-label"><span class="ms">translate</span>내 언어</span>
+    <select class="lang-select" id="my-lang" onchange="saveLang()">
+      <option value="ko">🇰🇷 한국어</option>
+      <option value="en">🇺🇸 English</option>
+      <option value="ja">🇯🇵 日本語</option>
+      <option value="zh">🇨🇳 中文</option>
+      <option value="es">🇪🇸 Español</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="vi">🇻🇳 Tiếng Việt</option>
+      <option value="th">🇹🇭 ภาษาไทย</option>
+    </select>
+  </div>
+  <div id="messages"></div>
+  <div class="chat-input-area">
+    <textarea id="msg-input" placeholder="메시지 입력..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" onclick="sendMessage()"><span class="ms">send</span></button>
+  </div>
+</div>
+<div id="profile-screen">
+  <div class="screen-hd">
+    <button class="back-btn" onclick="showMain()"><span class="ms">arrow_back</span></button>
+    <span class="screen-title">내 프로필</span>
+  </div>
+  <div class="pe-hero">
+    <div class="pe-avatar"><img id="pe-photo" src="" alt=""></div>
+    <div class="pe-name-row">
+      <input class="pe-name-input" id="pe-name" type="text" placeholder="이름 입력">
+      <button class="pe-save-btn" onclick="saveProfile()">저장</button>
+    </div>
+    <div class="pe-email" id="pe-email"></div>
+  </div>
+  <div class="settings-section-label">번역 언어</div>
+  <div class="settings-card" style="margin:0 20px 16px;">
+    <div class="settings-row" style="cursor:default;">
+      <div class="settings-icon-wrap"><span class="ms">language</span></div>
+      <div class="settings-row-info"><div class="settings-row-label">기본 번역 언어</div></div>
+      <select class="pe-lang-select" id="pe-lang" onchange="saveProfileLang()">
+        <option value="ko">🇰🇷 한국어</option>
+        <option value="en">🇺🇸 English</option>
+        <option value="ja">🇯🇵 日本語</option>
+        <option value="zh">🇨🇳 中文</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="vi">🇻🇳 Tiếng Việt</option>
+        <option value="th">🇹🇭 ภาษาไทย</option>
+      </select>
+    </div>
+  </div>
+  <div class="settings-section-label">화면</div>
+  <div class="settings-card" style="margin:0 20px 16px;">
+    <div class="settings-row" onclick="toggleTheme()">
+      <div class="settings-icon-wrap"><span class="ms">dark_mode</span></div>
+      <div class="settings-row-info"><div class="settings-row-label">다크 모드</div></div>
+      <div class="toggle" id="profile-dark-toggle"></div>
+    </div>
+  </div>
+  <div class="settings-section-label">계정</div>
+  <button class="signout-btn" onclick="auth.signOut()">로그아웃</button>
+</div>
+<script>
+const TRANSLATE_KEY='AIzaSyBiZvDPaZAts3C6iiXkUw3TsiUBiqjWA3g';
+const BASE_URL='https://jinjjabg-hub.github.io/MANDU/';
+const LANG_FLAGS={ko:'🇰🇷',en:'🇺🇸',ja:'🇯🇵',zh:'🇨🇳',es:'🇪🇸',fr:'🇫🇷',de:'🇩🇪',vi:'🇻🇳',th:'🇹🇭'};
+const LANG_NAMES={ko:'한국어',en:'English',ja:'日本語',zh:'中文',es:'Español',fr:'Français',de:'Deutsch',vi:'Tiếng Việt',th:'ภาษาไทย'};
+firebase.initializeApp({apiKey:"AIzaSyAZoWSGSA81daZydNgzegct2aaeFbDajr0",authDomain:"mandu-e7c3c.firebaseapp.com",projectId:"mandu-e7c3c",storageBucket:"mandu-e7c3c.firebasestorage.app",messagingSenderId:"196338490174",appId:"1:196338490174:web:78dc77e684945aca362a6f"});
+const auth=firebase.auth();
+const db=firebase.firestore();
+const provider=new firebase.auth.GoogleAuthProvider();
+let currentUser=null,currentRoomId=null,currentRoomMembers=[];
+let unsubMsg=null,unsubRoom=null,lastMyMsgWrap=null;
+let heartbeatInterval=null,selectedUsers=[],allUsers=[],usersMap={};
+let currentTab='chats';
+let isGuest=false,guestMsgCount=0,hostUID=null;
+const urlParams=new URLSearchParams(window.location.search);
+hostUID=urlParams.get('host');
+isGuest=!!hostUID;
+function initTheme(){applyTheme(localStorage.getItem('mandu_theme')||'light');}
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);['dark-toggle','profile-dark-toggle'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='toggle '+(t==='dark'?'on':'');});localStorage.setItem('mandu_theme',t);}
+function toggleTheme(){applyTheme((localStorage.getItem('mandu_theme')||'light')==='dark'?'light':'dark');}
+initTheme();
+function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2200);}
+function copyInviteLink(){navigator.clipboard.writeText(BASE_URL).then(()=>showToast('초대 링크 복사! 🥟')).catch(()=>prompt('링크 복사:',BASE_URL));}
+function copyMyLink(){if(!currentUser){showToast('로그인 후 사용 가능해요');return;}const link=BASE_URL+'?host='+currentUser.uid;navigator.clipboard.writeText(link).then(()=>showToast('내 링크 복사! 멤버카드에 넣어보세요 🥟')).catch(()=>prompt('내 링크:',link));}
+function initOnline(){if(!currentUser||isGuest)return;setOnline();heartbeatInterval=setInterval(setOnline,120000);document.addEventListener('visibilitychange',()=>document.hidden?setOffline():setOnline());window.addEventListener('beforeunload',setOffline);}
+function setOnline(){if(!currentUser)return;db.collection('users').doc(currentUser.uid).set({online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
+function setOffline(){if(!currentUser)return;db.collection('users').doc(currentUser.uid).set({online:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
+function markRead(roomId){if(!currentUser||!roomId)return;db.collection('rooms').doc(roomId).set({readBy:{[currentUser.uid]:firebase.firestore.FieldValue.serverTimestamp()}},{merge:true});}
+function updateReadReceipt(readBy){if(!lastMyMsgWrap)return;const others=currentRoomMembers.filter(u=>u!==currentUser.uid);const n=others.filter(u=>readBy&&readBy[u]).length;let el=lastMyMsgWrap.querySelector('.read-receipt');if(!el){el=document.createElement('div');el.className='read-receipt';lastMyMsgWrap.appendChild(el);}el.textContent=n>0?`읽음 ${n}`'';}
+document.getElementById('loginBtn').onclick=()=>auth.signInWithPopup(provider);
+auth.onAuthStateChanged(async user=>{
+  document.getElementById('loading').style.display='none';
+  if(user){
+    currentUser=user;
+    if(isGuest&&user.isAnonymous){await openGuestRoom();return;}
+    isGuest=false;
+    await db.collection('users').doc(user.uid).set({uid:user.uid,displayName:user.displayName,photoURL:user.photoURL,email:user.email,online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    updateUIAfterLogin();
+    if(hostUID){const hostDoc=await db.collection('users').doc(hostUID).get();if(hostDoc.exists){await startDM(hostDoc.data());return;}}
+    showMain();
+  }else{
+    if(heartbeatInterval){clearInterval(heartbeatInterval);heartbeatInterval=null;}
+    currentUser=null;
+    if(isGuest&&hostUID){await loadGuestHostInfo();show('guest-screen');}else{show('login-screen');}
+  }
+});
+async function loadGuestHostInfo(){try{const doc=await db.collection('users').doc(hostUID).get();if(doc.exists){const d=doc.data();document.getElementById('guest-host-name').textContent=d.displayName||'—';document.getElementById('guest-host-photo').src=d.photoURL||'';}}catch(e){}}
+async function startGuestChat(){const name=document.getElementById('guest-name-input').value.trim();if(!name){showToast('이름을 입력해주세요');return;}try{await auth.signInAnonymously();await db.collection('users').doc(auth.currentUser.uid).set({uid:auth.currentUser.uid,displayName:name,photoURL:'',email:'',online:true,isGuest:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});localStorage.setItem('mandu_guest_name',name);}catch(e){showToast('오류가 발생했어요. 다시 시도해주세요.');}}
+async function openGuestRoom(){if(!currentUser||!hostUID)return;try{const hostDoc=await db.collection('users').doc(hostUID).get();if(!hostDoc.exists){showToast('잘못된 링크예요');show('login-screen');return;}const host=hostDoc.data();const guestName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';const roomId='guest_'+currentUser.uid+'_'+hostUID;await db.collection('rooms').doc(roomId).set({type:'direct',members:[currentUser.uid,hostUID],memberNames:{[currentUser.uid]:guestName,[hostUID]:host.displayName},memberPhotos:{[currentUser.uid]:'',[hostUID]:host.photoURL||''},lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),isGuestRoom:true},{merge:true});openRoom(roomId,host.displayName,host.photoURL,false);}catch(e){showToast('오류가 발생했어요');}}
+function upgradeToGoogle(){currentUser.linkWithPopup(provider).then(result=>{currentUser=result.user;isGuest=false;showToast('가입 완료! 환영해요 🥟');hideBanner();db.collection('users').doc(currentUser.uid).set({uid:currentUser.uid,displayName:currentUser.displayName,photoURL:currentUser.photoURL,email:currentUser.email,online:true,isGuest:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}).catch(()=>{auth.signInWithPopup(provider);});}
+function showLoginFromGuest(){auth.signInWithPopup(provider);}
+function hideBanner(){document.getElementById('upgrade-banner').style.display='none';}
+function checkGuestUpgrade(){if(!isGuest)return;guestMsgCount++;if(guestMsgCount===3){document.getElementById('upgrade-banner').style.display='block';}}
+function updateUIAfterLogin(){if(!currentUser||currentUser.isAnonymous)return;document.getElementById('my-avatar').src=currentUser.photoURL||'';document.getElementById('hero-avatar').src=currentUser.photoURL||'';document.getElementById('settings-avatar').src=currentUser.photoURL||'';document.getElementById('hero-name').textContent=currentUser.displayName||'—';document.getElementById('settings-name').textContent=currentUser.displayName||'—';document.getElementById('settings-email').textContent=currentUser.email||'';document.getElementById('my-link-display').textContent=BASE_URL+'?host='+currentUser.uid;const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';document.getElementById('my-lang').value=lang;document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();initOnline();}
+function saveLang(){if(!currentUser)return;localStorage.setItem('mandu_lang_'+currentUser.uid,document.getElementById('my-lang').value);}
+function saveProfileLang(){if(!currentUser)return;const lang=document.getElementById('pe-lang').value;localStorage.setItem('mandu_lang_'+currentUser.uid,lang);document.getElementById('my-lang').value=lang;document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();showToast('언어가 변경됐어요!');}
+const SCREENS=['login-screen','guest-screen','main-screen','chat-screen','create-screen','profile-screen'];
+function show(id){SCREENS.forEach(s=>{document.getElementById(s).style.display='none';});const el=document.getElementById(id);el.style.display='flex';el.style.flexDirection='column';}
+function showMain(){if(unsubMsg){unsubMsg();unsubMsg=null;}if(unsubRoom){unsubRoom();unsubRoom=null;}lastMyMsgWrap=null;document.getElementById('upgrade-banner').style.display='none';show('main-screen');loadRooms();loadUsers();switchTab(currentTab);}
+function switchTab(tab){currentTab=tab;['chats','friends','discover','settings'].forEach(t=>{document.getElementById('panel-'+t).classList.toggle('active',t===tab);document.getElementById('tab-'+t).classList.toggle('active',t===tab);});}
+function showProfile(){if(!currentUser||currentUser.isAnonymous)return;document.getElementById('pe-photo').src=currentUser.photoURL||'';document.getElementById('pe-name').value=currentUser.displayName||'';document.getElementById('pe-email').textContent=currentUser.email||'';const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';document.getElementById('pe-lang').value=lang;show('profile-screen');}
+async function saveProfile(){if(!currentUser)return;const name=document.getElementById('pe-name').value.trim();if(!name){showToast('이름을 입력하세요');return;}await db.collection('users').doc(currentUser.uid).update({displayName:name});document.getElementById('hero-name').textContent=name;document.getElementById('settings-name').textContent=name;showToast('저장됐어요!');}
+function handleBack(){if(isGuest){show('guest-screen');}else{showMain();}}
+function loadRooms(){const list=document.getElementById('room-list');const sub=document.getElementById('chats-sub');db.collection('rooms').where('members','array-contains',currentUser.uid).onSnapshot(snap=>{list.innerHTML='';if(snap.empty){sub.textContent='채팅방이 없어요';list.innerHTML='<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">채팅방이 없어요</div><div class="empty-desc">+ 버튼으로 만들어보세요!</div></div>';return;}const docs=snap.docs.sort((a,b)=>{const at=a.data().lastMessageTime,bt=b.data().lastMessageTime;if(!at)return 1;if(!bt)return -1;return bt.toMillis()-at.toMillis();});const unread=docs.filter(d=>{const r=d.data();const readBy=r.readBy||{};const myRead=readBy[currentUser.uid];return r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!myRead||r.lastMessageTime.toMillis()>myRead.toMillis());}).length;sub.textContent=unread>0?`${unread}개 안읽은 대화`:`${docs.length}개 채팅방`;docs.forEach(doc=>{const r=doc.data();const isGroup=r.type==='group';const name=isGroup?r.name:(r.memberNames&&Object.entries(r.memberNames).find(([k])=>k!==currentUser.uid)?.[1]||'채팅방');const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).find(([k])=>k!==currentUser.uid)?.[1]:'';const partnerUid=!isGroup?Object.keys(r.memberNames||{}).find(k=>k!==currentUser.uid):null;const readBy=r.readBy||{};const myRead=readBy[currentUser.uid];const isUnread=r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!myRead||r.lastMessageTime.toMillis()>myRead.toMillis());const isOnline=!isGroup&&partnerUid&&usersMap[partnerUid]?.online===true;const partnerLang=partnerUid&&usersMap[partnerUid]?localStorage.getItem('mandu_lang_'+partnerUid)||'':null;const isGuestRoom=r.isGuestRoom;const item=document.createElement('div');item.className='room-item';item.innerHTML=`<div class="av-wrap"><div class="av">${photo?`<img src="${photo}" alt="">`:(isGroup?'👥':'👤')}</div>${isOnline?'<div class="online-dot"></div>':''}</div><div class="room-info"><div class="room-name-row"><span class="room-name">${name}</span>${isGuestRoom?'<span class="country-pill">게스트</span>':''}${partnerLang&&!isGuestRoom?`<span class="country-pill">${LANG_FLAGS[partnerLang]||''} ${partnerLang.toUpperCase()}</span>`:''}</div><div class="room-last">${r.lastMessage||'대화를 시작해보세요'}</div></div><div class="room-meta"><span class="room-time">${formatTime(r.lastMessageTime)}</span>${isUnread?'<span class="unread-badge">N</span>':''}</div>`;item.onclick=()=>openRoom(doc.id,name,photo,isGroup);list.appendChild(item);});});}
+function loadUsers(){const list=document.getElementById('user-list');db.collection('users').onSnapshot(snap=>{snap.docs.forEach(d=>{usersMap[d.id]=d.data();});allUsers=snap.docs.filter(d=>d.id!==currentUser.uid&&!d.data().isGuest).map(d=>d.data());list.innerHTML='';if(allUsers.length===0){list.innerHTML='<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">친구가 없어요</div><div class="empty-desc">링크를 공유해서 초대해보세요!</div><button class="empty-btn" onclick="copyMyLink()">🔗 내 링크 복사</button></div>';return;}allUsers.forEach(u=>{const isOnline=u.online===true;const lang=localStorage.getItem('mandu_lang_'+u.uid)||'';const item=document.createElement('div');item.className='user-item';item.innerHTML=`<div class="av-wrap"><div class="av">${u.photoURL?`<img src="${u.photoURL}" alt="">`:'👤'}</div>${isOnline?'<div class="online-dot"></div>':''}</div><div class="user-info"><div class="user-name">${u.displayName||'익명'} ${lang?LANG_FLAGS[lang]||'':''}</div><div class="user-status ${isOnline?'online':''}">${isOnline?'● 온라인':'○ 오프라인'}</div></div><div><button class="act-btn"><span class="ms">chat_bubble</span></button></div>`;item.onclick=()=>startDM(u);list.appendChild(item);});});}
+async function startDM(partner){const ids=[currentUser.uid,partner.uid].sort();const roomId=ids.join('_');await db.collection('rooms').doc(roomId).set({type:'direct',members:ids,memberNames:{[currentUser.uid]:currentUser.displayName,[partner.uid]:partner.displayName},memberPhotos:{[currentUser.uid]:currentUser.photoURL||'',[partner.uid]:partner.photoURL||''},lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});openRoom(roomId,partner.displayName,partner.photoURL,false);}
+function showCreate(){selectedUsers=[];show('create-screen');const list=document.getElementById('select-user-list');list.innerHTML='';allUsers.forEach(u=>{const item=document.createElement('div');item.className='user-item';item.innerHTML=`<div class="av">${u.photoURL?`<img src="${u.photoURL}" alt="">`:'👤'}</div><div class="user-info"><div class="user-name">${u.displayName||'익명'}</div></div><span class="ms check-icon">check_circle</span>`;item.onclick=()=>{const idx=selectedUsers.findIndex(x=>x.uid===u.uid);if(idx>=0){selectedUsers.splice(idx,1);item.classList.remove('selected');}else{selectedUsers.push(u);item.classList.add('selected');}};list.appendChild(item);});}
+async function createRoom(){if(selectedUsers.length===0){showToast('대화 상대를 선택하세요!');return;}if(selectedUsers.length===1){await startDM(selectedUsers[0]);return;}const name=document.getElementById('group-name').value.trim()||'그룹 채팅';const members=[currentUser.uid,...selectedUsers.map(u=>u.uid)];const memberNames={[currentUser.uid]:currentUser.displayName};const memberPhotos={[currentUser.uid]:currentUser.photoURL||''};selectedUsers.forEach(u=>{memberNames[u.uid]=u.displayName;memberPhotos[u.uid]=u.photoURL||'';});const ref=await db.collection('rooms').add({type:'group',name,members,memberNames,memberPhotos,lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()});openRoom(ref.id,name,'',true);}
+function openRoom(roomId,name,photo,isGroup){currentRoomId=roomId;lastMyMsgWrap=null;document.getElementById('chat-title').textContent=name;const icon=document.getElementById('chat-icon');icon.innerHTML=photo?`<img src="${photo}" alt="" style="width:100%;height:100%;object-fit:cover;">`:(isGroup?'👥':'👤');show('chat-screen');const lang=localStorage.getItem('mandu_lang_'+(currentUser?.uid||''));if(lang)document.getElementById('my-lang').value=lang;markRead(roomId);loadMessages();if(unsubRoom)unsubRoom();unsubRoom=db.collection('rooms').doc(roomId).onSnapshot(snap=>{const data=snap.data();if(!data)return;currentRoomMembers=data.members||[];updateReadReceipt(data.readBy||{});});}
+function loadMessages(){const container=document.getElementById('messages');container.innerHTML='';if(unsubMsg)unsubMsg();unsubMsg=db.collection('rooms').doc(currentRoomId).collection('messages').orderBy('createdAt','asc').onSnapshot(snap=>{snap.docChanges().filter(c=>c.type==='added').forEach(c=>renderMsg(c.doc.data()));setTimeout(()=>{container.scrollTop=container.scrollHeight;},300);});}
+async function translate(text,targetLang){if(!text||!targetLang)return '';try{const res=await fetch(`https://translation.googleapis.com/language/translate/v2?key=${TRANSLATE_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:text,target:targetLang,format:'text'})});const data=await res.json();return data.data?.translations?.[0]?.translatedText||'';}catch(e){return '';}}
+function renderMsg(d){const container=document.getElementById('messages');const mine=d.uid===currentUser.uid;const myLang=document.getElementById('my-lang').value;const w=document.createElement('div');w.className='msg-wrap '+(mine?'mine':'theirs');if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}const row=document.createElement('div');row.className='msg-row';const b=document.createElement('div');b.className='msg-bubble';b.textContent=d.text;const timeEl=document.createElement('div');timeEl.className='msg-time';timeEl.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';row.appendChild(b);row.appendChild(timeEl);w.appendChild(row);container.appendChild(w);if(mine){if(lastMyMsgWrap){const p=lastMyMsgWrap.querySelector('.read-receipt');if(p)p.remove();}lastMyMsgWrap=w;const r=document.createElement('div');r.className='read-receipt';w.appendChild(r);}if(!mine&&myLang){translate(d.text,myLang).then(t=>{if(t&&t!==d.text){b.textContent=t;const orig=document.createElement('div');orig.className='msg-translated';orig.innerHTML=`<span class="ms">translate</span>${d.text}`;w.appendChild(orig);}});}}
+async function sendMessage(){const input=document.getElementById('msg-input');const text=input.value.trim();if(!text||!currentUser||!currentRoomId)return;input.value='';input.style.height='auto';await db.collection('rooms').doc(currentRoomId).collection('messages').add({text,uid:currentUser.uid,displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',createdAt:firebase.firestore.FieldValue.serverTimestamp()});await db.collection('rooms').doc(currentRoomId).set({lastMessage:text,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid},{merge:true});markRead(currentRoomId);if(isGuest)checkGuestUpgrade();}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function formatTime(ts){if(!ts)return '';const d=ts.toDate?ts.toDate():new Date();return d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});}
+</script>
+</body>
+</html>
+```
+
+이게 완성본이에요. 전체 교체하면 됩니다! 🥟
