@@ -353,6 +353,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .pe-email{font-size:13px;color:var(--outline);}
 .pe-manduid{font-size:15px;font-weight:700;color:var(--primary);}
 .pe-lang-select{background:var(--surface);border:1.5px solid var(--outline-variant);color:var(--on-surface);border-radius:8px;padding:6px 10px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;cursor:pointer;flex-shrink:0;}
+.biz-input{width:100%;background:var(--surface-container-low);border:1.5px solid var(--outline-variant);border-radius:10px;padding:10px 14px;color:var(--on-surface);font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;transition:border-color .2s;}
+.biz-input:focus{border-color:var(--primary);}
+.biz-textarea{resize:none;min-height:72px;line-height:1.5;}
+.biz-field{padding:12px 16px;border-bottom:1px solid var(--outline-variant);}
+.biz-field:last-child{border-bottom:none;}
+.biz-field-label{font-size:12px;font-weight:600;color:var(--outline);display:block;margin-bottom:6px;letter-spacing:.3px;}
+.biz-char-counter{font-size:11px;color:var(--outline);text-align:right;margin-top:4px;}
 
 /* ── 온보딩 화면 ── */
 #onboarding-screen{flex:1;display:none;flex-direction:column;background:var(--background);overflow:hidden;}
@@ -831,6 +838,92 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <div class="pe-manduid" id="pe-manduid">@—</div>
     <div class="pe-email" id="pe-email"></div>
   </div>
+  <!-- ── 비즈니스 프로필 ── -->
+  <div class="settings-section-label">비즈니스 프로필</div>
+  <div style="margin:0 20px 8px;background:var(--primary-fixed);border-radius:14px;padding:12px 14px;">
+    <div style="font-size:13px;color:var(--primary);line-height:1.7;font-weight:500;">🌏 MANDU는 비즈니스 특화 메신저입니다. 비즈니스 정보를 입력하면 전 세계 파트너와 연결될 수 있어요.</div>
+  </div>
+  <div class="settings-card" style="margin:0 20px 4px;">
+    <div class="biz-field">
+      <label class="biz-field-label">🌍 국가</label>
+      <select id="biz-country" class="biz-input">
+        <option value="">선택 안 함</option>
+        <option value="KR">🇰🇷 대한민국</option>
+        <option value="US">🇺🇸 미국</option>
+        <option value="JP">🇯🇵 일본</option>
+        <option value="CN">🇨🇳 중국</option>
+        <option value="VN">🇻🇳 베트남</option>
+        <option value="TH">🇹🇭 태국</option>
+        <option value="ID">🇮🇩 인도네시아</option>
+        <option value="MN">🇲🇳 몽골</option>
+        <option value="IN">🇮🇳 인도</option>
+        <option value="SG">🇸🇬 싱가포르</option>
+        <option value="MY">🇲🇾 말레이시아</option>
+        <option value="PH">🇵🇭 필리핀</option>
+        <option value="GB">🇬🇧 영국</option>
+        <option value="DE">🇩🇪 독일</option>
+        <option value="FR">🇫🇷 프랑스</option>
+        <option value="ES">🇪🇸 스페인</option>
+        <option value="IT">🇮🇹 이탈리아</option>
+        <option value="NL">🇳🇱 네덜란드</option>
+        <option value="CH">🇨🇭 스위스</option>
+        <option value="CA">🇨🇦 캐나다</option>
+        <option value="AU">🇦🇺 호주</option>
+        <option value="BR">🇧🇷 브라질</option>
+        <option value="MX">🇲🇽 멕시코</option>
+        <option value="AR_C">🇦🇷 아르헨티나</option>
+        <option value="RU">🇷🇺 러시아</option>
+        <option value="TR">🇹🇷 터키</option>
+        <option value="AE">🇦🇪 아랍에미리트</option>
+        <option value="SA">🇸🇦 사우디아라비아</option>
+        <option value="PT">🇵🇹 포르투갈</option>
+      </select>
+    </div>
+    <div class="biz-field">
+      <label class="biz-field-label">🏢 회사명</label>
+      <input id="biz-company" type="text" class="biz-input" placeholder="회사 또는 브랜드명" maxlength="50">
+    </div>
+    <div class="biz-field">
+      <label class="biz-field-label">💼 직함 / 직책</label>
+      <input id="biz-jobtitle" type="text" class="biz-input" placeholder="대표, 팀장, 프리랜서 등" maxlength="50">
+    </div>
+    <div class="biz-field">
+      <label class="biz-field-label">🏭 업종</label>
+      <select id="biz-industry" class="biz-input">
+        <option value="">선택 안 함</option>
+        <option value="food">🍽️ 식품</option>
+        <option value="finance">💰 금융 / 보험</option>
+        <option value="it">💻 IT / 소프트웨어</option>
+        <option value="legal">⚖️ 법률</option>
+        <option value="realestate">🏠 부동산</option>
+        <option value="manufacturing">🏭 제조</option>
+        <option value="distribution">🚚 유통 / 물류</option>
+        <option value="education">📚 교육</option>
+        <option value="healthcare">🏥 의료 / 헬스</option>
+        <option value="marketing">📣 마케팅 / 광고</option>
+        <option value="consulting">💡 컨설팅</option>
+        <option value="construction">🏗️ 건설</option>
+        <option value="beauty">💄 뷰티 / 패션</option>
+        <option value="media">🎬 미디어 / 콘텐츠</option>
+        <option value="other">📌 기타</option>
+      </select>
+    </div>
+    <div class="biz-field">
+      <label class="biz-field-label">✏️ 한줄 소개</label>
+      <textarea id="biz-bio" class="biz-input biz-textarea" placeholder="나를 한 문장으로 소개해주세요 (최대 100자)" maxlength="100" oninput="updateBizBioCounter(this)"></textarea>
+      <div class="biz-char-counter" id="biz-bio-counter">0 / 100</div>
+    </div>
+    <div class="biz-field" style="display:flex;align-items:center;gap:14px;cursor:pointer;border-bottom:none;" onclick="toggleBizDiscover()">
+      <div class="settings-icon-wrap" style="flex-shrink:0;"><span class="ms">explore</span></div>
+      <div class="settings-row-info" style="flex:1;min-width:0;">
+        <div class="settings-row-label">Discover 공개</div>
+        <div style="font-size:12px;color:var(--on-surface-variant);margin-top:2px;">내 비즈니스 프로필을 공개합니다</div>
+      </div>
+      <div class="toggle on" id="biz-discover-toggle"></div>
+    </div>
+  </div>
+  <button id="biz-save-btn" onclick="saveBusinessProfile()" style="display:block;width:calc(100% - 40px);margin:8px 20px 16px;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">비즈니스 프로필 저장 🌏</button>
+  <!-- ── 비즈니스 프로필 끝 ── -->
   <div class="settings-section-label" id="profile-lang-section-lbl">번역 언어</div>
   <div class="settings-card" style="margin:0 20px 16px;">
     <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
@@ -1666,7 +1759,63 @@ function showProfile(){
   const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';
   document.getElementById('pe-lang').value=lang;
   updateQRImages();
+  loadBusinessProfile();
   show('profile-screen');
+}
+
+function loadBusinessProfile(){
+  if(!currentUser)return;
+  db.collection('users').doc(currentUser.uid).get().then(function(doc){
+    if(!doc.exists)return;
+    const d=doc.data();
+    if(d.country!=null)document.getElementById('biz-country').value=d.country;
+    if(d.company!=null)document.getElementById('biz-company').value=d.company;
+    if(d.jobTitle!=null)document.getElementById('biz-jobtitle').value=d.jobTitle;
+    if(d.industry!=null)document.getElementById('biz-industry').value=d.industry;
+    if(d.bio!=null){
+      const bioEl=document.getElementById('biz-bio');
+      bioEl.value=d.bio;
+      updateBizBioCounter(bioEl);
+    }
+    _bizDiscoverOn=d.discoverPublic!==false;
+    const tog=document.getElementById('biz-discover-toggle');
+    if(tog)tog.className='toggle'+(_bizDiscoverOn?' on':'');
+  }).catch(function(){});
+}
+
+function updateBizBioCounter(el){
+  const c=document.getElementById('biz-bio-counter');
+  if(c)c.textContent=el.value.length+' / 100';
+}
+
+let _bizDiscoverOn=true;
+
+function toggleBizDiscover(){
+  _bizDiscoverOn=!_bizDiscoverOn;
+  const tog=document.getElementById('biz-discover-toggle');
+  if(tog)tog.className='toggle'+(_bizDiscoverOn?' on':'');
+}
+
+async function saveBusinessProfile(){
+  if(!currentUser)return;
+  const btn=document.getElementById('biz-save-btn');
+  const orig=btn.textContent;
+  btn.disabled=true;btn.textContent='저장 중...';
+  const data={
+    country:document.getElementById('biz-country').value,
+    company:document.getElementById('biz-company').value.trim(),
+    jobTitle:document.getElementById('biz-jobtitle').value.trim(),
+    industry:document.getElementById('biz-industry').value,
+    bio:document.getElementById('biz-bio').value.trim(),
+    discoverPublic:_bizDiscoverOn,
+  };
+  try{
+    await db.collection('users').doc(currentUser.uid).update(data);
+    showToast('비즈니스 프로필이 저장됐어요 🌏');
+  }catch(e){
+    showToast('저장 실패. 다시 시도해주세요');
+  }
+  btn.disabled=false;btn.textContent=orig;
 }
 
 async function uploadProfilePhoto(input){
