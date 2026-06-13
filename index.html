@@ -399,8 +399,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <!-- 슬라이드 2: 자동번역 -->
     <div class="onb-slide">
       <div class="onb-slide-icon">🌐</div>
-      <div class="onb-slide-title">10개 언어<br>자동번역</div>
-      <div class="onb-slide-desc">한국어·영어·일본어·중국어·스페인어·<br>프랑스어·독일어·베트남어·태국어·몽골어.<br>메시지를 보내면 상대방 언어로 자동 번역돼요.</div>
+      <div class="onb-slide-title">14개 언어<br>자동번역</div>
+      <div class="onb-slide-desc">한국어·영어·일본어·중국어·스페인어·<br>프랑스어·독일어·베트남어·태국어·몽골어·<br>힌디어·포르투갈어·아랍어·인도네시아어.<br>전 세계 인구 약 77% 커버!</div>
     </div>
     <!-- 슬라이드 3: 시작하기 -->
     <div class="onb-slide">
@@ -781,7 +781,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <div class="emoji-grid" id="emoji-grid"></div>
   </div>
   <div class="lang-bar">
-    <span class="lang-label"><span class="ms">translate</span>내 언어</span>
+    <span class="lang-label"><span class="ms">translate</span><span id="lang-label-text">내 언어</span></span>
     <select class="lang-select" id="my-lang" onchange="saveLang()">
       <option value="ko">🇰🇷 한국어</option>
       <option value="en">🇺🇸 English</option>
@@ -793,6 +793,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
       <option value="vi">🇻🇳 Tiếng Việt</option>
       <option value="th">🇹🇭 ภาษาไทย</option>
       <option value="mn">🇲🇳 Монгол</option>
+      <option value="hi">🇮🇳 हिन्दी</option>
+      <option value="pt">🇧🇷 Português</option>
+      <option value="ar">🇸🇦 العربية</option>
+      <option value="id">🇮🇩 Indonesia</option>
     </select>
   </div>
   <div id="messages"></div>
@@ -810,7 +814,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 <div id="profile-screen">
   <div class="screen-hd">
     <button class="back-btn" onclick="showMain()"><span class="ms">arrow_back</span></button>
-    <span class="screen-title">내 프로필</span>
+    <span class="screen-title" id="profile-screen-title">내 프로필</span>
   </div>
   <div class="pe-hero">
     <div style="position:relative;display:inline-block;">
@@ -827,11 +831,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <div class="pe-manduid" id="pe-manduid">@—</div>
     <div class="pe-email" id="pe-email"></div>
   </div>
-  <div class="settings-section-label">번역 언어</div>
+  <div class="settings-section-label" id="profile-lang-section-lbl">번역 언어</div>
   <div class="settings-card" style="margin:0 20px 16px;">
     <div class="settings-row" style="cursor:default;min-height:56px;">
       <div class="settings-icon-wrap"><span class="ms">language</span></div>
-      <div class="settings-row-info"><div class="settings-row-label">기본 번역 언어</div></div>
+      <div class="settings-row-info"><div class="settings-row-label" id="profile-lang-row-lbl">기본 번역 언어</div></div>
       <select class="pe-lang-select" id="pe-lang" onchange="saveProfileLang()" style="max-width:140px;">
         <option value="ko">🇰🇷 한국어</option>
         <option value="en">🇺🇸 English</option>
@@ -843,6 +847,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
         <option value="vi">🇻🇳 Tiếng Việt</option>
         <option value="th">🇹🇭 ภาษาไทย</option>
         <option value="mn">🇲🇳 Монгол</option>
+        <option value="hi">🇮🇳 हिन्दी</option>
+        <option value="pt">🇧🇷 Português</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="id">🇮🇩 Indonesia</option>
       </select>
     </div>
   </div>
@@ -928,6 +936,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
         <option value="zh">🇨🇳 中文</option>
         <option value="vi">🇻🇳 Tiếng Việt</option>
         <option value="th">🇹🇭 ภาษาไทย</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="mn">🇲🇳 Монгол</option>
+        <option value="hi">🇮🇳 हिन्दी</option>
+        <option value="pt">🇧🇷 Português</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="id">🇮🇩 Indonesia</option>
       </select>
       <span class="ms" style="color:var(--outline);font-size:20px !important;">arrow_forward</span>
       <select class="dict-lang-sel" id="dict-to">
@@ -937,6 +953,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
         <option value="zh">🇨🇳 中文</option>
         <option value="vi">🇻🇳 Tiếng Việt</option>
         <option value="th">🇹🇭 ภาษาไทย</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="mn">🇲🇳 Монгол</option>
+        <option value="hi">🇮🇳 हिन्दी</option>
+        <option value="pt">🇧🇷 Português</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="id">🇮🇩 Indonesia</option>
       </select>
     </div>
     <div class="dict-add-row" style="border-top:none;padding:8px 0 4px;">
@@ -956,37 +980,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 <div class="bottom-sheet" id="plan-sheet">
   <div class="sheet-handle"></div>
   <div class="sheet-hd">
-    <span class="sheet-title">플랜 선택</span>
+    <span class="sheet-title" id="plan-sheet-title">플랜 선택</span>
     <button class="sheet-close" onclick="closePlanSheet()"><span class="ms">close</span></button>
   </div>
   <div style="padding:0 16px 16px;overflow-y:auto;">
-    <div style="font-size:13px;color:var(--outline);margin-bottom:16px;text-align:center;">현재 <strong id="plan-current-label">무료</strong> · 이번 달 <strong id="plan-used-label">0자</strong> 사용</div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;" id="plan-cards">
-      <div class="plan-card" id="pc-light" onclick="selectPlanCard('light',this)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="font-size:15px;font-weight:700;">라이트</span>
-          <span style="font-size:17px;font-weight:700;color:var(--primary);">2,900<span style="font-size:12px;font-weight:400;color:var(--outline);">원/월</span></span>
-        </div>
-        <div style="font-size:13px;color:var(--outline);">월 15만자 번역</div>
-      </div>
-      <div class="plan-card" id="pc-normal" onclick="selectPlanCard('normal',this)" style="position:relative;">
-        <div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:100px;white-space:nowrap;">추천</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="font-size:15px;font-weight:700;">보통</span>
-          <span style="font-size:17px;font-weight:700;color:var(--primary);">4,900<span style="font-size:12px;font-weight:400;color:var(--outline);">원/월</span></span>
-        </div>
-        <div style="font-size:13px;color:var(--outline);">월 40만자 번역</div>
-      </div>
-      <div class="plan-card" id="pc-heavy" onclick="selectPlanCard('heavy',this)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="font-size:15px;font-weight:700;">헤비</span>
-          <span style="font-size:17px;font-weight:700;color:var(--primary);">9,900<span style="font-size:12px;font-weight:400;color:var(--outline);">원/월</span></span>
-        </div>
-        <div style="font-size:13px;color:var(--outline);">월 200만자 번역</div>
-      </div>
-    </div>
+    <div id="plan-status-wrap" style="font-size:13px;color:var(--outline);margin-bottom:16px;text-align:center;">현재 <strong id="plan-current-label">무료</strong> · 이번 달 <strong id="plan-used-label">0자</strong> 사용</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;" id="plan-cards"></div>
     <button id="plan-confirm-btn" onclick="confirmPlanUpgrade()" style="width:100%;padding:15px;border-radius:14px;border:none;background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;opacity:.4;" disabled>업그레이드하기</button>
-    <button onclick="closePlanSheet()" style="width:100%;padding:11px;border:none;background:none;color:var(--outline);font-size:14px;cursor:pointer;margin-top:8px;font-family:'Plus Jakarta Sans',sans-serif;">취소</button>
+    <button id="plan-cancel-btn" onclick="closePlanSheet()" style="width:100%;padding:11px;border:none;background:none;color:var(--outline);font-size:14px;cursor:pointer;margin-top:8px;font-family:'Plus Jakarta Sans',sans-serif;">취소</button>
   </div>
 </div>
 
@@ -1012,7 +1013,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 
 <script>
 const BASE_URL='https://jinjjabg-hub.github.io/MANDU/';
-const LANG_FLAGS={ko:'🇰🇷',en:'🇺🇸',ja:'🇯🇵',zh:'🇨🇳',es:'🇪🇸',fr:'🇫🇷',de:'🇩🇪',vi:'🇻🇳',th:'🇹🇭',mn:'🇲🇳'};
+const LANG_FLAGS={ko:'🇰🇷',en:'🇺🇸',ja:'🇯🇵',zh:'🇨🇳',es:'🇪🇸',fr:'🇫🇷',de:'🇩🇪',vi:'🇻🇳',th:'🇹🇭',mn:'🇲🇳',hi:'🇮🇳',pt:'🇧🇷',ar:'🇸🇦',id:'🇮🇩'};
 
 firebase.initializeApp({
   apiKey:"AIzaSyAZoWSGSA81daZydNgzegct2aaeFbDajr0",
@@ -1605,13 +1606,16 @@ function updateUIAfterLogin(){
   const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';
   document.getElementById('my-lang').value=lang;
   document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
+  applyUILanguage(lang);
   initOnline();
   updateQRImages();
 }
 
 function saveLang(){
   if(!currentUser)return;
-  localStorage.setItem('mandu_lang_'+currentUser.uid,document.getElementById('my-lang').value);
+  const lang=document.getElementById('my-lang').value;
+  localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
+  applyUILanguage(lang);
 }
 function saveProfileLang(){
   if(!currentUser)return;
@@ -1619,6 +1623,7 @@ function saveProfileLang(){
   localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
   document.getElementById('my-lang').value=lang;
   document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
+  applyUILanguage(lang);
   showToast('언어가 변경됐어요!');
 }
 
@@ -1869,7 +1874,7 @@ function detectLang(text){
 const GOOGLE_KEY='AIzaSyBiZvDPaZAts3C6iiXkUw3TsiUBiqjWA3g';
 
 // ── 플랜별 월 한도 ─────────────────────────────────────────
-const PLAN_LIMITS={free:50000,light:150000,normal:400000,heavy:2000000,biz:Infinity};
+const PLAN_LIMITS={free:50000,light:300000,business:800000,premium:2000000};
 const MAX_CHARS_PER_MSG=500; // 1회 최대 입력
 
 // ── 1단계: 번역 스킵 필터 ──────────────────────────────────
@@ -2377,7 +2382,7 @@ async function deleteDictEntry(key){
 }
 
 // ── 목록 렌더 ────────────────────────────────────────
-const LANG_NAMES={ko:'한국어',en:'English',ja:'日本語',zh:'中文',vi:'Tiếng Việt',th:'ภาษาไทย'};
+const LANG_NAMES={ko:'한국어',en:'English',ja:'日本語',zh:'中文',es:'Español',fr:'Français',de:'Deutsch',vi:'Tiếng Việt',th:'ภาษาไทย',mn:'Монгол',hi:'हिन्दी',pt:'Português',ar:'العربية',id:'Indonesia'};
 function renderDictList(){
   const list=document.getElementById('dict-list');
   const keys=Object.keys(myDictCache);
@@ -2405,6 +2410,51 @@ function renderDictList(){
   });
 }
 
+// ── UI 다국어 번역 ──────────────────────────────────────
+const UI_T={
+  ko:{plan_title:'플랜 선택',plan_status:'현재 {plan} · 이번 달 {used} 사용',plan_recommended:'추천',plan_upgrade_btn:'업그레이드하기',plan_cancel:'취소',plan_free:'무료',plan_upgrade_to:'{plan}로 업그레이드 — {price}원/월',plan_upgrade_cta:'🚀 플랜 업그레이드',lang_label:'내 언어',msg_placeholder:'메시지 입력...',profile_title:'내 프로필',profile_save:'저장',profile_lang_label:'기본 번역 언어',qr_title:'내 QR 코드',dict_title:'내 사전 📖',search_title:'검색',plan_light_desc:'월 10만~30만자 · 기본 글로벌 채팅',plan_biz_desc:'월 30만~80만자 · 활발한 글로벌 소통',plan_prem_desc:'월 80만~200만자 · 무한한 비즈니스',usage_premium_msg:'PREMIUM 플랜 — 200만자까지 사용할 수 있어요 🎉'},
+  en:{plan_title:'Select Plan',plan_status:'Current {plan} · Used {used} this month',plan_recommended:'Best',plan_upgrade_btn:'Upgrade',plan_cancel:'Cancel',plan_free:'Free',plan_upgrade_to:'Upgrade to {plan} — ₩{price}/mo',plan_upgrade_cta:'🚀 Upgrade Plan',lang_label:'My Language',msg_placeholder:'Type a message...',profile_title:'My Profile',profile_save:'Save',profile_lang_label:'Default Language',qr_title:'My QR Code',dict_title:'My Dictionary 📖',search_title:'Search',plan_light_desc:'100K~300K chars/mo · Basic global chat',plan_biz_desc:'300K~800K chars/mo · Active global comms',plan_prem_desc:'800K~2M chars/mo · Unlimited business',usage_premium_msg:'PREMIUM Plan — up to 2M chars 🎉'},
+  ja:{plan_title:'プラン選択',plan_status:'現在 {plan} · 今月 {used} 使用',plan_recommended:'おすすめ',plan_upgrade_btn:'アップグレード',plan_cancel:'キャンセル',plan_free:'無料',plan_upgrade_to:'{plan}にアップグレード — ₩{price}/月',plan_upgrade_cta:'🚀 プランアップグレード',lang_label:'マイ言語',msg_placeholder:'メッセージを入力...',profile_title:'マイプロフィール',profile_save:'保存',profile_lang_label:'デフォルト言語',qr_title:'マイQRコード',dict_title:'マイ辞書 📖',search_title:'検索',plan_light_desc:'月10万~30万字 · 基本グローバルチャット',plan_biz_desc:'月30万~80万字 · 活発なグローバル交流',plan_prem_desc:'月80万~200万字 · 無限ビジネス',usage_premium_msg:'PREMIUMプラン — 200万字まで 🎉'},
+  zh:{plan_title:'选择套餐',plan_status:'当前 {plan} · 本月使用 {used}',plan_recommended:'推荐',plan_upgrade_btn:'升级',plan_cancel:'取消',plan_free:'免费',plan_upgrade_to:'升级到{plan} — ₩{price}/月',plan_upgrade_cta:'🚀 升级套餐',lang_label:'我的语言',msg_placeholder:'输入消息...',profile_title:'我的资料',profile_save:'保存',profile_lang_label:'默认语言',qr_title:'我的二维码',dict_title:'我的词典 📖',search_title:'搜索',plan_light_desc:'每月10万~30万字 · 基础全球聊天',plan_biz_desc:'每月30万~80万字 · 活跃全球沟通',plan_prem_desc:'每月80万~200万字 · 无限商务',usage_premium_msg:'PREMIUM套餐 — 最多200万字 🎉'},
+  es:{plan_title:'Seleccionar Plan',plan_status:'Plan actual {plan} · {used} usados este mes',plan_recommended:'Recom.',plan_upgrade_btn:'Actualizar',plan_cancel:'Cancelar',plan_free:'Gratis',plan_upgrade_to:'Actualizar a {plan} — ₩{price}/mes',plan_upgrade_cta:'🚀 Actualizar Plan',lang_label:'Mi idioma',msg_placeholder:'Escribe un mensaje...',profile_title:'Mi perfil',profile_save:'Guardar',profile_lang_label:'Idioma predeterminado',qr_title:'Mi código QR',dict_title:'Mi diccionario 📖',search_title:'Buscar',plan_light_desc:'100K~300K chars/mes · Chat global básico',plan_biz_desc:'300K~800K chars/mes · Comunicación global activa',plan_prem_desc:'800K~2M chars/mes · Negocios ilimitados',usage_premium_msg:'Plan PREMIUM — hasta 2M chars 🎉'},
+  fr:{plan_title:'Choisir un plan',plan_status:'Plan actuel {plan} · {used} utilisés ce mois',plan_recommended:'Conseil.',plan_upgrade_btn:'Mettre à niveau',plan_cancel:'Annuler',plan_free:'Gratuit',plan_upgrade_to:'Passer à {plan} — ₩{price}/mois',plan_upgrade_cta:'🚀 Améliorer le plan',lang_label:'Ma langue',msg_placeholder:'Écrire un message...',profile_title:'Mon profil',profile_save:'Enregistrer',profile_lang_label:'Langue par défaut',qr_title:'Mon QR code',dict_title:'Mon dictionnaire 📖',search_title:'Rechercher',plan_light_desc:'100K~300K car/mois · Chat mondial de base',plan_biz_desc:'300K~800K car/mois · Communication mondiale active',plan_prem_desc:'800K~2M car/mois · Business illimité',usage_premium_msg:'Plan PREMIUM — jusqu\'à 2M car. 🎉'},
+  de:{plan_title:'Plan auswählen',plan_status:'Aktueller Plan {plan} · {used} genutzt',plan_recommended:'Empf.',plan_upgrade_btn:'Upgrade',plan_cancel:'Abbrechen',plan_free:'Kostenlos',plan_upgrade_to:'Upgrade auf {plan} — ₩{price}/Monat',plan_upgrade_cta:'🚀 Plan upgraden',lang_label:'Meine Sprache',msg_placeholder:'Nachricht eingeben...',profile_title:'Mein Profil',profile_save:'Speichern',profile_lang_label:'Standardsprache',qr_title:'Mein QR-Code',dict_title:'Mein Wörterbuch 📖',search_title:'Suchen',plan_light_desc:'100K~300K Zeichen/Mo. · Basis-Globalchat',plan_biz_desc:'300K~800K Zeichen/Mo. · Aktive Kommunikation',plan_prem_desc:'800K~2M Zeichen/Mo. · Unbegrenztes Business',usage_premium_msg:'PREMIUM-Plan — bis zu 2M Zeichen 🎉'},
+  vi:{plan_title:'Chọn gói',plan_status:'Gói hiện tại {plan} · Đã dùng {used} tháng này',plan_recommended:'Đề xuất',plan_upgrade_btn:'Nâng cấp',plan_cancel:'Hủy',plan_free:'Miễn phí',plan_upgrade_to:'Nâng cấp lên {plan} — ₩{price}/tháng',plan_upgrade_cta:'🚀 Nâng cấp gói',lang_label:'Ngôn ngữ của tôi',msg_placeholder:'Nhập tin nhắn...',profile_title:'Hồ sơ của tôi',profile_save:'Lưu',profile_lang_label:'Ngôn ngữ mặc định',qr_title:'Mã QR của tôi',dict_title:'Từ điển của tôi 📖',search_title:'Tìm kiếm',plan_light_desc:'100K~300K ký tự/tháng · Chat toàn cầu cơ bản',plan_biz_desc:'300K~800K ký tự/tháng · Giao tiếp toàn cầu tích cực',plan_prem_desc:'800K~2M ký tự/tháng · Kinh doanh không giới hạn',usage_premium_msg:'Gói PREMIUM — tối đa 2M ký tự 🎉'},
+  th:{plan_title:'เลือกแผน',plan_status:'แผนปัจจุบัน {plan} · ใช้ไป {used} เดือนนี้',plan_recommended:'แนะนำ',plan_upgrade_btn:'อัปเกรด',plan_cancel:'ยกเลิก',plan_free:'ฟรี',plan_upgrade_to:'อัปเกรดเป็น {plan} — ₩{price}/เดือน',plan_upgrade_cta:'🚀 อัปเกรดแผน',lang_label:'ภาษาของฉัน',msg_placeholder:'พิมพ์ข้อความ...',profile_title:'โปรไฟล์ของฉัน',profile_save:'บันทึก',profile_lang_label:'ภาษาเริ่มต้น',qr_title:'QR โค้ดของฉัน',dict_title:'พจนานุกรมของฉัน 📖',search_title:'ค้นหา',plan_light_desc:'1แสน~3แสนตัว/เดือน · แชทโลกพื้นฐาน',plan_biz_desc:'3แสน~8แสนตัว/เดือน · สื่อสารโลกกว้าง',plan_prem_desc:'8แสน~2ล้านตัว/เดือน · ธุรกิจไม่จำกัด',usage_premium_msg:'แผน PREMIUM — สูงสุด 2ล้านตัว 🎉'},
+  mn:{plan_title:'Төлөвлөгөө сонгох',plan_status:'Одоогийн {plan} · Энэ сард {used} ашигласан',plan_recommended:'Санал',plan_upgrade_btn:'Шинэчлэх',plan_cancel:'Цуцлах',plan_free:'Үнэгүй',plan_upgrade_to:'{plan} руу шинэчлэх — ₩{price}/сар',plan_upgrade_cta:'🚀 Шинэчлэх',lang_label:'Миний хэл',msg_placeholder:'Мессеж бичих...',profile_title:'Миний профайл',profile_save:'Хадгалах',profile_lang_label:'Үндсэн хэл',qr_title:'Миний QR код',dict_title:'Миний толь бичиг 📖',search_title:'Хайх',plan_light_desc:'100К~300К тэмдэгт/сар · Үндсэн дэлхийн чат',plan_biz_desc:'300К~800К тэмдэгт/сар · Идэвхтэй харилцаа',plan_prem_desc:'800К~2М тэмдэгт/сар · Хязгааргүй бизнес',usage_premium_msg:'PREMIUM төлөвлөгөө — 2М тэмдэгт хүртэл 🎉'},
+  hi:{plan_title:'प्लान चुनें',plan_status:'वर्तमान {plan} · इस महीने {used} उपयोग',plan_recommended:'सुझाव',plan_upgrade_btn:'अपग्रेड करें',plan_cancel:'रद्द करें',plan_free:'मुफ़्त',plan_upgrade_to:'{plan} में अपग्रेड करें — ₩{price}/माह',plan_upgrade_cta:'🚀 प्लान अपग्रेड करें',lang_label:'मेरी भाषा',msg_placeholder:'संदेश लिखें...',profile_title:'मेरी प्रोफाइल',profile_save:'सहेजें',profile_lang_label:'डिफ़ॉल्ट भाषा',qr_title:'मेरा QR कोड',dict_title:'मेरा शब्दकोश 📖',search_title:'खोजें',plan_light_desc:'1L~3L अक्षर/माह · बेसिक ग्लोबल चैट',plan_biz_desc:'3L~8L अक्षर/माह · सक्रिय वैश्विक संचार',plan_prem_desc:'8L~20L अक्षर/माह · असीमित व्यापार',usage_premium_msg:'PREMIUM प्लान — 20L अक्षर तक 🎉'},
+  pt:{plan_title:'Selecionar Plano',plan_status:'Plano atual {plan} · {used} usados este mês',plan_recommended:'Recom.',plan_upgrade_btn:'Atualizar',plan_cancel:'Cancelar',plan_free:'Grátis',plan_upgrade_to:'Atualizar para {plan} — ₩{price}/mês',plan_upgrade_cta:'🚀 Atualizar Plano',lang_label:'Meu idioma',msg_placeholder:'Digite uma mensagem...',profile_title:'Meu perfil',profile_save:'Salvar',profile_lang_label:'Idioma padrão',qr_title:'Meu QR code',dict_title:'Meu dicionário 📖',search_title:'Pesquisar',plan_light_desc:'100K~300K chars/mês · Chat global básico',plan_biz_desc:'300K~800K chars/mês · Comunicação global ativa',plan_prem_desc:'800K~2M chars/mês · Negócios ilimitados',usage_premium_msg:'Plano PREMIUM — até 2M chars 🎉'},
+  ar:{plan_title:'اختر خطة',plan_status:'الخطة الحالية {plan} · استخدمت {used} هذا الشهر',plan_recommended:'مُوصى',plan_upgrade_btn:'ترقية',plan_cancel:'إلغاء',plan_free:'مجاني',plan_upgrade_to:'الترقية إلى {plan} — ₩{price}/شهر',plan_upgrade_cta:'🚀 ترقية الخطة',lang_label:'لغتي',msg_placeholder:'اكتب رسالة...',profile_title:'ملفي الشخصي',profile_save:'حفظ',profile_lang_label:'اللغة الافتراضية',qr_title:'رمز QR الخاص بي',dict_title:'قاموسي 📖',search_title:'بحث',plan_light_desc:'100K~300K حرف/شهر · دردشة عالمية أساسية',plan_biz_desc:'300K~800K حرف/شهر · تواصل عالمي نشط',plan_prem_desc:'800K~2M حرف/شهر · أعمال غير محدودة',usage_premium_msg:'خطة PREMIUM — حتى 2M حرف 🎉'},
+  id:{plan_title:'Pilih Paket',plan_status:'Paket saat ini {plan} · {used} digunakan bulan ini',plan_recommended:'Rekomendasi',plan_upgrade_btn:'Upgrade',plan_cancel:'Batal',plan_free:'Gratis',plan_upgrade_to:'Upgrade ke {plan} — ₩{price}/bln',plan_upgrade_cta:'🚀 Upgrade Paket',lang_label:'Bahasa saya',msg_placeholder:'Ketik pesan...',profile_title:'Profil saya',profile_save:'Simpan',profile_lang_label:'Bahasa default',qr_title:'Kode QR saya',dict_title:'Kamus saya 📖',search_title:'Cari',plan_light_desc:'100K~300K karakter/bln · Chat global dasar',plan_biz_desc:'300K~800K karakter/bln · Komunikasi global aktif',plan_prem_desc:'800K~2M karakter/bln · Bisnis tanpa batas',usage_premium_msg:'Paket PREMIUM — hingga 2M karakter 🎉'},
+};
+
+let _uiLang='ko';
+function t(key){const T=UI_T[_uiLang]||UI_T.ko;return T[key]||UI_T.ko[key]||key;}
+
+function applyUILanguage(lang){
+  _uiLang=lang||'ko';
+  document.documentElement.dir=(lang==='ar')?'rtl':'ltr';
+  const T=UI_T[_uiLang]||UI_T.ko;
+  // Plan sheet
+  const pst=document.getElementById('plan-sheet-title');if(pst)pst.textContent=T.plan_title;
+  const pcb=document.getElementById('plan-cancel-btn');if(pcb)pcb.textContent=T.plan_cancel;
+  const pcfb=document.getElementById('plan-confirm-btn');if(pcfb&&pcfb.disabled)pcfb.textContent=T.plan_upgrade_btn;
+  // Lang label & placeholder
+  const llt=document.getElementById('lang-label-text');if(llt)llt.textContent=T.lang_label;
+  const mi=document.getElementById('msg-input');if(mi)mi.placeholder=T.msg_placeholder;
+  // Upgrade button in settings
+  const uub=document.getElementById('usage-upgrade-btn');if(uub)uub.textContent=T.plan_upgrade_cta;
+  // Profile screen
+  const prtitle=document.getElementById('profile-screen-title');if(prtitle)prtitle.textContent=T.profile_title;
+  const prSave=document.querySelector('#profile-screen .pe-save-btn');if(prSave)prSave.textContent=T.profile_save;
+  const prLangLbl=document.getElementById('profile-lang-row-lbl');if(prLangLbl)prLangLbl.textContent=T.profile_lang_label;
+  const prLangSec=document.getElementById('profile-lang-section-lbl');if(prLangSec)prLangSec.textContent=T.profile_lang_label;
+  // Sheet titles
+  const qrTitle=document.querySelector('#qr-sheet .sheet-title');if(qrTitle)qrTitle.textContent=T.qr_title;
+  const dictTitle=document.querySelector('#dict-sheet .sheet-title');if(dictTitle)dictTitle.textContent=T.dict_title;
+  const searchTitle=document.querySelector('#search-sheet .sheet-title');if(searchTitle)searchTitle.textContent=T.search_title;
+}
+
 // ── 사용량 UI 렌더 ──────────────────────────────────────
 function fmtChars(n){
   if(n>=10000)return (n/10000).toFixed(1).replace('.0','')+'만자';
@@ -2430,8 +2480,8 @@ async function renderUsageUI(){
   if(!monthEl)return;
 
   monthEl.textContent=now.getFullYear()+'년 '+(now.getMonth()+1)+'월';
-  const planLabels={free:'무료',light:'라이트',normal:'보통',heavy:'헤비'};
-  badgeEl.textContent=planLabels[plan]||'무료';
+  const planLabels={free:t('plan_free'),light:'LIGHT',business:'BUSINESS',premium:'PREMIUM'};
+  badgeEl.textContent=planLabels[plan]||t('plan_free');
 
   barEl.style.width=pct+'%';
   barEl.style.background=pct>=90?'#ef4444':pct>=60?'#f59e0b':'var(--primary)';
@@ -2439,8 +2489,8 @@ async function renderUsageUI(){
   usedEl.textContent=fmtChars(used);
   limitEl.textContent='/ '+fmtChars(limit);
 
-  if(plan==='heavy'){
-    msgEl.textContent='헤비 플랜 — 200만자까지 사용할 수 있어요 🎉';
+  if(plan==='premium'){
+    msgEl.textContent=t('usage_premium_msg');
     btnEl.style.display='none';
   } else if(pct>=90){
     msgEl.textContent='⚠️ 한도의 '+pct+'% 소진! 잔여 '+fmtChars(limit-used);
@@ -2468,22 +2518,57 @@ async function getUserPlan(){
 }
 
 // ── 플랜 시트 ──────────────────────────────────────────
+const PLAN_DEFS=[
+  {key:'light',price:'1,900'},
+  {key:'business',price:'4,900',recommended:true},
+  {key:'premium',price:'9,900'},
+];
+
 let _selectedPlanKey=null;
+
+function renderPlanCards(){
+  const T=UI_T[_uiLang]||UI_T.ko;
+  const descs={light:T.plan_light_desc,business:T.plan_biz_desc,premium:T.plan_prem_desc};
+  const names={light:'LIGHT',business:'BUSINESS',premium:'PREMIUM'};
+  const container=document.getElementById('plan-cards');
+  if(!container)return;
+  container.innerHTML='';
+  PLAN_DEFS.forEach(function(p){
+    const div=document.createElement('div');
+    div.className='plan-card';
+    div.id='pc-'+p.key;
+    if(p.recommended)div.style.position='relative';
+    div.onclick=function(){selectPlanCard(p.key,div);};
+    div.innerHTML=(p.recommended?'<div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:100px;white-space:nowrap;">'+T.plan_recommended+'</div>':'')+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'+
+      '<span style="font-size:15px;font-weight:700;">'+names[p.key]+'</span>'+
+      '<span style="font-size:17px;font-weight:700;color:var(--primary);">'+p.price+'<span style="font-size:12px;font-weight:400;color:var(--outline);">원/월</span></span>'+
+      '</div>'+
+      '<div style="font-size:13px;color:var(--outline);">'+descs[p.key]+'</div>';
+    container.appendChild(div);
+  });
+}
+
 function showPlanSheet(){
   getMonthlyUsage().then(function(used){
     getUserPlan().then(function(plan){
-      const planLabels={free:'무료',light:'라이트',normal:'보통',heavy:'헤비'};
-      document.getElementById('plan-current-label').textContent=planLabels[plan]||'무료';
-      document.getElementById('plan-used-label').textContent=fmtChars(used);
+      const T=UI_T[_uiLang]||UI_T.ko;
+      const planLabels={free:T.plan_free,light:'LIGHT',business:'BUSINESS',premium:'PREMIUM'};
+      const statusWrap=document.getElementById('plan-status-wrap');
+      if(statusWrap){
+        statusWrap.innerHTML=T.plan_status
+          .replace('{plan}','<strong id="plan-current-label">'+(planLabels[plan]||T.plan_free)+'</strong>')
+          .replace('{used}','<strong id="plan-used-label">'+fmtChars(used)+'</strong>');
+      }
     });
   });
   _selectedPlanKey=null;
-  ['light','normal','heavy'].forEach(function(k){
-    const el=document.getElementById('pc-'+k);
-    if(el)el.classList.remove('selected');
-  });
+  renderPlanCards();
   const btn=document.getElementById('plan-confirm-btn');
-  btn.disabled=true;btn.style.opacity='.4';btn.textContent='업그레이드하기';
+  const T=UI_T[_uiLang]||UI_T.ko;
+  btn.disabled=true;btn.style.opacity='.4';btn.textContent=T.plan_upgrade_btn;
+  const cancelBtn=document.getElementById('plan-cancel-btn');
+  if(cancelBtn)cancelBtn.textContent=T.plan_cancel;
   document.getElementById('plan-backdrop').classList.add('open');
   document.getElementById('plan-sheet').classList.add('open');
 }
@@ -2493,24 +2578,22 @@ function closePlanSheet(){
 }
 function selectPlanCard(key,el){
   _selectedPlanKey=key;
-  ['light','normal','heavy'].forEach(function(k){
-    const c=document.getElementById('pc-'+k);
+  PLAN_DEFS.forEach(function(p){
+    const c=document.getElementById('pc-'+p.key);
     if(c)c.classList.remove('selected');
   });
   el.classList.add('selected');
-  const prices={light:'2,900',normal:'4,900',heavy:'9,900'};
-  const labels={light:'라이트',normal:'보통',heavy:'헤비'};
+  const prices={light:'1,900',business:'4,900',premium:'9,900'};
+  const T=UI_T[_uiLang]||UI_T.ko;
   const btn=document.getElementById('plan-confirm-btn');
   btn.disabled=false;btn.style.opacity='1';
-  btn.textContent=labels[key]+'로 업그레이드 — '+prices[key]+'원/월';
+  btn.textContent=T.plan_upgrade_to.replace('{plan}',key.toUpperCase()).replace('{price}',prices[key]);
 }
 async function confirmPlanUpgrade(){
   if(!_selectedPlanKey||!currentUser)return;
-  // TODO: 결제 연동 후 아래 실행
   await db.collection('users').doc(currentUser.uid).set({plan:_selectedPlanKey},{merge:true});
   localStorage.setItem('mandu_plan_'+currentUser.uid,_selectedPlanKey);
-  const labels={light:'라이트',normal:'보통',heavy:'헤비'};
-  showToast(labels[_selectedPlanKey]+' 플랜으로 변경됐어요 🎉');
+  showToast(_selectedPlanKey.toUpperCase()+' 플랜으로 변경됐어요 🎉');
   closePlanSheet();
   renderUsageUI();
 }
