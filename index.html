@@ -229,14 +229,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .spc-email{font-size:12px;color:var(--outline);margin-top:2px;}
 .spc-edit{display:flex;align-items:center;gap:4px;background:none;border:1.5px solid var(--primary);color:var(--primary);border-radius:100px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
 .settings-section-label{font-size:10px;font-weight:700;color:var(--outline);letter-spacing:1.5px;text-transform:uppercase;padding:12px 20px 4px;}
-.settings-card{margin:0 20px 16px;background:var(--surface);border-radius:16px;border:1.5px solid var(--outline-variant);overflow:hidden;width:calc(100% - 40px);box-sizing:border-box;}
-.settings-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--outline-variant);cursor:pointer;min-width:0;box-sizing:border-box;}
+.settings-card{margin:0 20px 16px;background:var(--surface);border-radius:16px;border:1.5px solid var(--outline-variant);overflow:hidden;}
+.settings-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--outline-variant);cursor:pointer;min-width:0;}
 .settings-row:last-child{border-bottom:none;}
 .settings-icon-wrap{width:40px;height:40px;border-radius:50%;background:var(--primary-fixed);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .settings-icon-wrap .ms{font-size:20px;}
-.settings-row-info{flex:1;min-width:0;overflow:hidden;}
-.settings-row-label{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.settings-row-sub{font-size:12px;color:var(--outline);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.settings-row-info{flex:1;min-width:0;}
+.settings-row-label{font-size:15px;font-weight:600;}
+.settings-row-sub{font-size:12px;color:var(--outline);margin-top:1px;}
 .settings-chevron .ms{font-size:20px;color:var(--outline-variant);}
 .toggle{width:48px;height:26px;border-radius:100px;background:var(--outline-variant);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
 .toggle.on{background:var(--primary);}
@@ -833,10 +833,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </div>
   <div class="settings-section-label" id="profile-lang-section-lbl">번역 언어</div>
   <div class="settings-card" style="margin:0 20px 16px;">
-    <div class="settings-row" style="cursor:default;min-height:56px;">
-      <div class="settings-icon-wrap"><span class="ms">language</span></div>
-      <div class="settings-row-info"><div class="settings-row-label" id="profile-lang-row-lbl">기본 번역 언어</div></div>
-      <select class="pe-lang-select" id="pe-lang" onchange="saveProfileLang()" style="max-width:200px;">
+    <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="settings-icon-wrap"><span class="ms">language</span></div>
+        <div class="settings-row-label" id="profile-lang-row-lbl">기본 번역 언어</div>
+      </div>
+      <select class="pe-lang-select" id="pe-lang" onchange="saveProfileLang()" style="width:100%;font-size:14px;padding:10px 12px;">
         <option value="ko">🇰🇷 한국어</option>
         <option value="en">🇺🇸 English</option>
         <option value="ja">🇯🇵 日本語</option>
@@ -856,8 +858,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </div>
   <div class="settings-section-label">내 QR 코드</div>
   <div class="settings-card" style="margin:0 20px 16px;">
-    <div style="padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;box-sizing:border-box;">
-      <div style="width:200px;height:200px;border-radius:16px;overflow:hidden;border:3px solid var(--primary-fixed);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+    <div style="padding:20px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <div style="width:200px;height:200px;border-radius:16px;overflow:hidden;border:3px solid var(--primary-fixed);background:#fff;display:flex;align-items:center;justify-content:center;">
         <div id="profile-qr"></div>
       </div>
       <div style="font-size:16px;font-weight:800;color:var(--primary);text-align:center;" id="profile-manduid-display">@—</div>
@@ -866,10 +868,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </div>
   <div class="settings-section-label">화면</div>
   <div class="settings-card" style="margin:0 20px 16px;">
-    <div class="settings-row" onclick="toggleTheme()" style="width:100%;box-sizing:border-box;">
+    <div class="settings-row" onclick="toggleTheme()">
       <div class="settings-icon-wrap"><span class="ms">dark_mode</span></div>
       <div class="settings-row-info"><div class="settings-row-label">다크 모드</div></div>
-      <div class="toggle" id="profile-dark-toggle" style="flex-shrink:0;"></div>
+      <div class="toggle" id="profile-dark-toggle"></div>
     </div>
   </div>
   <div class="settings-section-label">계정</div>
