@@ -1761,6 +1761,7 @@ function saveProfileLang(){
 const SCREENS=['onboarding-screen','login-screen','id-screen','guest-screen','main-screen','chat-screen','create-screen','profile-screen'];
 const _PUSH_SCREENS=['chat-screen','create-screen','profile-screen'];
 let _exitPressTime=0;
+let _historyInited=false;
 
 function show(id){
   SCREENS.forEach(function(s){document.getElementById(s).style.display='none';});
@@ -1772,22 +1773,24 @@ function show(id){
   }
 }
 
-window.addEventListener('popstate',function(){
+window.addEventListener('popstate',function(e){
+  const state=(e.state||{});
+  // 'root' 항목까지 pop됨 = 앱 종료 영역
+  if(state.manduScreen==='root'){
+    const now=Date.now();
+    if(now-_exitPressTime<2000)return; // 두 번째 back → 앱 종료 허용
+    _exitPressTime=now;
+    history.pushState({manduScreen:'main'},''); // main 항목 복구
+    showToast('한 번 더 누르면 앱을 종료합니다');
+    return;
+  }
+  // 서브스크린에서 back
   const cur=SCREENS.find(function(s){
     const el=document.getElementById(s);
     return el&&el.style.display!=='none';
   });
-  if(cur==='chat-screen'){
-    handleBack();
-  }else if(cur==='create-screen'||cur==='profile-screen'){
-    showMain();
-  }else if(cur==='main-screen'){
-    const now=Date.now();
-    if(now-_exitPressTime<2000)return;
-    _exitPressTime=now;
-    history.pushState({manduScreen:'main'},'');
-    showToast('한 번 더 누르면 앱을 종료합니다');
-  }
+  if(cur==='chat-screen'){handleBack();}
+  else if(cur==='create-screen'||cur==='profile-screen'){showMain();}
 });
 
 function showMain(){
@@ -1796,7 +1799,15 @@ function showMain(){
   lastMyMsgWrap=null;
   document.getElementById('upgrade-banner').style.display='none';
   show('main-screen');
-  history.replaceState({manduScreen:'main'},'');
+  if(!_historyInited){
+    // 최초 1회: root(탈출점) + main 두 항목 생성
+    history.replaceState({manduScreen:'root'},'');
+    history.pushState({manduScreen:'main'},'');
+    _historyInited=true;
+  }else{
+    // 서브스크린에서 복귀: 현재 항목을 main으로 표시
+    history.replaceState({manduScreen:'main'},'');
+  }
   loadRooms();loadUsers();
   switchTab(currentTab);
 }
