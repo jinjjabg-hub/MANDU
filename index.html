@@ -219,6 +219,23 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .check-icon{color:var(--primary);opacity:0;}
 .user-item.selected .check-icon{opacity:1;}
 .discover-placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;text-align:center;}
+.discover-subtabs{display:flex;padding:10px 16px;gap:8px;border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
+.discover-subtab{flex:1;padding:8px 0;border:none;background:var(--surface-container-low);border-radius:100px;font-size:13px;font-weight:600;color:var(--on-surface-variant);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;}
+.discover-subtab.active{background:var(--primary);color:#fff;}
+.discover-panel{display:none;flex-direction:column;flex:1;overflow-y:auto;}
+.discover-panel.active{display:flex;}
+.discover-card{margin:0 16px 10px;background:var(--surface);border-radius:16px;border:1.5px solid var(--outline-variant);padding:14px;display:flex;gap:12px;align-items:flex-start;}
+.discover-card-av{width:46px;height:46px;border-radius:50%;overflow:hidden;background:var(--surface-container-low);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.discover-card-av img{width:100%;height:100%;object-fit:cover;}
+.discover-card-body{flex:1;min-width:0;}
+.discover-card-name{font-size:15px;font-weight:700;color:var(--on-surface);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.discover-card-mid{font-size:12px;color:var(--primary);font-weight:600;margin-top:1px;}
+.discover-card-meta{font-size:12px;color:var(--on-surface-variant);margin-top:4px;line-height:1.5;}
+.discover-card-bio{font-size:12px;color:var(--on-surface-variant);margin-top:5px;font-style:italic;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.discover-chat-btn{flex-shrink:0;padding:7px 13px;background:var(--primary);color:#fff;border:none;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;margin-top:2px;}
+.discover-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px;text-align:center;}
+.discover-spinner{width:30px;height:30px;border:3px solid var(--outline-variant);border-top-color:var(--primary);border-radius:50%;animation:dSpin .8s linear infinite;margin:48px auto;}
+@keyframes dSpin{to{transform:rotate(360deg);}}
 .settings-profile-card{margin:16px 20px;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:20px;padding:20px;}
 .spc-row{display:flex;align-items:center;gap:14px;}
 .spc-avatar{width:60px;height:60px;border-radius:50%;border:2px solid var(--primary);overflow:hidden;flex-shrink:0;}
@@ -632,10 +649,29 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     </div>
   </div>
   <div class="panel-content" id="panel-discover">
-    <div class="discover-placeholder">
-      <span class="ms" style="font-size:64px !important;color:var(--primary-fixed-dim);">explore</span>
-      <div style="font-size:20px;font-weight:700;color:var(--on-surface-variant);">Discover</div>
-      <div style="font-size:14px;color:var(--outline);line-height:1.7;">전 세계 새로운 친구를 발견하는<br>기능이 곧 출시됩니다! 🌏</div>
+    <!-- 서브탭 -->
+    <div class="discover-subtabs">
+      <button class="discover-subtab active" id="dtab-business" onclick="switchDiscoverTab('business')">비즈니스</button>
+      <button class="discover-subtab" id="dtab-global" onclick="switchDiscoverTab('global')">글로벌</button>
+      <button class="discover-subtab" id="dtab-contacts" onclick="switchDiscoverTab('contacts')">지인찾기</button>
+    </div>
+    <!-- 비즈니스 패널 -->
+    <div class="discover-panel active" id="dpanel-business">
+      <div id="discover-biz-list" style="padding:14px 0 0;"></div>
+    </div>
+    <!-- 글로벌 패널 -->
+    <div class="discover-panel" id="dpanel-global">
+      <div style="padding:12px 16px 6px;">
+        <div style="background:var(--primary-fixed);border-radius:14px;padding:11px 14px;font-size:13px;color:var(--primary);font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <span>🌏 다른 나라 사람과 대화해보세요!</span>
+          <button onclick="shuffleGlobal()" style="padding:5px 12px;background:var(--primary);color:#fff;border:none;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0;">🔀 새로고침</button>
+        </div>
+      </div>
+      <div id="discover-global-list" style="padding:6px 0 0;"></div>
+    </div>
+    <!-- 지인찾기 패널 -->
+    <div class="discover-panel" id="dpanel-contacts">
+      <div id="contacts-panel-inner"></div>
     </div>
   </div>
   <div class="panel-content" id="panel-settings">
@@ -1747,6 +1783,162 @@ function switchTab(tab){
     document.getElementById('tab-'+t).classList.toggle('active',t===tab);
   });
   if(tab==='settings')renderUsageUI();
+  if(tab==='discover')loadDiscover();
+}
+
+// ── DISCOVER ──────────────────────────────────────────────────
+const _INDUSTRY_LABELS={food:'🍽️ 식품',finance:'💰 금융/보험',it:'💻 IT/소프트웨어',legal:'⚖️ 법률',realestate:'🏠 부동산',manufacturing:'🏭 제조',distribution:'🚚 유통/물류',education:'📚 교육',healthcare:'🏥 의료/헬스',marketing:'📣 마케팅/광고',consulting:'💡 컨설팅',construction:'🏗️ 건설',beauty:'💄 뷰티/패션',media:'🎬 미디어/콘텐츠',other:'📌 기타'};
+const _COUNTRY_LABELS={KR:'🇰🇷 대한민국',US:'🇺🇸 미국',JP:'🇯🇵 일본',CN:'🇨🇳 중국',VN:'🇻🇳 베트남',TH:'🇹🇭 태국',ID:'🇮🇩 인도네시아',MN:'🇲🇳 몽골',IN:'🇮🇳 인도',SG:'🇸🇬 싱가포르',MY:'🇲🇾 말레이시아',PH:'🇵🇭 필리핀',GB:'🇬🇧 영국',DE:'🇩🇪 독일',FR:'🇫🇷 프랑스',ES:'🇪🇸 스페인',IT:'🇮🇹 이탈리아',NL:'🇳🇱 네덜란드',CH:'🇨🇭 스위스',CA:'🇨🇦 캐나다',AU:'🇦🇺 호주',BR:'🇧🇷 브라질',MX:'🇲🇽 멕시코',AR_C:'🇦🇷 아르헨티나',RU:'🇷🇺 러시아',TR:'🇹🇷 터키',AE:'🇦🇪 아랍에미리트',SA:'🇸🇦 사우디아라비아',PT:'🇵🇹 포르투갈'};
+
+let _discoverActiveTab='business';
+let _globalUsers=[];
+let _discoverLoaded={business:false,global:false};
+
+function loadDiscover(){
+  if(_discoverActiveTab==='business'&&!_discoverLoaded.business)loadDiscoverBusiness();
+  else if(_discoverActiveTab==='global'&&!_discoverLoaded.global)loadDiscoverGlobal();
+  else if(_discoverActiveTab==='contacts')initDiscoverContacts();
+}
+
+function switchDiscoverTab(tab){
+  _discoverActiveTab=tab;
+  ['business','global','contacts'].forEach(function(t){
+    document.getElementById('dtab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('dpanel-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='business'&&!_discoverLoaded.business)loadDiscoverBusiness();
+  else if(tab==='global'&&!_discoverLoaded.global)loadDiscoverGlobal();
+  else if(tab==='contacts')initDiscoverContacts();
+}
+
+function _buildDiscoverCard(u){
+  const av=u.photoURL?'<img src="'+u.photoURL+'" alt="">':'👤';
+  const metaParts=[u.jobTitle,u.company,_INDUSTRY_LABELS[u.industry]||'',_COUNTRY_LABELS[u.country]||''].filter(Boolean);
+  const meta=metaParts.join(' · ');
+  const lang=(LANG_FLAGS&&u.lang)?LANG_FLAGS[u.lang]||'':'';
+  const uid=u.uid||'';
+  const div=document.createElement('div');
+  div.className='discover-card';
+  div.innerHTML=
+    '<div class="discover-card-av">'+av+'</div>'+
+    '<div class="discover-card-body">'+
+      '<div class="discover-card-name">'+(u.displayName||'이름 없음')+(lang?' '+lang:'')+'</div>'+
+      (u.manduid?'<div class="discover-card-mid">@'+u.manduid+'</div>':'')+
+      (meta?'<div class="discover-card-meta">'+meta+'</div>':'')+
+      (u.bio?'<div class="discover-card-bio">"'+u.bio+'"</div>':'')+
+    '</div>'+
+    '<button class="discover-chat-btn" onclick="discoverStartDM(\''+uid+'\')">채팅하기</button>';
+  return div;
+}
+
+function _discoverSpinner(container){
+  container.innerHTML='<div class="discover-spinner"></div>';
+}
+
+function _discoverEmpty(container,icon,msg){
+  container.innerHTML='<div class="discover-empty"><span class="ms" style="font-size:44px;color:var(--primary-fixed-dim);">'+icon+'</span><div style="font-size:14px;color:var(--outline);">'+msg+'</div></div>';
+}
+
+async function loadDiscoverBusiness(){
+  const list=document.getElementById('discover-biz-list');
+  _discoverSpinner(list);
+  try{
+    const snap=await db.collection('users').where('discoverPublic','==',true).limit(50).get();
+    const docs=snap.docs.filter(function(d){return d.id!==currentUser.uid&&!d.data().isGuest;});
+    if(!docs.length){_discoverEmpty(list,'work','아직 등록된 비즈니스 프로필이 없어요');return;}
+    const mySnap=await db.collection('users').doc(currentUser.uid).get();
+    const myIndustry=mySnap.exists?mySnap.data().industry:'';
+    docs.sort(function(a,b){
+      return (a.data().industry===myIndustry?0:1)-(b.data().industry===myIndustry?0:1);
+    });
+    list.innerHTML='';
+    docs.forEach(function(d){
+      const u=d.data();u.uid=d.id;
+      list.appendChild(_buildDiscoverCard(u));
+    });
+    _discoverLoaded.business=true;
+  }catch(e){
+    _discoverEmpty(list,'error','불러오기 실패. 다시 시도해주세요');
+  }
+}
+
+async function loadDiscoverGlobal(){
+  const list=document.getElementById('discover-global-list');
+  _discoverSpinner(list);
+  try{
+    const myCountry=(usersMap[currentUser.uid]||{}).country||'';
+    const snap=await db.collection('users').where('discoverPublic','==',true).limit(50).get();
+    _globalUsers=snap.docs.filter(function(d){return d.id!==currentUser.uid&&!d.data().isGuest;}).map(function(d){const u=d.data();u.uid=d.id;return u;});
+    _globalUsers.sort(function(a,b){
+      return (a.country===myCountry?1:0)-(b.country===myCountry?1:0);
+    });
+    renderGlobalList(list);
+    _discoverLoaded.global=true;
+  }catch(e){
+    _discoverEmpty(list,'public','불러오기 실패. 다시 시도해주세요');
+  }
+}
+
+function renderGlobalList(listEl){
+  var list=listEl||document.getElementById('discover-global-list');
+  list.innerHTML='';
+  if(!_globalUsers.length){_discoverEmpty(list,'public','아직 등록된 글로벌 프로필이 없어요');return;}
+  _globalUsers.forEach(function(u){list.appendChild(_buildDiscoverCard(u));});
+}
+
+function shuffleGlobal(){
+  for(var i=_globalUsers.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var tmp=_globalUsers[i];_globalUsers[i]=_globalUsers[j];_globalUsers[j]=tmp;
+  }
+  renderGlobalList();
+}
+
+function initDiscoverContacts(){
+  var inner=document.getElementById('contacts-panel-inner');
+  if(inner.dataset.init==='1')return;
+  inner.dataset.init='1';
+  if(navigator.contacts&&navigator.contacts.select){
+    inner.innerHTML=
+      '<div style="padding:20px 16px 12px;">'+
+        '<button onclick="pickContacts()" style="display:block;width:100%;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;">📱 연락처에서 찾기</button>'+
+      '</div>'+
+      '<div id="contacts-result"></div>';
+  }else{
+    inner.innerHTML='<div class="discover-empty"><span class="ms" style="font-size:44px;color:var(--primary-fixed-dim);">contacts</span><div style="font-size:14px;color:var(--outline);">이 기기에서는 지원되지 않아요</div></div>';
+  }
+}
+
+async function pickContacts(){
+  try{
+    var contacts=await navigator.contacts.select(['name','tel'],{multiple:true});
+    if(!contacts||!contacts.length)return;
+    var phones=[];
+    contacts.forEach(function(c){(c.tel||[]).forEach(function(p){phones.push(p.replace(/\D/g,''));});});
+    var result=document.getElementById('contacts-result');
+    result.innerHTML='<div class="discover-spinner"></div>';
+    var snap=await db.collection('users').get();
+    var matched=snap.docs.filter(function(d){
+      var ph=(d.data().phoneNumber||'').replace(/\D/g,'');
+      return ph&&phones.indexOf(ph)!==-1&&d.id!==currentUser.uid;
+    });
+    result.innerHTML='';
+    if(!matched.length){_discoverEmpty(result,'person_search','연락처에서 MANDU 사용자를 찾지 못했어요');return;}
+    matched.forEach(function(d){var u=d.data();u.uid=d.id;result.appendChild(_buildDiscoverCard(u));});
+  }catch(e){
+    showToast('연락처 접근에 실패했어요');
+  }
+}
+
+async function discoverStartDM(uid){
+  if(!uid)return;
+  try{
+    var snap=await db.collection('users').doc(uid).get();
+    if(!snap.exists)return;
+    var partner=snap.data();partner.uid=uid;
+    await startDM(partner);
+    switchTab('chats');
+  }catch(e){showToast('채팅방 생성에 실패했어요');}
 }
 
 function showProfile(){
