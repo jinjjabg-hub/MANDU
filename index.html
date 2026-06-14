@@ -1759,12 +1759,36 @@ function saveProfileLang(){
 }
 
 const SCREENS=['onboarding-screen','login-screen','id-screen','guest-screen','main-screen','chat-screen','create-screen','profile-screen'];
+const _PUSH_SCREENS=['chat-screen','create-screen','profile-screen'];
+let _exitPressTime=0;
+
 function show(id){
   SCREENS.forEach(function(s){document.getElementById(s).style.display='none';});
   const el=document.getElementById(id);
   el.style.display='flex';
   el.style.flexDirection='column';
+  if(_PUSH_SCREENS.indexOf(id)!==-1){
+    history.pushState({manduScreen:id},'');
+  }
 }
+
+window.addEventListener('popstate',function(){
+  const cur=SCREENS.find(function(s){
+    const el=document.getElementById(s);
+    return el&&el.style.display!=='none';
+  });
+  if(cur==='chat-screen'){
+    handleBack();
+  }else if(cur==='create-screen'||cur==='profile-screen'){
+    showMain();
+  }else if(cur==='main-screen'){
+    const now=Date.now();
+    if(now-_exitPressTime<2000)return;
+    _exitPressTime=now;
+    history.pushState({manduScreen:'main'},'');
+    showToast('한 번 더 누르면 앱을 종료합니다');
+  }
+});
 
 function showMain(){
   if(unsubMsg){unsubMsg();unsubMsg=null;}
@@ -1772,6 +1796,7 @@ function showMain(){
   lastMyMsgWrap=null;
   document.getElementById('upgrade-banner').style.display='none';
   show('main-screen');
+  history.replaceState({manduScreen:'main'},'');
   loadRooms();loadUsers();
   switchTab(currentTab);
 }

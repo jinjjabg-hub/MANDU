@@ -1,4 +1,4 @@
-const CACHE = 'mandu-v5';
+const CACHE = 'mandu-v6';
 const ASSETS = ['/MANDU/', '/MANDU/index.html', '/MANDU/manifest.json', '/MANDU/icon-192.png', '/MANDU/icon-512.png'];
 
 self.addEventListener('install', e => {
