@@ -1775,22 +1775,21 @@ function show(id){
 
 window.addEventListener('popstate',function(e){
   const state=(e.state||{});
-  // 'root' 항목까지 pop됨 = 앱 종료 영역
   if(state.manduScreen==='root'){
     const now=Date.now();
-    if(now-_exitPressTime<2000)return; // 두 번째 back → 앱 종료 허용
+    if(now-_exitPressTime<2000)return;
     _exitPressTime=now;
-    history.pushState({manduScreen:'main'},''); // main 항목 복구
-    showToast('한 번 더 누르면 앱을 종료합니다');
+    history.pushState({manduScreen:'main',tab:'chats'},'');
+    showToast('한 번 더 누르면 종료됩니다');
     return;
   }
-  // 서브스크린에서 back
   const cur=SCREENS.find(function(s){
     const el=document.getElementById(s);
     return el&&el.style.display!=='none';
   });
   if(cur==='chat-screen'){handleBack();}
   else if(cur==='create-screen'||cur==='profile-screen'){showMain();}
+  else if(cur==='main-screen'&&currentTab!=='chats'){switchTab('chats');}
 });
 
 function showMain(){
@@ -1800,12 +1799,10 @@ function showMain(){
   document.getElementById('upgrade-banner').style.display='none';
   show('main-screen');
   if(!_historyInited){
-    // 최초 1회: root(탈출점) + main 두 항목 생성
     history.replaceState({manduScreen:'root'},'');
-    history.pushState({manduScreen:'main'},'');
+    history.pushState({manduScreen:'main',tab:'chats'},'');
     _historyInited=true;
   }else{
-    // 서브스크린에서 복귀: 현재 항목을 main으로 표시
     history.replaceState({manduScreen:'main'},'');
   }
   loadRooms();loadUsers();
@@ -1813,11 +1810,21 @@ function showMain(){
 }
 
 function switchTab(tab){
+  const prevTab=currentTab;
   currentTab=tab;
   ['chats','friends','discover','settings'].forEach(function(t){
     document.getElementById('panel-'+t).classList.toggle('active',t===tab);
     document.getElementById('tab-'+t).classList.toggle('active',t===tab);
   });
+  if(_historyInited){
+    if(tab==='chats'){
+      history.replaceState({manduScreen:'main',tab:'chats'},'');
+    }else if(prevTab==='chats'){
+      history.pushState({manduScreen:'main',tab:tab},'');
+    }else{
+      history.replaceState({manduScreen:'main',tab:tab},'');
+    }
+  }
   if(tab==='settings')renderUsageUI();
   if(tab==='discover')loadDiscover();
 }
@@ -2078,7 +2085,7 @@ async function saveProfile(){
 }
 
 function handleBack(){
-  if(isGuest){show('guest-screen');}else{showMain();}
+  if(isGuest){show('guest-screen');}else{currentTab='chats';showMain();}
 }
 
 function loadRooms(){
