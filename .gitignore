@@ -1,0 +1,15 @@
+# 키스토어 (절대 커밋 금지)
+twa/android.keystore
+twa/keystore-base64.txt
+
+# 빌드 결과물
+twa/app-release-*.apk
+twa/app-release-*.aab
+mandu-*.apk
+mandu-*.aab
+twa/android/
+twa/output/
+
+# 환경 설정
+.env
+*.local
