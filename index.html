@@ -1561,6 +1561,34 @@ function showPrivacyPolicy(){
   overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
 }
 
+// ── MANDU ID 자동 생성 ────────────────────────────────────
+function buildManduidBase(email){
+  let b=(email||'').split('@')[0].toLowerCase()
+    .replace(/[.\-+]/g,'_').replace(/[^a-z0-9_]/g,'')
+    .replace(/^[_0-9]+/,'').replace(/_+/g,'_').replace(/^_|_$/g,'');
+  if(!b)b='user';
+  if(b.length<3)b=b+'_mandu';
+  return b.substring(0,18);
+}
+async function autoCreateManduid(user){
+  const base=buildManduidBase(user.email||'');
+  let id=base,n=0;
+  while(n<=999){
+    const snap=await db.collection('manduid_index').doc(id).get();
+    if(!snap.exists){
+      await db.collection('manduid_index').doc(id).set({uid:user.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      await db.collection('users').doc(user.uid).set({manduid:id},{merge:true});
+      return id;
+    }
+    if(snap.data().uid===user.uid){
+      await db.collection('users').doc(user.uid).set({manduid:id},{merge:true});
+      return id;
+    }
+    n++;id=base+n;
+  }
+  throw new Error('autoCreateManduid: no available ID');
+}
+
 // ── 인증 상태 변경 ────────────────────────────────────────
 auth.onAuthStateChanged(async function(user){
   // 로딩 화면 반드시 숨김 (에러 발생해도 무한 로딩 방지)
@@ -1605,8 +1633,17 @@ auth.onAuthStateChanged(async function(user){
           return;
         }
       }catch(e){}
-      // 진짜 최초 가입 → ID 생성 화면
-      show('id-screen');
+      // 최초 가입 → MANDU ID 자동 생성
+      try{
+        const autoId=await autoCreateManduid(user);
+        currentManduid=autoId;
+        updateUIAfterLogin();
+        showMain();
+        showToast('환영해요 @'+autoId+' 🥟');
+      }catch(e){
+        console.error('autoCreateManduid error:',e);
+        show('id-screen');
+      }
       return;
     }
 
