@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tm.mandu",
+      "sha256_cert_fingerprints": [
+        "TODO: 키스토어 생성 후 아래 명령으로 SHA-256 확인 후 교체하세요",
+        "keytool -list -v -keystore android.keystore -alias mandu"
+      ]
+    }
+  }
+]

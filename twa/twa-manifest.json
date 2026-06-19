@@ -1,0 +1,36 @@
+{
+  "packageId": "com.tm.mandu",
+  "host": "jinjjabg-hub.github.io",
+  "startUrl": "/MANDU/",
+  "name": "MANDU",
+  "launcherName": "MANDU",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#6b38d4",
+  "navigationColor": "#6b38d4",
+  "navigationColorDark": "#6b38d4",
+  "navigationDividerColor": "#6b38d4",
+  "navigationDividerColorDark": "#6b38d4",
+  "backgroundColor": "#f8f9ff",
+  "enableNotifications": true,
+  "iconUrl": "https://jinjjabg-hub.github.io/MANDU/icon-512.png",
+  "maskableIconUrl": "https://jinjjabg-hub.github.io/MANDU/icon-512.png",
+  "monochromeIconUrl": "https://jinjjabg-hub.github.io/MANDU/icon-192.png",
+  "shortcuts": [],
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "mandu"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "minSdkVersion": 19,
+  "targetSdkVersion": 34,
+  "features": {
+    "locationDelegation": { "enabled": false },
+    "playBilling": { "enabled": false }
+  },
+  "alphaDependencies": { "enabled": false },
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://jinjjabg-hub.github.io/MANDU/manifest.json",
+  "fallbackType": "customtabs"
+}
