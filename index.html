@@ -56,6 +56,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{--primary:#6b38d4;--primary-container:#8455ef;--primary-fixed:#e9ddff;--primary-fixed-dim:#d0bcff;--on-primary:#fff;--secondary-container:#e4e0f5;--background:#f8f9ff;--surface:#fff;--surface-container:#e6eeff;--surface-container-low:#eff4ff;--surface-container-high:#dee9fc;--on-surface:#121c2a;--on-surface-variant:#494454;--outline:#7b7486;--outline-variant:#cbc3d7;--error:#ba1a1a;--success:#22c55e;}
@@ -1158,6 +1159,8 @@ firebase.initializeApp({
 const auth=firebase.auth();
 const db=firebase.firestore();
 const provider=new firebase.auth.GoogleAuthProvider();
+let messaging=null;
+try{if(firebase.messaging.isSupported())messaging=firebase.messaging();}catch(e){}
 
 let currentUser=null,currentRoomId=null,currentRoomMembers=[];
 let unsubMsg=null,unsubRoom=null,lastMyMsgWrap=null;
@@ -1429,6 +1432,42 @@ function initOnline(){
   heartbeatInterval=setInterval(setOnline,120000);
   document.addEventListener('visibilitychange',()=>document.hidden?setOffline():setOnline());
   window.addEventListener('beforeunload',setOffline);
+  initFCM();
+}
+
+async function initFCM(){
+  if(!messaging||!currentUser||isGuest)return;
+  if(!('Notification' in window)||!('serviceWorker' in navigator))return;
+  try{
+    const swReg=await navigator.serviceWorker.register('/MANDU/firebase-messaging-sw.js');
+    // TODO: Firebase Console → 프로젝트 설정 → 클라우드 메시징 → 웹 푸시 인증서에서 VAPID 키 확인 후 아래 값을 교체하세요
+    const VAPID_KEY='TODO_REPLACE_WITH_YOUR_VAPID_KEY_FROM_FIREBASE_CONSOLE';
+    const permission=await Notification.requestPermission();
+    if(permission!=='granted')return;
+    const token=await messaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:swReg});
+    if(token){
+      await db.collection('users').doc(currentUser.uid).set({fcmToken:token},{merge:true});
+    }
+    messaging.onMessage(function(payload){
+      const n=payload.notification||{};
+      showToast('🔔 '+(n.title||'MANDU')+': '+(n.body||'새 메시지'));
+    });
+    navigator.serviceWorker.addEventListener('message',function(e){
+      if(!e.data||e.data.type!=='OPEN_ROOM'||!e.data.roomId)return;
+      const roomId=e.data.roomId;
+      db.collection('rooms').doc(roomId).get().then(function(doc){
+        if(!doc.exists)return;
+        const r=doc.data();
+        const isGroup=r.type==='group';
+        const entries=r.memberNames?Object.entries(r.memberNames):[];
+        const otherEntry=entries.find(function(en){return en[0]!==currentUser.uid;});
+        const name=isGroup?r.name:(otherEntry?otherEntry[1]:'채팅방');
+        openRoom(roomId,name,r.photoURL||'',isGroup);
+      }).catch(function(){});
+    });
+  }catch(e){
+    console.warn('FCM 초기화 실패:',e);
+  }
 }
 function setOnline(){if(!currentUser)return;db.collection('users').doc(currentUser.uid).set({online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
 function setOffline(){if(!currentUser)return;db.collection('users').doc(currentUser.uid).set({online:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
