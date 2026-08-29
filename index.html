@@ -399,6 +399,25 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 </style>
 </head>
 <body>
+<div id="pwa-install-banner" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:var(--surface);border:1px solid var(--outline-variant);border-radius:16px;padding:12px 14px;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.15);">
+  <div style="font-size:22px;">🥟</div>
+  <div style="flex:1;font-size:13px;color:var(--on-surface);line-height:1.4;">
+    <strong>MANDU</strong>를 홈 화면에 추가하면<br>더 빠르고 편하게 쓸 수 있어요
+  </div>
+  <button id="pwa-install-btn" onclick="handleInstallClick()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">설치하기</button>
+  <button onclick="dismissInstallBanner()" style="background:none;border:none;color:var(--outline);font-size:18px;line-height:1;cursor:pointer;padding:0 2px;">✕</button>
+</div>
+<div id="ios-install-sheet" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);align-items:flex-end;">
+  <div style="background:var(--surface);width:100%;border-radius:20px 20px 0 0;padding:24px 20px 28px;">
+    <div style="font-size:16px;font-weight:700;margin-bottom:12px;color:var(--on-surface);">홈 화면에 MANDU 추가하기</div>
+    <div style="font-size:14px;line-height:1.9;color:var(--on-surface-variant);">
+      1. 하단(또는 상단) <strong>공유 버튼</strong> ⬆️ 을 눌러주세요<br>
+      2. 메뉴에서 <strong>'홈 화면에 추가'</strong>를 선택하세요<br>
+      3. 오른쪽 위 <strong>'추가'</strong>를 눌러주세요
+    </div>
+    <button onclick="document.getElementById('ios-install-sheet').style.display='none'" style="margin-top:20px;width:100%;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;">확인했어요</button>
+  </div>
+</div>
 <div id="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -3069,6 +3088,49 @@ if('serviceWorker' in navigator){
       .catch(function(err){console.log('SW 등록 실패:',err);});
   });
 }
+
+// ── PWA 설치 유도 배너 (디카 → 만두 유입 시 바로 설치 유도) ──────────
+let deferredInstallPrompt=null;
+function isStandaloneMode(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+}
+function isIOSDevice(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+}
+function maybeShowInstallBanner(){
+  if(isStandaloneMode())return; // 이미 설치해서 앱으로 실행 중이면 안 보여줌
+  const dismissedAt=localStorage.getItem('mandu_install_dismissed_at');
+  if(dismissedAt && (Date.now()-Number(dismissedAt) < 7*24*60*60*1000))return; // 7일간 다시 안 보여줌
+  if(deferredInstallPrompt || isIOSDevice()){
+    const b=document.getElementById('pwa-install-banner');
+    if(b)b.style.display='flex';
+  }
+}
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredInstallPrompt=e; // 안드로이드 크롬: 나중에 버튼 클릭 시 이걸로 prompt() 호출
+  maybeShowInstallBanner();
+});
+window.addEventListener('appinstalled',function(){
+  localStorage.setItem('mandu_install_dismissed_at',String(Date.now()));
+  const b=document.getElementById('pwa-install-banner');
+  if(b)b.style.display='none';
+});
+async function handleInstallClick(){
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt=null;
+    document.getElementById('pwa-install-banner').style.display='none';
+  }else if(isIOSDevice()){
+    document.getElementById('ios-install-sheet').style.display='flex';
+  }
+}
+function dismissInstallBanner(){
+  localStorage.setItem('mandu_install_dismissed_at',String(Date.now()));
+  document.getElementById('pwa-install-banner').style.display='none';
+}
+window.addEventListener('load',function(){ setTimeout(maybeShowInstallBanner,800); });
 </script>
 </body>
 </html>
