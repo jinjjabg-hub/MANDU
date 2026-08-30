@@ -466,6 +466,27 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </div>
 </div>
 
+<!-- ── 최초 로그인 언어 선택 화면 (신규) ── -->
+<div id="lang-screen" style="flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px;background:var(--background);">
+  <div style="font-size:20px;font-weight:800;text-align:center;line-height:1.5;" id="lang-screen-title">언어를 선택해주세요<br>Choose your language</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:360px;">
+    <button onclick="selectInitialLang('ko')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇰🇷</span>한국어</button>
+    <button onclick="selectInitialLang('en')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇺🇸</span>English</button>
+    <button onclick="selectInitialLang('ja')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇯🇵</span>日本語</button>
+    <button onclick="selectInitialLang('zh')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇨🇳</span>中文</button>
+    <button onclick="selectInitialLang('es')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇪🇸</span>Español</button>
+    <button onclick="selectInitialLang('fr')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇫🇷</span>Français</button>
+    <button onclick="selectInitialLang('de')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇩🇪</span>Deutsch</button>
+    <button onclick="selectInitialLang('vi')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇻🇳</span>Tiếng Việt</button>
+    <button onclick="selectInitialLang('th')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇹🇭</span>ไทย</button>
+    <button onclick="selectInitialLang('mn')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇲🇳</span>Монгол</button>
+    <button onclick="selectInitialLang('hi')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇮🇳</span>हिन्दी</button>
+    <button onclick="selectInitialLang('pt')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇧🇷</span>Português</button>
+    <button onclick="selectInitialLang('ar')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇸🇦</span>العربية</button>
+    <button onclick="selectInitialLang('id')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px;border:1px solid var(--outline-variant);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;"><span style="font-size:26px;">🇮🇩</span>Indonesia</button>
+  </div>
+</div>
+
 <!-- ── 만두 ID 생성 화면 (신규) ── -->
 <div id="id-screen">
   <svg class="id-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
@@ -617,7 +638,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </div>
   <div class="panel-content active" id="panel-chats">
     <div class="panel-hd">
-      <div class="panel-hd-title">Chats</div>
+      <div class="panel-hd-title" id="chats-title">Chats</div>
       <div class="panel-hd-sub" id="chats-sub">불러오는 중...</div>
     </div>
     <div class="scroll-area"><div id="room-list"></div></div>
@@ -796,10 +817,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     </div>
   </div>
   <nav class="bottom-nav">
-    <button class="nav-tab active" id="tab-chats" onclick="switchTab('chats')"><span class="ms">chat_bubble</span>Chats</button>
-    <button class="nav-tab" id="tab-friends" onclick="switchTab('friends')"><span class="ms">group</span>Friends</button>
-    <button class="nav-tab" id="tab-discover" onclick="switchTab('discover')"><span class="ms">explore</span>Discover</button>
-    <button class="nav-tab" id="tab-settings" onclick="switchTab('settings')"><span class="ms">settings</span>Settings</button>
+    <button class="nav-tab active" id="tab-chats" onclick="switchTab('chats')"><span class="ms">chat_bubble</span><span id="tab-chats-label">Chats</span></button>
+    <button class="nav-tab" id="tab-friends" onclick="switchTab('friends')"><span class="ms">group</span><span id="tab-friends-label">Friends</span></button>
+    <button class="nav-tab" id="tab-discover" onclick="switchTab('discover')"><span class="ms">explore</span><span id="tab-discover-label">Discover</span></button>
+    <button class="nav-tab" id="tab-settings" onclick="switchTab('settings')"><span class="ms">settings</span><span id="tab-settings-label">Settings</span></button>
   </nav>
 </div>
 
@@ -1005,6 +1026,31 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
       </select>
     </div>
   </div>
+  <div class="settings-section-label" id="profile-ui-lang-section-lbl">화면 언어</div>
+  <div class="settings-card" style="margin:0 20px 16px;">
+    <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="settings-icon-wrap"><span class="ms">translate</span></div>
+        <div class="settings-row-label" id="profile-ui-lang-row-lbl">앱 화면 표시 언어</div>
+      </div>
+      <select class="pe-lang-select" id="pe-ui-lang" onchange="saveUILang()" style="width:100%;font-size:14px;padding:10px 12px;">
+        <option value="ko">🇰🇷 한국어</option>
+        <option value="en">🇺🇸 English</option>
+        <option value="ja">🇯🇵 日本語</option>
+        <option value="zh">🇨🇳 中文</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="vi">🇻🇳 Tiếng Việt</option>
+        <option value="th">🇹🇭 ภาษาไทย</option>
+        <option value="mn">🇲🇳 Монгол</option>
+        <option value="hi">🇮🇳 हिन्दी</option>
+        <option value="pt">🇧🇷 Português</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="id">🇮🇩 Indonesia</option>
+      </select>
+    </div>
+  </div>
   <div class="settings-section-label">내 QR 코드</div>
   <div class="settings-card" style="margin:0 20px 16px;">
     <div style="padding:20px;display:flex;flex-direction:column;align-items:center;gap:12px;">
@@ -1186,6 +1232,7 @@ let unsubMsg=null,unsubRoom=null,lastMyMsgWrap=null;
 let heartbeatInterval=null,selectedUsers=[],allUsers=[],usersMap={};
 let currentTab='chats',isGuest=false,guestMsgCount=0,hostUID=null;
 let currentManduid=null; // ← 새로 추가
+let _pendingNewUser=null; // ← 최초 로그인 언어선택 대기용
 
 // URL 파라미터 파싱 — ?u=만두ID 방식 추가
 const urlParams=new URLSearchParams(window.location.search);
@@ -1480,7 +1527,7 @@ async function initFCM(){
         const isGroup=r.type==='group';
         const entries=r.memberNames?Object.entries(r.memberNames):[];
         const otherEntry=entries.find(function(en){return en[0]!==currentUser.uid;});
-        const name=isGroup?r.name:(otherEntry?otherEntry[1]:'채팅방');
+        const name=isGroup?r.name:(otherEntry?otherEntry[1]:t('chat_default_room_name'));
         openRoom(roomId,name,r.photoURL||'',isGroup);
       }).catch(function(){});
     });
@@ -1628,6 +1675,25 @@ function buildManduidBase(email){
   if(b.length<3)b=b+'_mandu';
   return b.substring(0,18);
 }
+async function selectInitialLang(lang){
+  if(!_pendingNewUser)return;
+  const user=_pendingNewUser;
+  localStorage.setItem('mandu_lang_'+user.uid,lang);
+  localStorage.setItem('mandu_ui_lang_'+user.uid,lang);
+  applyUILanguage(lang);
+  try{
+    const autoId=await autoCreateManduid(user);
+    currentManduid=autoId;
+    updateUIAfterLogin();
+    showMain();
+    showToast(t('welcome_toast').replace('{id}',autoId));
+  }catch(e){
+    console.error('autoCreateManduid error:',e);
+    show('id-screen');
+  }
+  _pendingNewUser=null;
+}
+
 async function autoCreateManduid(user){
   const base=buildManduidBase(user.email||'');
   let id=base,n=0;
@@ -1691,17 +1757,9 @@ auth.onAuthStateChanged(async function(user){
           return;
         }
       }catch(e){}
-      // 최초 가입 → MANDU ID 자동 생성
-      try{
-        const autoId=await autoCreateManduid(user);
-        currentManduid=autoId;
-        updateUIAfterLogin();
-        showMain();
-        showToast('환영해요 @'+autoId+' 🥟');
-      }catch(e){
-        console.error('autoCreateManduid error:',e);
-        show('id-screen');
-      }
+      // 최초 가입 → 언어부터 선택하게 함 (선택 후 selectInitialLang에서 ID 자동생성 이어짐)
+      _pendingNewUser=user;
+      show('lang-screen');
       return;
     }
 
@@ -1832,7 +1890,9 @@ function updateUIAfterLogin(){
   const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';
   document.getElementById('my-lang').value=lang;
   document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
-  applyUILanguage(lang);
+  const uiLang=localStorage.getItem('mandu_ui_lang_'+currentUser.uid)||lang;
+  const peUiLangEl=document.getElementById('pe-ui-lang');if(peUiLangEl)peUiLangEl.value=uiLang;
+  applyUILanguage(uiLang);
   initOnline();
   updateQRImages();
 }
@@ -1841,7 +1901,6 @@ function saveLang(){
   if(!currentUser)return;
   const lang=document.getElementById('my-lang').value;
   localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
-  applyUILanguage(lang);
 }
 function saveProfileLang(){
   if(!currentUser)return;
@@ -1849,11 +1908,17 @@ function saveProfileLang(){
   localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
   document.getElementById('my-lang').value=lang;
   document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
+  showToast('번역 언어가 변경됐어요!');
+}
+function saveUILang(){
+  if(!currentUser)return;
+  const lang=document.getElementById('pe-ui-lang').value;
+  localStorage.setItem('mandu_ui_lang_'+currentUser.uid,lang);
   applyUILanguage(lang);
-  showToast('언어가 변경됐어요!');
+  showToast(t('ui_lang_changed_toast'));
 }
 
-const SCREENS=['onboarding-screen','login-screen','id-screen','guest-screen','main-screen','chat-screen','create-screen','profile-screen'];
+const SCREENS=['onboarding-screen','login-screen','lang-screen','id-screen','guest-screen','main-screen','chat-screen','create-screen','profile-screen'];
 const _PUSH_SCREENS=['chat-screen','create-screen','profile-screen'];
 let _exitPressTime=0;
 let _historyInited=false;
@@ -2190,8 +2255,8 @@ function loadRooms(){
     .onSnapshot(function(snap){
       list.innerHTML='';
       if(snap.empty){
-        sub.textContent='채팅방이 없어요';
-        list.innerHTML='<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">채팅방이 없어요</div><div class="empty-desc">+ 버튼으로 만들어보세요!</div></div>';
+        sub.textContent=t('chats_empty_title');
+        list.innerHTML='<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc')+'</div></div>';
         return;
       }
       const docs=snap.docs.sort(function(a,b){
@@ -2202,11 +2267,11 @@ function loadRooms(){
         const r=d.data();const rb=r.readBy||{};const mr=rb[currentUser.uid];
         return r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
       }).length;
-      sub.textContent=unread>0?(unread+'개 안읽은 대화'):(docs.length+'개 채팅방');
+      sub.textContent=unread>0?t('chats_unread_count').replace('{n}',unread):t('chats_room_count').replace('{n}',docs.length);
       docs.forEach(function(doc){
         const r=doc.data();
         const isGroup=r.type==='group';
-        const name=isGroup?r.name:(r.memberNames&&Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})?Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})[1]:'채팅방');
+        const name=isGroup?r.name:(r.memberNames&&Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})?Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})[1]:t('chat_default_room_name'));
         const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).filter(function(e){return e[0]!==currentUser.uid;})[0]?.[1]:'';
         const partnerUid=!isGroup?Object.keys(r.memberNames||{}).find(function(k){return k!==currentUser.uid;}):null;
         const rb=r.readBy||{};const mr=rb[currentUser.uid];
@@ -2217,8 +2282,8 @@ function loadRooms(){
         item.className='room-item';
         item.innerHTML=
           '<div class="av-wrap"><div class="av">'+(photo?'<img src="'+photo+'" alt="">':( isGroup?'👥':'👤'))+'</div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
-          '<div class="room-info"><div class="room-name-row"><span class="room-name">'+name+'</span>'+(r.isGuestRoom?'<span class="country-pill">게스트</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
-          '<div class="room-last">'+(r.lastMessage||'대화를 시작해보세요')+'</div></div>'+
+          '<div class="room-info"><div class="room-name-row"><span class="room-name">'+name+'</span>'+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
+          '<div class="room-last">'+(r.lastMessage||t('chat_start_hint'))+'</div></div>'+
           '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'</div>';
         item.onclick=function(){openRoom(doc.id,name,photo,isGroup);};
         list.appendChild(item);
@@ -2893,20 +2958,20 @@ function renderDictList(){
 
 // ── UI 다국어 번역 ──────────────────────────────────────
 const UI_T={
-  ko:{plan_title:'플랜 선택',plan_status:'현재 {plan} · 이번 달 {used} 사용',plan_recommended:'추천',plan_upgrade_btn:'업그레이드하기',plan_cancel:'취소',plan_free:'무료',plan_upgrade_to:'{plan}로 업그레이드 — ${price}/월',plan_upgrade_cta:'🚀 플랜 업그레이드',lang_label:'내 언어',msg_placeholder:'메시지 입력...',profile_title:'내 프로필',profile_save:'저장',profile_lang_label:'기본 번역 언어',qr_title:'내 QR 코드',dict_title:'내 사전 📖',search_title:'검색',plan_light_desc:'월 1만~5만자 · 기본 글로벌 채팅',plan_biz_desc:'월 5만~10만자 · 활발한 글로벌 소통',plan_prem_desc:'월 10만~30만자 · 무한한 비즈니스',usage_premium_msg:'PREMIUM 플랜 — 30만자까지 사용할 수 있어요 🎉'},
-  en:{plan_title:'Select Plan',plan_status:'Current {plan} · Used {used} this month',plan_recommended:'Best',plan_upgrade_btn:'Upgrade',plan_cancel:'Cancel',plan_free:'Free',plan_upgrade_to:'Upgrade to {plan} — ${price}/mo',plan_upgrade_cta:'🚀 Upgrade Plan',lang_label:'My Language',msg_placeholder:'Type a message...',profile_title:'My Profile',profile_save:'Save',profile_lang_label:'Default Language',qr_title:'My QR Code',dict_title:'My Dictionary 📖',search_title:'Search',plan_light_desc:'10K~50K chars/mo · Basic global chat',plan_biz_desc:'50K~100K chars/mo · Active global comms',plan_prem_desc:'100K~300K chars/mo · Unlimited business',usage_premium_msg:'PREMIUM Plan — up to 300K chars 🎉'},
-  ja:{plan_title:'プラン選択',plan_status:'現在 {plan} · 今月 {used} 使用',plan_recommended:'おすすめ',plan_upgrade_btn:'アップグレード',plan_cancel:'キャンセル',plan_free:'無料',plan_upgrade_to:'{plan}にアップグレード — ${price}/月',plan_upgrade_cta:'🚀 プランアップグレード',lang_label:'マイ言語',msg_placeholder:'メッセージを入力...',profile_title:'マイプロフィール',profile_save:'保存',profile_lang_label:'デフォルト言語',qr_title:'マイQRコード',dict_title:'マイ辞書 📖',search_title:'検索',plan_light_desc:'月1万~5万字 · 基本グローバルチャット',plan_biz_desc:'月5万~10万字 · 活発なグローバル交流',plan_prem_desc:'月10万~30万字 · 無限ビジネス',usage_premium_msg:'PREMIUMプラン — 30万字まで 🎉'},
-  zh:{plan_title:'选择套餐',plan_status:'当前 {plan} · 本月使用 {used}',plan_recommended:'推荐',plan_upgrade_btn:'升级',plan_cancel:'取消',plan_free:'免费',plan_upgrade_to:'升级到{plan} — ${price}/月',plan_upgrade_cta:'🚀 升级套餐',lang_label:'我的语言',msg_placeholder:'输入消息...',profile_title:'我的资料',profile_save:'保存',profile_lang_label:'默认语言',qr_title:'我的二维码',dict_title:'我的词典 📖',search_title:'搜索',plan_light_desc:'每月1万~5万字 · 基础全球聊天',plan_biz_desc:'每月5万~10万字 · 活跃全球沟通',plan_prem_desc:'每月10万~30万字 · 无限商务',usage_premium_msg:'PREMIUM套餐 — 最多30万字 🎉'},
-  es:{plan_title:'Seleccionar Plan',plan_status:'Plan actual {plan} · {used} usados este mes',plan_recommended:'Recom.',plan_upgrade_btn:'Actualizar',plan_cancel:'Cancelar',plan_free:'Gratis',plan_upgrade_to:'Actualizar a {plan} — ${price}/mes',plan_upgrade_cta:'🚀 Actualizar Plan',lang_label:'Mi idioma',msg_placeholder:'Escribe un mensaje...',profile_title:'Mi perfil',profile_save:'Guardar',profile_lang_label:'Idioma predeterminado',qr_title:'Mi código QR',dict_title:'Mi diccionario 📖',search_title:'Buscar',plan_light_desc:'10K~50K chars/mes · Chat global básico',plan_biz_desc:'50K~100K chars/mes · Comunicación global activa',plan_prem_desc:'100K~300K chars/mes · Negocios ilimitados',usage_premium_msg:'Plan PREMIUM — hasta 300K chars 🎉'},
-  fr:{plan_title:'Choisir un plan',plan_status:'Plan actuel {plan} · {used} utilisés ce mois',plan_recommended:'Conseil.',plan_upgrade_btn:'Mettre à niveau',plan_cancel:'Annuler',plan_free:'Gratuit',plan_upgrade_to:'Passer à {plan} — ${price}/mois',plan_upgrade_cta:'🚀 Améliorer le plan',lang_label:'Ma langue',msg_placeholder:'Écrire un message...',profile_title:'Mon profil',profile_save:'Enregistrer',profile_lang_label:'Langue par défaut',qr_title:'Mon QR code',dict_title:'Mon dictionnaire 📖',search_title:'Rechercher',plan_light_desc:'10K~50K car/mois · Chat mondial de base',plan_biz_desc:'50K~100K car/mois · Communication mondiale active',plan_prem_desc:'100K~300K car/mois · Business illimité',usage_premium_msg:'Plan PREMIUM — jusqu\'à 300K car. 🎉'},
-  de:{plan_title:'Plan auswählen',plan_status:'Aktueller Plan {plan} · {used} genutzt',plan_recommended:'Empf.',plan_upgrade_btn:'Upgrade',plan_cancel:'Abbrechen',plan_free:'Kostenlos',plan_upgrade_to:'Upgrade auf {plan} — ${price}/Monat',plan_upgrade_cta:'🚀 Plan upgraden',lang_label:'Meine Sprache',msg_placeholder:'Nachricht eingeben...',profile_title:'Mein Profil',profile_save:'Speichern',profile_lang_label:'Standardsprache',qr_title:'Mein QR-Code',dict_title:'Mein Wörterbuch 📖',search_title:'Suchen',plan_light_desc:'10K~50K Zeichen/Mo. · Basis-Globalchat',plan_biz_desc:'50K~100K Zeichen/Mo. · Aktive Kommunikation',plan_prem_desc:'100K~300K Zeichen/Mo. · Unbegrenztes Business',usage_premium_msg:'PREMIUM-Plan — bis zu 300K Zeichen 🎉'},
-  vi:{plan_title:'Chọn gói',plan_status:'Gói hiện tại {plan} · Đã dùng {used} tháng này',plan_recommended:'Đề xuất',plan_upgrade_btn:'Nâng cấp',plan_cancel:'Hủy',plan_free:'Miễn phí',plan_upgrade_to:'Nâng cấp lên {plan} — ${price}/tháng',plan_upgrade_cta:'🚀 Nâng cấp gói',lang_label:'Ngôn ngữ của tôi',msg_placeholder:'Nhập tin nhắn...',profile_title:'Hồ sơ của tôi',profile_save:'Lưu',profile_lang_label:'Ngôn ngữ mặc định',qr_title:'Mã QR của tôi',dict_title:'Từ điển của tôi 📖',search_title:'Tìm kiếm',plan_light_desc:'10K~50K ký tự/tháng · Chat toàn cầu cơ bản',plan_biz_desc:'50K~100K ký tự/tháng · Giao tiếp toàn cầu tích cực',plan_prem_desc:'100K~300K ký tự/tháng · Kinh doanh không giới hạn',usage_premium_msg:'Gói PREMIUM — tối đa 300K ký tự 🎉'},
-  th:{plan_title:'เลือกแผน',plan_status:'แผนปัจจุบัน {plan} · ใช้ไป {used} เดือนนี้',plan_recommended:'แนะนำ',plan_upgrade_btn:'อัปเกรด',plan_cancel:'ยกเลิก',plan_free:'ฟรี',plan_upgrade_to:'อัปเกรดเป็น {plan} — ${price}/เดือน',plan_upgrade_cta:'🚀 อัปเกรดแผน',lang_label:'ภาษาของฉัน',msg_placeholder:'พิมพ์ข้อความ...',profile_title:'โปรไฟล์ของฉัน',profile_save:'บันทึก',profile_lang_label:'ภาษาเริ่มต้น',qr_title:'QR โค้ดของฉัน',dict_title:'พจนานุกรมของฉัน 📖',search_title:'ค้นหา',plan_light_desc:'10,000~50,000 ตัว/เดือน · แชทโลกพื้นฐาน',plan_biz_desc:'50,000~100,000 ตัว/เดือน · สื่อสารโลกกว้าง',plan_prem_desc:'100,000~300,000 ตัว/เดือน · ธุรกิจไม่จำกัด',usage_premium_msg:'แผน PREMIUM — สูงสุด 300,000 ตัว 🎉'},
-  mn:{plan_title:'Төлөвлөгөө сонгох',plan_status:'Одоогийн {plan} · Энэ сард {used} ашигласан',plan_recommended:'Санал',plan_upgrade_btn:'Шинэчлэх',plan_cancel:'Цуцлах',plan_free:'Үнэгүй',plan_upgrade_to:'{plan} руу шинэчлэх — ${price}/сар',plan_upgrade_cta:'🚀 Шинэчлэх',lang_label:'Миний хэл',msg_placeholder:'Мессеж бичих...',profile_title:'Миний профайл',profile_save:'Хадгалах',profile_lang_label:'Үндсэн хэл',qr_title:'Миний QR код',dict_title:'Миний толь бичиг 📖',search_title:'Хайх',plan_light_desc:'10К~50К тэмдэгт/сар · Үндсэн дэлхийн чат',plan_biz_desc:'50К~100К тэмдэгт/сар · Идэвхтэй харилцаа',plan_prem_desc:'100К~300К тэмдэгт/сар · Хязгааргүй бизнес',usage_premium_msg:'PREMIUM төлөвлөгөө — 300К тэмдэгт хүртэл 🎉'},
-  hi:{plan_title:'प्लान चुनें',plan_status:'वर्तमान {plan} · इस महीने {used} उपयोग',plan_recommended:'सुझाव',plan_upgrade_btn:'अपग्रेड करें',plan_cancel:'रद्द करें',plan_free:'मुफ़्त',plan_upgrade_to:'{plan} में अपग्रेड करें — ${price}/माह',plan_upgrade_cta:'🚀 प्लान अपग्रेड करें',lang_label:'मेरी भाषा',msg_placeholder:'संदेश लिखें...',profile_title:'मेरी प्रोफाइल',profile_save:'सहेजें',profile_lang_label:'डिफ़ॉल्ट भाषा',qr_title:'मेरा QR कोड',dict_title:'मेरा शब्दकोश 📖',search_title:'खोजें',plan_light_desc:'10,000~50,000 अक्षर/माह · बेसिक ग्लोबल चैट',plan_biz_desc:'50,000~100,000 अक्षर/माह · सक्रिय वैश्विक संचार',plan_prem_desc:'100,000~300,000 अक्षर/माह · असीमित व्यापार',usage_premium_msg:'PREMIUM प्लान — 300,000 अक्षर तक 🎉'},
-  pt:{plan_title:'Selecionar Plano',plan_status:'Plano atual {plan} · {used} usados este mês',plan_recommended:'Recom.',plan_upgrade_btn:'Atualizar',plan_cancel:'Cancelar',plan_free:'Grátis',plan_upgrade_to:'Atualizar para {plan} — ${price}/mês',plan_upgrade_cta:'🚀 Atualizar Plano',lang_label:'Meu idioma',msg_placeholder:'Digite uma mensagem...',profile_title:'Meu perfil',profile_save:'Salvar',profile_lang_label:'Idioma padrão',qr_title:'Meu QR code',dict_title:'Meu dicionário 📖',search_title:'Pesquisar',plan_light_desc:'10K~50K chars/mês · Chat global básico',plan_biz_desc:'50K~100K chars/mês · Comunicação global ativa',plan_prem_desc:'100K~300K chars/mês · Negócios ilimitados',usage_premium_msg:'Plano PREMIUM — até 300K chars 🎉'},
-  ar:{plan_title:'اختر خطة',plan_status:'الخطة الحالية {plan} · استخدمت {used} هذا الشهر',plan_recommended:'مُوصى',plan_upgrade_btn:'ترقية',plan_cancel:'إلغاء',plan_free:'مجاني',plan_upgrade_to:'الترقية إلى {plan} — ${price}/شهر',plan_upgrade_cta:'🚀 ترقية الخطة',lang_label:'لغتي',msg_placeholder:'اكتب رسالة...',profile_title:'ملفي الشخصي',profile_save:'حفظ',profile_lang_label:'اللغة الافتراضية',qr_title:'رمز QR الخاص بي',dict_title:'قاموسي 📖',search_title:'بحث',plan_light_desc:'10K~50K حرف/شهر · دردشة عالمية أساسية',plan_biz_desc:'50K~100K حرف/شهر · تواصل عالمي نشط',plan_prem_desc:'100K~300K حرف/شهر · أعمال غير محدودة',usage_premium_msg:'خطة PREMIUM — حتى 300K حرف 🎉'},
-  id:{plan_title:'Pilih Paket',plan_status:'Paket saat ini {plan} · {used} digunakan bulan ini',plan_recommended:'Rekomendasi',plan_upgrade_btn:'Upgrade',plan_cancel:'Batal',plan_free:'Gratis',plan_upgrade_to:'Upgrade ke {plan} — ${price}/bln',plan_upgrade_cta:'🚀 Upgrade Paket',lang_label:'Bahasa saya',msg_placeholder:'Ketik pesan...',profile_title:'Profil saya',profile_save:'Simpan',profile_lang_label:'Bahasa default',qr_title:'Kode QR saya',dict_title:'Kamus saya 📖',search_title:'Cari',plan_light_desc:'10K~50K karakter/bln · Chat global dasar',plan_biz_desc:'50K~100K karakter/bln · Komunikasi global aktif',plan_prem_desc:'100K~300K karakter/bln · Bisnis tanpa batas',usage_premium_msg:'Paket PREMIUM — hingga 300K karakter 🎉'},
+  ko:{plan_title:'플랜 선택',plan_status:'현재 {plan} · 이번 달 {used} 사용',plan_recommended:'추천',plan_upgrade_btn:'업그레이드하기',plan_cancel:'취소',plan_free:'무료',plan_upgrade_to:'{plan}로 업그레이드 — ${price}/월',plan_upgrade_cta:'🚀 플랜 업그레이드',lang_label:'내 언어',msg_placeholder:'메시지 입력...',profile_title:'내 프로필',profile_save:'저장',profile_lang_label:'기본 번역 언어',qr_title:'내 QR 코드',dict_title:'내 사전 📖',search_title:'검색',plan_light_desc:'월 1만~5만자 · 기본 글로벌 채팅',plan_biz_desc:'월 5만~10만자 · 활발한 글로벌 소통',plan_prem_desc:'월 10만~30만자 · 무한한 비즈니스',usage_premium_msg:'PREMIUM 플랜 — 30만자까지 사용할 수 있어요 🎉',tab_chats:'채팅',tab_friends:'친구',tab_discover:'탐색',tab_settings:'설정',chats_loading:'불러오는 중...',chats_empty_title:'채팅방이 없어요',chats_empty_desc:'+ 버튼으로 만들어보세요!',chats_unread_count:'{n}개 안읽은 대화',chats_room_count:'{n}개 채팅방',chat_start_hint:'대화를 시작해보세요',chat_default_room_name:'채팅방',guest_badge:'게스트',welcome_toast:'환영해요 @{id} 🥟',ui_lang_changed_toast:'화면 언어가 변경됐어요!',profile_ui_lang_section:'화면 언어',profile_ui_lang_row:'앱 화면 표시 언어'},
+  en:{plan_title:'Select Plan',plan_status:'Current {plan} · Used {used} this month',plan_recommended:'Best',plan_upgrade_btn:'Upgrade',plan_cancel:'Cancel',plan_free:'Free',plan_upgrade_to:'Upgrade to {plan} — ${price}/mo',plan_upgrade_cta:'🚀 Upgrade Plan',lang_label:'My Language',msg_placeholder:'Type a message...',profile_title:'My Profile',profile_save:'Save',profile_lang_label:'Default Language',qr_title:'My QR Code',dict_title:'My Dictionary 📖',search_title:'Search',plan_light_desc:'10K~50K chars/mo · Basic global chat',plan_biz_desc:'50K~100K chars/mo · Active global comms',plan_prem_desc:'100K~300K chars/mo · Unlimited business',usage_premium_msg:'PREMIUM Plan — up to 300K chars 🎉',tab_chats:'Chats',tab_friends:'Friends',tab_discover:'Discover',tab_settings:'Settings',chats_loading:'Loading...',chats_empty_title:'No chats yet',chats_empty_desc:'Tap + to start one!',chats_unread_count:'{n} unread',chats_room_count:'{n} chats',chat_start_hint:'Start the conversation',chat_default_room_name:'Chat',guest_badge:'Guest',welcome_toast:'Welcome @{id} 🥟',ui_lang_changed_toast:'Display language changed!',profile_ui_lang_section:'Display Language',profile_ui_lang_row:'App display language'},
+  ja:{plan_title:'プラン選択',plan_status:'現在 {plan} · 今月 {used} 使用',plan_recommended:'おすすめ',plan_upgrade_btn:'アップグレード',plan_cancel:'キャンセル',plan_free:'無料',plan_upgrade_to:'{plan}にアップグレード — ${price}/月',plan_upgrade_cta:'🚀 プランアップグレード',lang_label:'マイ言語',msg_placeholder:'メッセージを入力...',profile_title:'マイプロフィール',profile_save:'保存',profile_lang_label:'デフォルト言語',qr_title:'マイQRコード',dict_title:'マイ辞書 📖',search_title:'検索',plan_light_desc:'月1万~5万字 · 基本グローバルチャット',plan_biz_desc:'月5万~10万字 · 活発なグローバル交流',plan_prem_desc:'月10万~30万字 · 無限ビジネス',usage_premium_msg:'PREMIUMプラン — 30万字まで 🎉',tab_chats:'チャット',tab_friends:'友達',tab_discover:'発見',tab_settings:'設定',chats_loading:'読み込み中...',chats_empty_title:'チャットがありません',chats_empty_desc:'+ボタンで作成しましょう！',chats_unread_count:'未読{n}件',chats_room_count:'チャット{n}件',chat_start_hint:'会話を始めましょう',chat_default_room_name:'チャット',guest_badge:'ゲスト',welcome_toast:'ようこそ @{id} 🥟',ui_lang_changed_toast:'表示言語が変更されました！',profile_ui_lang_section:'表示言語',profile_ui_lang_row:'アプリ表示言語'},
+  zh:{plan_title:'选择套餐',plan_status:'当前 {plan} · 本月使用 {used}',plan_recommended:'推荐',plan_upgrade_btn:'升级',plan_cancel:'取消',plan_free:'免费',plan_upgrade_to:'升级到{plan} — ${price}/月',plan_upgrade_cta:'🚀 升级套餐',lang_label:'我的语言',msg_placeholder:'输入消息...',profile_title:'我的资料',profile_save:'保存',profile_lang_label:'默认语言',qr_title:'我的二维码',dict_title:'我的词典 📖',search_title:'搜索',plan_light_desc:'每月1万~5万字 · 基础全球聊天',plan_biz_desc:'每月5万~10万字 · 活跃全球沟通',plan_prem_desc:'每月10万~30万字 · 无限商务',usage_premium_msg:'PREMIUM套餐 — 最多30万字 🎉',tab_chats:'聊天',tab_friends:'好友',tab_discover:'发现',tab_settings:'设置',chats_loading:'加载中...',chats_empty_title:'还没有聊天',chats_empty_desc:'点击 + 开始新聊天！',chats_unread_count:'{n}条未读',chats_room_count:'{n}个聊天',chat_start_hint:'开始对话吧',chat_default_room_name:'聊天',guest_badge:'访客',welcome_toast:'欢迎 @{id} 🥟',ui_lang_changed_toast:'显示语言已更改！',profile_ui_lang_section:'显示语言',profile_ui_lang_row:'应用显示语言'},
+  es:{plan_title:'Seleccionar Plan',plan_status:'Plan actual {plan} · {used} usados este mes',plan_recommended:'Recom.',plan_upgrade_btn:'Actualizar',plan_cancel:'Cancelar',plan_free:'Gratis',plan_upgrade_to:'Actualizar a {plan} — ${price}/mes',plan_upgrade_cta:'🚀 Actualizar Plan',lang_label:'Mi idioma',msg_placeholder:'Escribe un mensaje...',profile_title:'Mi perfil',profile_save:'Guardar',profile_lang_label:'Idioma predeterminado',qr_title:'Mi código QR',dict_title:'Mi diccionario 📖',search_title:'Buscar',plan_light_desc:'10K~50K chars/mes · Chat global básico',plan_biz_desc:'50K~100K chars/mes · Comunicación global activa',plan_prem_desc:'100K~300K chars/mes · Negocios ilimitados',usage_premium_msg:'Plan PREMIUM — hasta 300K chars 🎉',tab_chats:'Chats',tab_friends:'Amigos',tab_discover:'Descubrir',tab_settings:'Ajustes',chats_loading:'Cargando...',chats_empty_title:'Aún no hay chats',chats_empty_desc:'¡Toca + para empezar!',chats_unread_count:'{n} sin leer',chats_room_count:'{n} chats',chat_start_hint:'Inicia la conversación',chat_default_room_name:'Chat',guest_badge:'Invitado',welcome_toast:'¡Bienvenido @{id} 🥟',ui_lang_changed_toast:'¡Idioma de la app cambiado!',profile_ui_lang_section:'Idioma de la app',profile_ui_lang_row:'Idioma de visualización de la app'},
+  fr:{plan_title:'Choisir un plan',plan_status:'Plan actuel {plan} · {used} utilisés ce mois',plan_recommended:'Conseil.',plan_upgrade_btn:'Mettre à niveau',plan_cancel:'Annuler',plan_free:'Gratuit',plan_upgrade_to:'Passer à {plan} — ${price}/mois',plan_upgrade_cta:'🚀 Améliorer le plan',lang_label:'Ma langue',msg_placeholder:'Écrire un message...',profile_title:'Mon profil',profile_save:'Enregistrer',profile_lang_label:'Langue par défaut',qr_title:'Mon QR code',dict_title:'Mon dictionnaire 📖',search_title:'Rechercher',plan_light_desc:'10K~50K car/mois · Chat mondial de base',plan_biz_desc:'50K~100K car/mois · Communication mondiale active',plan_prem_desc:'100K~300K car/mois · Business illimité',usage_premium_msg:'Plan PREMIUM — jusqu\'à 300K car. 🎉',tab_chats:'Discussions',tab_friends:'Amis',tab_discover:'Découvrir',tab_settings:'Réglages',chats_loading:'Chargement...',chats_empty_title:'Aucune discussion',chats_empty_desc:'Appuyez sur + pour commencer !',chats_unread_count:'{n} non lus',chats_room_count:'{n} discussions',chat_start_hint:'Démarrez la conversation',chat_default_room_name:'Discussion',guest_badge:'Invité',welcome_toast:'Bienvenue @{id} 🥟',ui_lang_changed_toast:'Langue de l\'app changée !',profile_ui_lang_section:'Langue de l\'app',profile_ui_lang_row:'Langue d\'affichage de l\'app'},
+  de:{plan_title:'Plan auswählen',plan_status:'Aktueller Plan {plan} · {used} genutzt',plan_recommended:'Empf.',plan_upgrade_btn:'Upgrade',plan_cancel:'Abbrechen',plan_free:'Kostenlos',plan_upgrade_to:'Upgrade auf {plan} — ${price}/Monat',plan_upgrade_cta:'🚀 Plan upgraden',lang_label:'Meine Sprache',msg_placeholder:'Nachricht eingeben...',profile_title:'Mein Profil',profile_save:'Speichern',profile_lang_label:'Standardsprache',qr_title:'Mein QR-Code',dict_title:'Mein Wörterbuch 📖',search_title:'Suchen',plan_light_desc:'10K~50K Zeichen/Mo. · Basis-Globalchat',plan_biz_desc:'50K~100K Zeichen/Mo. · Aktive Kommunikation',plan_prem_desc:'100K~300K Zeichen/Mo. · Unbegrenztes Business',usage_premium_msg:'PREMIUM-Plan — bis zu 300K Zeichen 🎉',tab_chats:'Chats',tab_friends:'Freunde',tab_discover:'Entdecken',tab_settings:'Einstellungen',chats_loading:'Wird geladen...',chats_empty_title:'Noch keine Chats',chats_empty_desc:'Tippe auf +, um loszulegen!',chats_unread_count:'{n} ungelesen',chats_room_count:'{n} Chats',chat_start_hint:'Starte die Unterhaltung',chat_default_room_name:'Chat',guest_badge:'Gast',welcome_toast:'Willkommen @{id} 🥟',ui_lang_changed_toast:'App-Sprache geändert!',profile_ui_lang_section:'App-Sprache',profile_ui_lang_row:'Anzeigesprache der App'},
+  vi:{plan_title:'Chọn gói',plan_status:'Gói hiện tại {plan} · Đã dùng {used} tháng này',plan_recommended:'Đề xuất',plan_upgrade_btn:'Nâng cấp',plan_cancel:'Hủy',plan_free:'Miễn phí',plan_upgrade_to:'Nâng cấp lên {plan} — ${price}/tháng',plan_upgrade_cta:'🚀 Nâng cấp gói',lang_label:'Ngôn ngữ của tôi',msg_placeholder:'Nhập tin nhắn...',profile_title:'Hồ sơ của tôi',profile_save:'Lưu',profile_lang_label:'Ngôn ngữ mặc định',qr_title:'Mã QR của tôi',dict_title:'Từ điển của tôi 📖',search_title:'Tìm kiếm',plan_light_desc:'10K~50K ký tự/tháng · Chat toàn cầu cơ bản',plan_biz_desc:'50K~100K ký tự/tháng · Giao tiếp toàn cầu tích cực',plan_prem_desc:'100K~300K ký tự/tháng · Kinh doanh không giới hạn',usage_premium_msg:'Gói PREMIUM — tối đa 300K ký tự 🎉',tab_chats:'Trò chuyện',tab_friends:'Bạn bè',tab_discover:'Khám phá',tab_settings:'Cài đặt',chats_loading:'Đang tải...',chats_empty_title:'Chưa có cuộc trò chuyện',chats_empty_desc:'Nhấn + để bắt đầu!',chats_unread_count:'{n} chưa đọc',chats_room_count:'{n} cuộc trò chuyện',chat_start_hint:'Bắt đầu cuộc trò chuyện',chat_default_room_name:'Trò chuyện',guest_badge:'Khách',welcome_toast:'Chào mừng @{id} 🥟',ui_lang_changed_toast:'Đã đổi ngôn ngữ hiển thị!',profile_ui_lang_section:'Ngôn ngữ hiển thị',profile_ui_lang_row:'Ngôn ngữ hiển thị ứng dụng'},
+  th:{plan_title:'เลือกแผน',plan_status:'แผนปัจจุบัน {plan} · ใช้ไป {used} เดือนนี้',plan_recommended:'แนะนำ',plan_upgrade_btn:'อัปเกรด',plan_cancel:'ยกเลิก',plan_free:'ฟรี',plan_upgrade_to:'อัปเกรดเป็น {plan} — ${price}/เดือน',plan_upgrade_cta:'🚀 อัปเกรดแผน',lang_label:'ภาษาของฉัน',msg_placeholder:'พิมพ์ข้อความ...',profile_title:'โปรไฟล์ของฉัน',profile_save:'บันทึก',profile_lang_label:'ภาษาเริ่มต้น',qr_title:'QR โค้ดของฉัน',dict_title:'พจนานุกรมของฉัน 📖',search_title:'ค้นหา',plan_light_desc:'10,000~50,000 ตัว/เดือน · แชทโลกพื้นฐาน',plan_biz_desc:'50,000~100,000 ตัว/เดือน · สื่อสารโลกกว้าง',plan_prem_desc:'100,000~300,000 ตัว/เดือน · ธุรกิจไม่จำกัด',usage_premium_msg:'แผน PREMIUM — สูงสุด 300,000 ตัว 🎉',tab_chats:'แชท',tab_friends:'เพื่อน',tab_discover:'ค้นพบ',tab_settings:'ตั้งค่า',chats_loading:'กำลังโหลด...',chats_empty_title:'ยังไม่มีแชท',chats_empty_desc:'แตะ + เพื่อเริ่มแชท!',chats_unread_count:'ยังไม่อ่าน {n} รายการ',chats_room_count:'{n} แชท',chat_start_hint:'เริ่มการสนทนา',chat_default_room_name:'แชท',guest_badge:'แขก',welcome_toast:'ยินดีต้อนรับ @{id} 🥟',ui_lang_changed_toast:'เปลี่ยนภาษาที่แสดงแล้ว!',profile_ui_lang_section:'ภาษาที่แสดง',profile_ui_lang_row:'ภาษาที่แสดงในแอป'},
+  mn:{plan_title:'Төлөвлөгөө сонгох',plan_status:'Одоогийн {plan} · Энэ сард {used} ашигласан',plan_recommended:'Санал',plan_upgrade_btn:'Шинэчлэх',plan_cancel:'Цуцлах',plan_free:'Үнэгүй',plan_upgrade_to:'{plan} руу шинэчлэх — ${price}/сар',plan_upgrade_cta:'🚀 Шинэчлэх',lang_label:'Миний хэл',msg_placeholder:'Мессеж бичих...',profile_title:'Миний профайл',profile_save:'Хадгалах',profile_lang_label:'Үндсэн хэл',qr_title:'Миний QR код',dict_title:'Миний толь бичиг 📖',search_title:'Хайх',plan_light_desc:'10К~50К тэмдэгт/сар · Үндсэн дэлхийн чат',plan_biz_desc:'50К~100К тэмдэгт/сар · Идэвхтэй харилцаа',plan_prem_desc:'100К~300К тэмдэгт/сар · Хязгааргүй бизнес',usage_premium_msg:'PREMIUM төлөвлөгөө — 300К тэмдэгт хүртэл 🎉',tab_chats:'Чат',tab_friends:'Найзууд',tab_discover:'Нээх',tab_settings:'Тохиргоо',chats_loading:'Ачааллаж байна...',chats_empty_title:'Одоогоор чат байхгүй байна',chats_empty_desc:'+ товчийг дарж эхлүүлээрэй!',chats_unread_count:'{n} уншаагүй',chats_room_count:'{n} чат',chat_start_hint:'Ярилцлагаа эхлүүлээрэй',chat_default_room_name:'Чат',guest_badge:'Зочин',welcome_toast:'Тавтай морил @{id} 🥟',ui_lang_changed_toast:'Дэлгэцийн хэл өөрчлөгдлөө!',profile_ui_lang_section:'Дэлгэцийн хэл',profile_ui_lang_row:'Аппын дэлгэцийн хэл'},
+  hi:{plan_title:'प्लान चुनें',plan_status:'वर्तमान {plan} · इस महीने {used} उपयोग',plan_recommended:'सुझाव',plan_upgrade_btn:'अपग्रेड करें',plan_cancel:'रद्द करें',plan_free:'मुफ़्त',plan_upgrade_to:'{plan} में अपग्रेड करें — ${price}/माह',plan_upgrade_cta:'🚀 प्लान अपग्रेड करें',lang_label:'मेरी भाषा',msg_placeholder:'संदेश लिखें...',profile_title:'मेरी प्रोफाइल',profile_save:'सहेजें',profile_lang_label:'डिफ़ॉल्ट भाषा',qr_title:'मेरा QR कोड',dict_title:'मेरा शब्दकोश 📖',search_title:'खोजें',plan_light_desc:'10,000~50,000 अक्षर/माह · बेसिक ग्लोबल चैट',plan_biz_desc:'50,000~100,000 अक्षर/माह · सक्रिय वैश्विक संचार',plan_prem_desc:'100,000~300,000 अक्षर/माह · असीमित व्यापार',usage_premium_msg:'PREMIUM प्लान — 300,000 अक्षर तक 🎉',tab_chats:'चैट',tab_friends:'मित्र',tab_discover:'खोजें',tab_settings:'सेटिंग्स',chats_loading:'लोड हो रहा है...',chats_empty_title:'अभी कोई चैट नहीं',chats_empty_desc:'शुरू करने के लिए + दबाएं!',chats_unread_count:'{n} अपठित',chats_room_count:'{n} चैट',chat_start_hint:'बातचीत शुरू करें',chat_default_room_name:'चैट',guest_badge:'अतिथि',welcome_toast:'स्वागत है @{id} 🥟',ui_lang_changed_toast:'डिस्प्ले भाषा बदल गई!',profile_ui_lang_section:'डिस्प्ले भाषा',profile_ui_lang_row:'ऐप डिस्प्ले भाषा'},
+  pt:{plan_title:'Selecionar Plano',plan_status:'Plano atual {plan} · {used} usados este mês',plan_recommended:'Recom.',plan_upgrade_btn:'Atualizar',plan_cancel:'Cancelar',plan_free:'Grátis',plan_upgrade_to:'Atualizar para {plan} — ${price}/mês',plan_upgrade_cta:'🚀 Atualizar Plano',lang_label:'Meu idioma',msg_placeholder:'Digite uma mensagem...',profile_title:'Meu perfil',profile_save:'Salvar',profile_lang_label:'Idioma padrão',qr_title:'Meu QR code',dict_title:'Meu dicionário 📖',search_title:'Pesquisar',plan_light_desc:'10K~50K chars/mês · Chat global básico',plan_biz_desc:'50K~100K chars/mês · Comunicação global ativa',plan_prem_desc:'100K~300K chars/mês · Negócios ilimitados',usage_premium_msg:'Plano PREMIUM — até 300K chars 🎉',tab_chats:'Conversas',tab_friends:'Amigos',tab_discover:'Descobrir',tab_settings:'Configurações',chats_loading:'Carregando...',chats_empty_title:'Ainda não há conversas',chats_empty_desc:'Toque em + para começar!',chats_unread_count:'{n} não lidas',chats_room_count:'{n} conversas',chat_start_hint:'Comece a conversa',chat_default_room_name:'Conversa',guest_badge:'Convidado',welcome_toast:'Bem-vindo @{id} 🥟',ui_lang_changed_toast:'Idioma do app alterado!',profile_ui_lang_section:'Idioma do app',profile_ui_lang_row:'Idioma de exibição do app'},
+  ar:{plan_title:'اختر خطة',plan_status:'الخطة الحالية {plan} · استخدمت {used} هذا الشهر',plan_recommended:'مُوصى',plan_upgrade_btn:'ترقية',plan_cancel:'إلغاء',plan_free:'مجاني',plan_upgrade_to:'الترقية إلى {plan} — ${price}/شهر',plan_upgrade_cta:'🚀 ترقية الخطة',lang_label:'لغتي',msg_placeholder:'اكتب رسالة...',profile_title:'ملفي الشخصي',profile_save:'حفظ',profile_lang_label:'اللغة الافتراضية',qr_title:'رمز QR الخاص بي',dict_title:'قاموسي 📖',search_title:'بحث',plan_light_desc:'10K~50K حرف/شهر · دردشة عالمية أساسية',plan_biz_desc:'50K~100K حرف/شهر · تواصل عالمي نشط',plan_prem_desc:'100K~300K حرف/شهر · أعمال غير محدودة',usage_premium_msg:'خطة PREMIUM — حتى 300K حرف 🎉',tab_chats:'الدردشات',tab_friends:'الأصدقاء',tab_discover:'اكتشف',tab_settings:'الإعدادات',chats_loading:'جارٍ التحميل...',chats_empty_title:'لا توجد محادثات بعد',chats_empty_desc:'اضغط على + للبدء!',chats_unread_count:'{n} غير مقروءة',chats_room_count:'{n} محادثة',chat_start_hint:'ابدأ المحادثة',chat_default_room_name:'محادثة',guest_badge:'ضيف',welcome_toast:'مرحباً @{id} 🥟',ui_lang_changed_toast:'تم تغيير لغة العرض!',profile_ui_lang_section:'لغة العرض',profile_ui_lang_row:'لغة عرض التطبيق'},
+  id:{plan_title:'Pilih Paket',plan_status:'Paket saat ini {plan} · {used} digunakan bulan ini',plan_recommended:'Rekomendasi',plan_upgrade_btn:'Upgrade',plan_cancel:'Batal',plan_free:'Gratis',plan_upgrade_to:'Upgrade ke {plan} — ${price}/bln',plan_upgrade_cta:'🚀 Upgrade Paket',lang_label:'Bahasa saya',msg_placeholder:'Ketik pesan...',profile_title:'Profil saya',profile_save:'Simpan',profile_lang_label:'Bahasa default',qr_title:'Kode QR saya',dict_title:'Kamus saya 📖',search_title:'Cari',plan_light_desc:'10K~50K karakter/bln · Chat global dasar',plan_biz_desc:'50K~100K karakter/bln · Komunikasi global aktif',plan_prem_desc:'100K~300K karakter/bln · Bisnis tanpa batas',usage_premium_msg:'Paket PREMIUM — hingga 300K karakter 🎉',tab_chats:'Obrolan',tab_friends:'Teman',tab_discover:'Jelajahi',tab_settings:'Pengaturan',chats_loading:'Memuat...',chats_empty_title:'Belum ada obrolan',chats_empty_desc:'Ketuk + untuk memulai!',chats_unread_count:'{n} belum dibaca',chats_room_count:'{n} obrolan',chat_start_hint:'Mulai percakapan',chat_default_room_name:'Obrolan',guest_badge:'Tamu',welcome_toast:'Selamat datang @{id} 🥟',ui_lang_changed_toast:'Bahasa tampilan diubah!',profile_ui_lang_section:'Bahasa tampilan',profile_ui_lang_row:'Bahasa tampilan aplikasi'},
 };
 
 let _uiLang='ko';
@@ -2930,10 +2995,20 @@ function applyUILanguage(lang){
   const prSave=document.querySelector('#profile-screen .pe-save-btn');if(prSave)prSave.textContent=T.profile_save;
   const prLangLbl=document.getElementById('profile-lang-row-lbl');if(prLangLbl)prLangLbl.textContent=T.profile_lang_label;
   const prLangSec=document.getElementById('profile-lang-section-lbl');if(prLangSec)prLangSec.textContent=T.profile_lang_label;
+  const prUiLangSec=document.getElementById('profile-ui-lang-section-lbl');if(prUiLangSec)prUiLangSec.textContent=T.profile_ui_lang_section;
+  const prUiLangRow=document.getElementById('profile-ui-lang-row-lbl');if(prUiLangRow)prUiLangRow.textContent=T.profile_ui_lang_row;
   // Sheet titles
   const qrTitle=document.querySelector('#qr-sheet .sheet-title');if(qrTitle)qrTitle.textContent=T.qr_title;
   const dictTitle=document.querySelector('#dict-sheet .sheet-title');if(dictTitle)dictTitle.textContent=T.dict_title;
   const searchTitle=document.querySelector('#search-sheet .sheet-title');if(searchTitle)searchTitle.textContent=T.search_title;
+  // 하단 탭
+  const tc=document.getElementById('tab-chats-label');if(tc)tc.textContent=T.tab_chats;
+  const tf=document.getElementById('tab-friends-label');if(tf)tf.textContent=T.tab_friends;
+  const td=document.getElementById('tab-discover-label');if(td)td.textContent=T.tab_discover;
+  const ts=document.getElementById('tab-settings-label');if(ts)ts.textContent=T.tab_settings;
+  // 채팅목록 헤더
+  const ct=document.getElementById('chats-title');if(ct)ct.textContent=T.tab_chats;
+  if(typeof loadRooms==='function'&&currentUser)loadRooms();
 }
 
 // ── 사용량 UI 렌더 ──────────────────────────────────────
