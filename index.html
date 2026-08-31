@@ -2644,7 +2644,18 @@ async function sendMessage(){
   others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
   await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
   markRead(currentRoomId);
+  sendPushNotification(others,text);
   if(isGuest)checkGuestUpgrade();
+}
+
+function sendPushNotification(toUids,body){
+  if(!toUids||toUids.length===0)return;
+  const senderName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
+  fetch('https://mandu-server.onrender.com/api/notify',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({toUids:toUids,roomId:currentRoomId,senderName:senderName,body:body})
+  }).catch(function(e){console.warn('푸시 알림 전송 실패:',e);});
 }
 
 async function sendFile(input){
@@ -2670,6 +2681,7 @@ async function sendFile(input){
     others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('파일 전송 완료!');
+    sendPushNotification(others,'📎 '+file.name);
   }catch(e){showToast('업로드 실패. 다시 시도해요');}
   input.value='';
 }
