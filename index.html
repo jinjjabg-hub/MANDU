@@ -1250,7 +1250,7 @@ try{if(firebase.messaging.isSupported())messaging=firebase.messaging();}catch(e)
 
 let currentUser=null,currentRoomId=null,currentRoomMembers=[];
 let unsubMsg=null,unsubRoom=null,lastMyMsgWrap=null;
-let heartbeatInterval=null,selectedUsers=[],allUsers=[],usersMap={};
+let heartbeatInterval=null,selectedUsers=[],allUsers=[],usersMap={},myContactUids=new Set();
 let currentTab='chats',isGuest=false,guestMsgCount=0,hostUID=null;
 let currentManduid=null; // ← 새로 추가
 let _pendingNewUser=null; // ← 최초 로그인 언어선택 대기용
@@ -2303,10 +2303,26 @@ function loadRooms(){
         const at=a.data().lastMessageTime,bt=b.data().lastMessageTime;
         if(!at)return 1;if(!bt)return -1;return bt.toMillis()-at.toMillis();
       });
+      // 실제로 대화해본 상대방 uid만 추려서 "친구" 탭에 반영 (전체 가입자 노출 방지)
+      myContactUids=new Set();
+      docs.forEach(function(doc){
+        (doc.data().members||[]).forEach(function(uid){
+          if(uid!==currentUser.uid)myContactUids.add(uid);
+        });
+      });
+      if(typeof renderUserList==='function'){
+        const kw=document.getElementById('friend-search')?document.getElementById('friend-search').value:'';
+        renderUserList(kw);
+      }
       const unread=docs.filter(function(d){
         const r=d.data();const rb=r.readBy||{};const mr=rb[currentUser.uid];
         return r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
       }).length;
+      // 앱 아이콘 뱃지 갱신 (지원 브라우저에서만 — iOS 16.4+ 홈화면 설치 앱, 데스크톱 Chrome/Edge)
+      if('setAppBadge' in navigator){
+        if(unread>0)navigator.setAppBadge(unread).catch(function(){});
+        else navigator.clearAppBadge().catch(function(){});
+      }
       sub.textContent=unread>0?t('chats_unread_count').replace('{n}',unread):t('chats_room_count').replace('{n}',docs.length);
       docs.forEach(function(doc){
         const r=doc.data();
@@ -2343,14 +2359,15 @@ function loadUsers(){
 function renderUserList(keyword){
   const list=document.getElementById('user-list');
   const q=(keyword||'').trim().toLowerCase();
+  const contacts=allUsers.filter(function(u){return myContactUids.has(u.uid);});
   const filtered=q
-    ?allUsers.filter(function(u){
+    ?contacts.filter(function(u){
         return (u.displayName||'').toLowerCase().includes(q)||
                (u.manduid||'').toLowerCase().includes(q.replace('@',''));
       })
-    :allUsers;
+    :contacts;
   list.innerHTML='';
-  if(allUsers.length===0){
+  if(contacts.length===0){
     list.innerHTML='<div class="empty-state"><div class="empty-emoji">🥟</div><div class="empty-title">'+t('friends_empty_title')+'</div><div class="empty-desc">'+t('friends_empty_desc')+'</div><button class="empty-btn" onclick="copyMyLink()">'+t('friends_empty_btn')+'</button></div>';
     return;
   }

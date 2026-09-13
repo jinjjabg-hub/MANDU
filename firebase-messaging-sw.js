@@ -15,6 +15,10 @@ const messaging=firebase.messaging();
 messaging.onBackgroundMessage(function(payload){
   const n=payload.notification||{};
   const d=payload.data||{};
+  // 앱이 꺼져있어도 아이콘에 뱃지 표시 (iOS 16.4+ 홈화면 설치 앱, 데스크톱 Chrome/Edge — 지원 안 하는 브라우저는 조용히 무시됨)
+  if('setAppBadge' in self.navigator){
+    self.navigator.setAppBadge(1).catch(function(){});
+  }
   return self.registration.showNotification(n.title||'MANDU 🥟',{
     body:n.body||'새 메시지가 있어요',
     icon:'/MANDU/icon-192.png',
