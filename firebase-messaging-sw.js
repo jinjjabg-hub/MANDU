@@ -23,6 +23,7 @@ messaging.onBackgroundMessage(function(payload){
     body:n.body||'새 메시지가 있어요',
     icon:'/MANDU/icon-192.png',
     badge:'/MANDU/icon-192.png',
+    vibrate:[200,100,200],
     data:d,
     tag:d.roomId?'room-'+d.roomId:'mandu-notif',
     renotify:true,
