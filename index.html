@@ -2628,11 +2628,20 @@ async function confirmAddMember(){
   }
 }
 
+// \uBC88\uC5ED \uC0DD\uB7B5 \uC5EC\uBD80 \uD310\uB2E8\uC6A9. \uD655\uC2E4\uD558\uC9C0 \uC54A\uC73C\uBA74 null \u2192 \uC11C\uBC84(\uAD6C\uAE00 \uC790\uB3D9 \uAC10\uC9C0)\uB85C \uB118\uAE40.
+// \uC608\uC804\uC5D4 \uB098\uBA38\uC9C0\uB97C \uC804\uBD80 'en'\uC73C\uB85C \uBD10\uC11C, \uC601\uC5B4 \uC124\uC815 \uC0AC\uC6A9\uC790\uAC00 \uBC1B\uC740 \uC2A4\uD398\uC778\uC5B4\u00B7\uBABD\uACE8\uC5B4 \uB4F1\uC774 \uBC88\uC5ED\uB418\uC9C0 \uC54A\uC558\uC74C.
+const EN_STOPWORDS=/\b(the|is|are|was|you|your|and|to|of|in|it|this|that|what|for|with|have|has|do|does|can|will|would|we|my|me|not|be|please|thanks|thank|hello|hi|ok|okay|yes|how|when|where|why|let|see|good|meet|time)\b/i;
 function detectLang(text){
-  if(/[\uAC00-\uD7A3]/.test(text))return 'ko';
+  if(/[\uAC00-\uD7A3\u3131-\u318E]/.test(text))return 'ko';
   if(/[\u3040-\u30FF]/.test(text))return 'ja';
   if(/[\u4E00-\u9FFF]/.test(text))return 'zh';
-  return 'en';
+  if(/[\u0E00-\u0E7F]/.test(text))return 'th';
+  if(/[\u0600-\u06FF]/.test(text))return 'ar';
+  if(/[\u0900-\u097F]/.test(text))return 'hi';
+  if(/[\u0400-\u04FF]/.test(text))return 'mn';
+  if(/[\u0103\u1EAF\u1EB1\u1EB3\u1EB5\u1EB7\u01A1\u1EDB\u1EDD\u1EDF\u1EE1\u1EE3\u01B0\u1EE9\u1EEB\u1EED\u1EEF\u1EF1\u0111\u1EA3\u1EA9\u1EAB\u1EAD\u1EBB\u1EBD\u1EB9\u1EC1\u1EC3\u1EC5\u1EC7\u1EC9\u0129\u1ECB\u1ECF\u1ECD\u1ED1\u1ED3\u1ED5\u1ED7\u1ED9\u1EE7\u0169\u1EE5\u1EF3\u1EF7\u1EF9\u1EF5]/i.test(text))return 'vi';
+  if(/^[\x00-\x7F]*$/.test(text)&&EN_STOPWORDS.test(text))return 'en';
+  return null;
 }
 
 // ── 플랜별 월 한도 ─────────────────────────────────────────
