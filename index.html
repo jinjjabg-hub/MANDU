@@ -1555,9 +1555,10 @@ async function initFCM(){
       await db.collection('users').doc(currentUser.uid).set({fcmToken:token},{merge:true});
     }
     messaging.onMessage(function(payload){
-      const n=payload.notification||{};
+      // data-only 메시지로 전송됨 (백엔드 참고) — notification이 아니라 data에서 읽음
+      const d=payload.data||{};
       playNotificationSound();
-      showToast('🔔 '+(n.title||'MANDU')+': '+(n.body||'새 메시지'));
+      showToast('🔔 '+(d.title||'MANDU')+': '+(d.body||'새 메시지'));
     });
     navigator.serviceWorker.addEventListener('message',function(e){
       if(!e.data||e.data.type!=='OPEN_ROOM'||!e.data.roomId)return;
