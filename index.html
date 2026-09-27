@@ -1555,9 +1555,10 @@ async function initFCM(){
       await db.collection('users').doc(currentUser.uid).set({fcmToken:token},{merge:true});
     }
     messaging.onMessage(function(payload){
-      const n=payload.notification||{};
+      // data-only 메시지로 전송됨 (백엔드 참고) — notification이 아니라 data에서 읽음
+      const d=payload.data||{};
       playNotificationSound();
-      showToast('🔔 '+(n.title||'MANDU')+': '+(n.body||'새 메시지'));
+      showToast('🔔 '+(d.title||'MANDU')+': '+(d.body||'새 메시지'));
     });
     navigator.serviceWorker.addEventListener('message',function(e){
       if(!e.data||e.data.type!=='OPEN_ROOM'||!e.data.roomId)return;
@@ -2363,6 +2364,11 @@ function loadRooms(){
         item.onclick=function(){openRoom(doc.id,name,photo,isGroup);};
         list.appendChild(item);
       });
+    },function(err){
+      // 에러 콜백이 없으면 에러 발생 시(권한 거부 등) "불러오는 중..."에서 영원히 멈춤
+      console.error('loadRooms 실패:',err);
+      sub.textContent='불러오기 실패';
+      list.innerHTML='<div class="empty-state"><div class="empty-emoji">⚠️</div><div class="empty-title">채팅 목록을 불러오지 못했어요</div><div class="empty-desc">'+(err&&err.message?err.message:'')+'</div></div>';
     });
 }
 
@@ -2372,7 +2378,7 @@ function loadUsers(){
     allUsers=snap.docs.filter(function(d){return d.id!==currentUser.uid&&!d.data().isGuest;}).map(function(d){return d.data();});
     const keyword=document.getElementById('friend-search')?document.getElementById('friend-search').value:'';
     renderUserList(keyword);
-  });
+  },function(err){console.error('loadUsers 실패:',err);});
 }
 
 function renderUserList(keyword){
@@ -2471,7 +2477,7 @@ function openRoom(roomId,name,photo,isGroup){
     const data=snap.data();if(!data)return;
     currentRoomMembers=data.members||[];
     updateReadReceipt(data.readBy||{});
-  });
+  },function(err){console.error('room listener 실패:',err);});
 }
 
 function loadMessages(){
@@ -2526,6 +2532,9 @@ function loadMessages(){
       }
       firstLoad=false;
       setTimeout(function(){container.scrollTop=container.scrollHeight;},300);
+    },function(err){
+      console.error('loadMessages 실패:',err);
+      showToast('메시지를 불러오지 못했어요');
     });
 }
 
