@@ -1253,12 +1253,12 @@ const BASE_URL='https://jinjjabg-hub.github.io/MANDU/';
 const LANG_FLAGS={ko:'🇰🇷',en:'🇺🇸',ja:'🇯🇵',zh:'🇨🇳',es:'🇪🇸',fr:'🇫🇷',de:'🇩🇪',vi:'🇻🇳',th:'🇹🇭',mn:'🇲🇳',hi:'🇮🇳',pt:'🇧🇷',ar:'🇸🇦',id:'🇮🇩'};
 
 firebase.initializeApp({
-  apiKey:"AIzaSyAZoWSGSA81daZydNgzegct2aaeFbDajr0",
-  authDomain:"mandu-e7c3c.firebaseapp.com",
-  projectId:"mandu-e7c3c",
-  storageBucket:"mandu-e7c3c.firebasestorage.app",
-  messagingSenderId:"196338490174",
-  appId:"1:196338490174:web:78dc77e684945aca362a6f"
+  apiKey:"AIzaSyAmebb0FQ4MxywQlMGgm8zrL2Ta97eskbo",
+  authDomain:"mandutok.firebaseapp.com",
+  projectId:"mandutok",
+  storageBucket:"mandutok.firebasestorage.app",
+  messagingSenderId:"1035686595939",
+  appId:"1:1035686595939:web:bea62dd7797325cff41756"
 });
 
 const auth=firebase.auth();
@@ -1546,8 +1546,7 @@ async function initFCM(){
   if(!('Notification' in window)||!('serviceWorker' in navigator))return;
   try{
     const swReg=await navigator.serviceWorker.register('/MANDU/firebase-messaging-sw.js');
-    // TODO: Firebase Console → 프로젝트 설정 → 클라우드 메시징 → 웹 푸시 인증서에서 VAPID 키 확인 후 아래 값을 교체하세요
-    const VAPID_KEY='BDeuVRvM86-2wVnSwDME5_JTEskIRA58eHuxusCb7Aogk_Y47PgKvz6IfhkYQT5MvZRRMkpY958eFAsZYUhmPk4';
+    const VAPID_KEY='BP41yvX4QbadGIZWbBSJIQXMDOfOaCGHXv-Wzs8AqO5wODgWg7OBSUGyN5mqWEWNA-Nq82cSBpQ7I-Hetm9PjJE';
     const permission=await Notification.requestPermission();
     if(permission!=='granted')return;
     const token=await messaging.getToken({vapidKey:VAPID_KEY,serviceWorkerRegistration:swReg});
