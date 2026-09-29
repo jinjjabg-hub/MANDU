@@ -1,85 +1,25 @@
 rules_version = '2';
+// MANDU 전용 Firebase 프로젝트(mandutok) 규칙.
+// 콘솔에서 직접 고치지 말고 이 파일을 고친 뒤 전체를 복사해 게시할 것.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // users/{uid} — 문서 쓰기는 여전히 본인만. 읽기는 로그인한 사람 누구나 가능하도록 변경
-    // (MANDU 친구 목록 기능이 상대방의 users 문서를 읽어야 해서 필요함).
-    // ⚠️ 참고: 이로 인해 DiCA의 credits 등 필드도 다른 로그인 유저가 "읽을" 수 있게 됨(쓰기는 여전히 막혀있음).
-    // 걱정되면 나중에 공개 프로필을 별도 컬렉션으로 분리하는 게 안전함.
+    // 사용자 프로필 — 친구 목록·게스트 연결 때문에 로그인(익명 게스트 포함)한 사람은 누구나 읽을 수 있다.
+    // 쓰기는 본인만. 번역 사용량(usage)은 서버(Admin SDK, 규칙 우회)만 기록하므로 클라이언트는 못 바꾼다.
+    // ⚠️ plan은 베타 기간이라 요금제 시트에서 본인이 직접 바꾸는 구조 — 실결제 붙일 때 usage처럼 잠글 것.
     match /users/{uid} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == uid
-        && !request.resource.data.keys().hasAny(['credits','paidTotal','scanTotal','freeMonth','freeRemain','dica500Granted','autocard50Granted']);
+        && !request.resource.data.keys().hasAny(['usage']);
       allow update: if request.auth != null && request.auth.uid == uid
-        && !request.resource.data.diff(resource.data).affectedKeys()
-             .hasAny(['credits','paidTotal','scanTotal','freeMonth','freeRemain','dica500Granted','autocard50Granted']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['usage']);
+      allow delete: if false;
 
-      // 명함첩 — 본인 것만 읽고 쓸 수 있다.
-      match /cards/{cardId} {
+      // 내 사전 — 본인만 읽고 쓴다.
+      match /mydict/{entryId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
     }
-
-    // BNI 멤버 명부 — 로그인한 사람은 누구나 읽지만(챕터 명부 조회), 등록/수정/삭제는 관리자만.
-    // 앱의 isAdmin()은 클라이언트 체크라 우회 가능하므로 여기서 이메일로 다시 확인한다.
-    match /bni_members/{memberId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.token.email == 'jinjjabg@gmail.com';
-    }
-
-    // 결제 기록 — Worker(Admin SDK)만 쓴다. 클라이언트는 읽기도 쓰기도 못한다(본인 결제 내역 확인 UI가 생기면 그때 read만 열어준다).
-    match /payments/{orderId} {
-      allow read, write: if false;
-    }
-
-    // 명함 업데이트 알림 — "내 명함이 바뀌었어요" 안내문. 뱃지 표시를 위해 로그인한 누구나 읽을 수 있고,
-    // 쓰기는 본인 소유(ownerUid가 본인 uid와 일치하는 경우)만 가능 — 남의 이름으로 알림을 보낼 수 없게 막는다.
-    match /card_updates/{key} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
-    }
-
-    // 자동 명함(AutoCard) — 공개(published)된 명함은 누구나 읽고, 그 전 단계는 본인·관리자만.
-    // 발행(published)은 관리자 또는 결제 확인 Worker(서비스 계정, 규칙 우회)만 → 결제하면 바로 발행.
-    // 발행 후 셀프 수정: 문구·사진·연락처·디자인은 주인이 자유롭게 고치지만,
-    // 가격이 걸린 항목(언어 목록·가격·상태)은 못 바꾼다. 언어 추가는 upgrade 요청 → 관리자가 결제 확인 후 반영.
-    match /autocards/{cardId} {
-      function acSignedIn() { return request.auth != null; }
-      function acAdmin() { return acSignedIn() && request.auth.token.email == 'jinjjabg@gmail.com' && request.auth.token.email_verified == true; }
-      function acOwner() { return acSignedIn() && resource.data.ownerUid == request.auth.uid; }
-      // 가격 = 5,900 + (언어 수 - 1) × 5,000, 언어는 1~4개 — 클라이언트가 가격을 깎아서 보낼 수 없게 서버에서 다시 계산
-      function acPriceOk(d) { return d.langs is list && d.langs.size() >= 1 && d.langs.size() <= 4 && d.price == 5900 + (d.langs.size() - 1) * 5000; }
-      // 언어 추가 요청: 지금 언어를 모두 포함하고 최대 4개
-      function acUpgradeOk(d) { return !('upgrade' in d) || (d.upgrade.langs is list && d.upgrade.langs.size() <= 4 && d.upgrade.langs.hasAll(resource.data.langs)); }
-      function acLocked() { return ['ownerUid', 'ownerEmail', 'status', 'langs', 'price', 'publishedAt', 'approvedBy', 'createdAt', 'paid']; }
-
-      allow read: if resource.data.status == 'published' || acOwner() || acAdmin();
-      allow create: if acSignedIn()
-        && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.ownerEmail == request.auth.token.email
-        && request.resource.data.status in ['draft', 'pending']
-        && (request.resource.data.status == 'draft' || acPriceOk(request.resource.data));
-      allow update: if acAdmin()
-        // 발행 전(작성 중·승인 대기): 주인이 자유롭게 고치되 가격은 언어 수와 맞아야 함
-        || (acOwner() && resource.data.status != 'published'
-            && request.resource.data.ownerUid == resource.data.ownerUid
-            && request.resource.data.ownerEmail == resource.data.ownerEmail
-            && request.resource.data.status in ['draft', 'pending']
-            && (request.resource.data.status == 'draft' || acPriceOk(request.resource.data)))
-        // 발행 후: 셀프 수정 OK, 가격이 걸린 항목은 잠금
-        || (acOwner() && resource.data.status == 'published'
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(acLocked())
-            && acUpgradeOk(request.resource.data));
-      allow delete: if acAdmin() || (acOwner() && resource.data.status != 'published');
-    }
-
-    // 자동 명함 결제 기록 — Worker(서비스 계정)만 쓰고 읽음
-    match /autocardPayments/{orderId} { allow read: if request.auth != null && request.auth.token.email == 'jinjjabg@gmail.com'; allow write: if false; }
-
-    // 예전 코드가 쓰다 만 최상위 컬렉션 — 지금은 아무도 안 쓰지만 혹시 남아있는 호출을 막아둔다.
-    match /cards/{cardId} { allow read, write: if false; }
-
-    // ── 여기부터 MANDU 채팅 기능에 필요한 규칙 (기존에 빠져있어서 permission-denied 발생하던 부분) ──
 
     // 채팅방 — 멤버만 읽고 쓸 수 있다. 생성 시 만든 사람이 멤버 목록에 포함돼야 한다.
     match /rooms/{roomId} {
@@ -88,8 +28,7 @@ service cloud.firestore {
       allow update: if request.auth != null && request.auth.uid in resource.data.members;
       allow delete: if false;
 
-      // 메시지 — 그 방 멤버만 읽고 쓸 수 있다. 보낸 사람(uid 필드)은 자기 자신이어야 한다
-      // (멤버 추가 안내 같은 시스템 메시지는 uid 필드 자체가 없어서 그 경우는 통과시킴).
+      // 메시지 — 그 방 멤버만. 보낸 사람(uid)은 본인이어야 한다(시스템 메시지는 uid가 없어서 통과).
       match /messages/{messageId} {
         allow read: if request.auth != null
           && request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomId)).data.members;
@@ -100,16 +39,13 @@ service cloud.firestore {
       }
     }
 
-    // 만두 아이디 ↔ uid 매핑 — 로그인(익명 게스트 포함)한 사람은 누구나 조회 가능(명함/게스트 링크 연결용),
-    // 생성·수정·삭제는 본인 소유(uid가 본인과 일치하는 경우)만 가능.
+    // 만두 아이디 ↔ uid — 로그인한 사람은 누구나 조회(게스트 링크 연결용), 본인 것만 생성·수정·삭제.
     match /manduid_index/{manduid} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow update: if request.auth != null && resource.data.uid == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
-    // 그 외 모든 문서는 기본적으로 막는다.
     match /{document=**} {
       allow read, write: if false;
     }
