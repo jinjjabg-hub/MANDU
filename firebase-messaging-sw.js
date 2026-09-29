@@ -2,12 +2,12 @@ importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey:"AIzaSyAZoWSGSA81daZydNgzegct2aaeFbDajr0",
-  authDomain:"mandu-e7c3c.firebaseapp.com",
-  projectId:"mandu-e7c3c",
-  storageBucket:"mandu-e7c3c.firebasestorage.app",
-  messagingSenderId:"196338490174",
-  appId:"1:196338490174:web:78dc77e684945aca362a6f"
+  apiKey:"AIzaSyAmebb0FQ4MxywQlMGgm8zrL2Ta97eskbo",
+  authDomain:"mandutok.firebaseapp.com",
+  projectId:"mandutok",
+  storageBucket:"mandutok.firebasestorage.app",
+  messagingSenderId:"1035686595939",
+  appId:"1:1035686595939:web:bea62dd7797325cff41756"
 });
 
 const messaging=firebase.messaging();
