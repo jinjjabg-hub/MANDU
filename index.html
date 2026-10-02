@@ -1569,7 +1569,9 @@ async function initFCM(){
   if(!messaging||!currentUser||isGuest)return;
   if(!('Notification' in window)||!('serviceWorker' in navigator))return;
   try{
-    const swReg=await navigator.serviceWorker.register('/MANDU/firebase-messaging-sw.js');
+    // 캐시용 sw.js와 같은 /MANDU/ 범위에 등록하면 브라우저가 하나만 남겨서(대개 sw.js)
+    // 푸시를 받아도 알림을 띄우지 못함 → 알림용은 별도 범위로 분리
+    const swReg=await navigator.serviceWorker.register('/MANDU/firebase-messaging-sw.js',{scope:'/MANDU/firebase-cloud-messaging-push-scope'});
     const VAPID_KEY='BP41yvX4QbadGIZWbBSJIQXMDOfOaCGHXv-Wzs8AqO5wODgWg7OBSUGyN5mqWEWNA-Nq82cSBpQ7I-Hetm9PjJE';
     const permission=await Notification.requestPermission();
     if(permission!=='granted')return;
@@ -1580,6 +1582,9 @@ async function initFCM(){
     messaging.onMessage(function(payload){
       // data-only 메시지로 전송됨 (백엔드 참고) — notification이 아니라 data에서 읽음
       const d=payload.data||{};
+      // 지금 보고 있는 방의 메시지는 메시지 리스너가 이미 소리를 냄 → 중복 소리·토스트 방지
+      const chatOpen=document.getElementById('chat-screen').style.display==='flex';
+      if(chatOpen&&d.roomId&&d.roomId===currentRoomId)return;
       playNotificationSound();
       showToast('🔔 '+(d.title||'MANDU')+': '+(d.body||'새 메시지'));
     });
