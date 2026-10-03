@@ -13,7 +13,7 @@ service cloud.firestore {
         && !request.resource.data.keys().hasAny(['usage']);
       allow update: if request.auth != null && request.auth.uid == uid
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['usage']);
-      allow delete: if false;
+      allow delete: if request.auth != null && request.auth.uid == uid;   // 회원 탈퇴 시 본인 프로필 삭제
 
       // 내 사전 — 본인만 읽고 쓴다.
       match /mydict/{entryId} {

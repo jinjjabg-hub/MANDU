@@ -1699,7 +1699,7 @@ function showEmailLogin(){
 
 // ── 회원 탈퇴 ─────────────────────────────────────────────
 async function confirmDeleteAccount(){
-  const ok=confirm('정말 탈퇴하시겠어요?\n\n모든 채팅 데이터와 계정이 삭제되며\n복구가 불가능합니다.');
+  const ok=confirm('정말 탈퇴하시겠어요?\n\n계정·프로필·번역 사전이 삭제되며 복구할 수 없습니다.\n(이미 보낸 메시지는 상대방 대화방에 남을 수 있어요)');
   if(!ok)return;
   try{
     const user=auth.currentUser;
@@ -1708,7 +1708,10 @@ async function confirmDeleteAccount(){
     if(currentManduid){
       await db.collection('manduid_index').doc(currentManduid).delete().catch(()=>{});
     }
-    await db.collection('users').doc(user.uid).delete().catch(()=>{});
+    // 내 번역 사전 → 프로필 문서 순서로 삭제 (실패하면 탈퇴를 멈추고 알림 — 데이터가 남은 채 계정만 지워지지 않도록)
+    const dictSnap=await db.collection('users').doc(user.uid).collection('mydict').get();
+    await Promise.all(dictSnap.docs.map(function(d){return d.ref.delete();}));
+    await db.collection('users').doc(user.uid).delete();
     await user.delete();
     showToast('탈퇴가 완료됐어요.');
   }catch(e){
@@ -1739,6 +1742,7 @@ function showPrivacyPolicy(){
     +'<b>4. 제3자 제공</b><br>Google 번역 API (메시지 번역), Firebase (데이터 저장·인증) — 법령 외 미제공<br><br>'
     +'<b>5. 이용자 권리</b><br>설정 → 회원 탈퇴를 통해 언제든지 모든 데이터 삭제 가능<br><br>'
     +'<b>6. 운영자 · 문의</b><br>상호: 티엠링크(T.M Link) · 대표자: 송승훈 · 개인사업자<br>사업자등록번호: 253-63-00948 · 통신판매업 신고번호: 제2026-부산사상구-0340호<br>사업장 주소: 부산광역시 사상구 가야대로378번길 1 (주례동, 팍스타운) 1704호 · 전화: 010-5334-2544 · 문의: jinjjabg@gmail.com (3영업일 이내 회신)<br><br>'
+    +'<a href="privacy.html" target="_blank" rel="noopener" style="color:var(--primary,#6b38d4);text-decoration:underline;font-weight:700;">개인정보처리방침 전문 · 계정 삭제 안내 보기</a><br><br>'
     +'<span style="opacity:.6;">시행일: 2025년 6월 1일 (운영자 정보 갱신: 2026년 9월 27일) | 운영: 티엠링크(T.M Link)</span>'
     +'</div>';
   overlay.appendChild(box);

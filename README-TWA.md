@@ -33,10 +33,9 @@ GitHub 저장소 → Settings → Secrets and variables → Actions → **New re
 | Secret 이름 | 값 |
 |------------|-----|
 | `KEYSTORE_BASE64` | `twa/keystore-base64.txt` 파일 내용 전체 복사 |
-| `KEYSTORE_PASSWORD` | `manduTWA2025!` |
+| `KEYSTORE_PASSWORD` | 키스토어 비밀번호 (**이 문서에 절대 적지 마세요** — 비밀번호 관리자에만 보관) |
 
-> `keystore-base64.txt`는 gitignore 되어 있습니다.  
-> 로컬 경로: `D:\0.앱\만두\twa\keystore-base64.txt`
+> `keystore-base64.txt`는 gitignore 되어 있습니다. 로컬 PC에만 보관하세요.
 
 ### Step 2 — 빌드 실행
 
@@ -64,8 +63,8 @@ Actions 탭 → 해당 워크플로우 실행 결과 → **Artifacts** 섹션에
 |------|-----|
 | 파일 | `twa/android.keystore` |
 | 별칭 | `mandu` |
-| 비밀번호 | `manduTWA2025!` |
-| SHA-256 | `69:48:37:E0:F4:66:02:76:35:3B:D1:9D:88:E1:78:43:5E:69:90:F4:64:39:14:BF:51:A5:87:5A:01:BC:E5:74` |
+| 비밀번호 | (비공개 — GitHub Secret `KEYSTORE_PASSWORD` 및 비밀번호 관리자에만 보관) |
+| SHA-256 (업로드 키) | `69:48:37:E0:F4:66:02:76:35:3B:D1:9D:88:E1:78:43:5E:69:90:F4:64:39:14:BF:51:A5:87:5A:01:BC:E5:74` |
 | 유효기간 | 10,000일 (~27년) |
 
 > ⚠️ `android.keystore` 파일을 분실하면 Play Store 업데이트가 불가능합니다.  
@@ -73,12 +72,34 @@ Actions 탭 → 해당 워크플로우 실행 결과 → **Artifacts** 섹션에
 
 ---
 
-## assetlinks.json 배포 확인
+## 키스토어 비밀번호 변경 (공개된 적 있는 비밀번호 교체)
 
-SHA-256이 등록된 `assetlinks.json`은 아래 URL로 자동 서빙됩니다:
+이 문서에 예전 비밀번호가 공개돼 있었습니다(2026-06-19 ~ 2026-10). 키스토어 **파일**은 한 번도 커밋된 적이 없지만, 비밀번호는 교체하세요.
+키를 새로 만들 필요는 없습니다 — 지문(SHA-256)이 그대로라 기존 설정이 유지됩니다.
+
+```bash
+# 키스토어 파일이 있는 PC에서 (JDK 의 keytool 사용)
+cd D:\0.앱\만두\twa
+keytool -storepasswd -keystore android.keystore            # 저장소 비밀번호 변경
+keytool -keypasswd  -keystore android.keystore -alias mandu # 키 비밀번호 변경 (위와 같은 값으로)
 ```
-https://jinjjabg-hub.github.io/MANDU/.well-known/assetlinks.json
+
+변경 후 GitHub → Settings → Secrets → `KEYSTORE_PASSWORD` 값을 새 비밀번호로 수정하세요.
+(빌드 워크플로우는 저장소·키 비밀번호에 같은 값을 사용합니다.)
+
+---
+
+## assetlinks.json (웹 ↔ 앱 연결) — ⚠️ 위치 주의
+
+안드로이드는 **도메인 최상위**의 파일만 확인합니다:
 ```
+https://jinjjabg-hub.github.io/.well-known/assetlinks.json
+```
+→ `jinjjabg-hub/jinjjabg-hub.github.io` 레포의 `.well-known/assetlinks.json` 에 만두 항목(`com.tm.mandu`)을 추가해야 합니다.
+이 레포의 `MANDU/.well-known/assetlinks.json` 은 안드로이드가 읽지 않습니다 (참고용).
+
+Play Store 에 올리면 Google 이 **앱 서명 키**로 다시 서명합니다.
+Play Console → 설정 → 앱 무결성 → "앱 서명 키 인증서"의 SHA-256 도 최상위 파일에 **함께** 넣어야 주소창 없이 열립니다.
 
 검증 도구:
 ```
