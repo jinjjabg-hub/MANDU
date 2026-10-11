@@ -333,6 +333,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 #msg-input::placeholder{color:var(--outline);}
 .send-btn{width:36px;height:36px;background:var(--primary);border:none;border-radius:50%;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .send-btn .ms{font-size:20px !important;font-variation-settings:'FILL' 1,'wght' 400;}
+.link-card{display:block;width:240px;margin-top:4px;border-radius:14px;overflow:hidden;border:1px solid var(--outline-variant);background:var(--surface);color:var(--on-surface);text-decoration:none;}
+.mine .link-card{margin-left:auto;}
+.link-card img{width:100%;max-height:160px;object-fit:cover;display:block;background:var(--surface-container);}
+.link-card .lc-body{padding:9px 12px 10px;}
+.link-card .lc-title{font-size:13px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.link-card .lc-desc{font-size:11px;color:var(--on-surface-variant);margin-top:3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.link-card .lc-site{font-size:10px;color:var(--outline);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .msg-image{max-width:220px;border-radius:14px;display:block;cursor:pointer;margin:2px 0;}
 .img-btn{width:34px;height:34px;background:var(--surface-container);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--primary);}
 .img-btn .ms{font-size:22px !important;}
@@ -2893,6 +2900,7 @@ function renderMsg(d,skipTranslate){
   const timeEl=document.createElement('div');timeEl.className='msg-time';
   timeEl.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
   row.appendChild(b);row.appendChild(timeEl);w.appendChild(row);container.appendChild(w);
+  if(!d.imageUrl&&!d.fileUrl&&d.text)attachLinkPreview(w,d.text);
   if(mine){
     if(lastMyMsgWrap){const p=lastMyMsgWrap.querySelector('.read-receipt');if(p)p.remove();}
     lastMyMsgWrap=w;
@@ -2935,6 +2943,63 @@ function compressImage(file,maxDim,quality){
     };
     img.onerror=function(){URL.revokeObjectURL(url);resolve(file);};
     img.src=url;
+  });
+}
+
+// ── 링크 미리보기 카드 (카톡처럼) ──
+// 메시지 속 첫 URL의 제목·설명·대표이미지를 서버(/api/preview)에서 받아 말풍선 아래 카드로 보여준다.
+// 같은 링크는 기기에 7일 캐시해서 다시 열 때 서버를 부르지 않는다. 실패하면 조용히 카드 없이 둔다.
+const LINK_PREVIEW_TTL=7*24*3600*1000;
+const _linkPreviewPending={};
+function getLinkPreview(url){
+  const key='mandu_lp_'+url;
+  try{
+    const c=JSON.parse(localStorage.getItem(key)||'null');
+    if(c&&Date.now()-c.t<LINK_PREVIEW_TTL)return Promise.resolve(c.d);
+  }catch(e){}
+  if(_linkPreviewPending[url])return _linkPreviewPending[url];
+  _linkPreviewPending[url]=(async function(){
+    if(!currentUser)return null;
+    let d=null;
+    try{
+      const idToken=await currentUser.getIdToken();
+      const res=await fetch('https://mandu-server.onrender.com/api/preview',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
+        body:JSON.stringify({url:url})
+      });
+      if(res.ok)d=await res.json();
+      else if(res.status!==422)return null; // 서버 잠듦·일시 오류는 캐시하지 않음 → 다음에 재시도
+    }catch(e){return null;}
+    try{localStorage.setItem(key,JSON.stringify({t:Date.now(),d:d}));}catch(e){}
+    return d;
+  })().finally(function(){delete _linkPreviewPending[url];});
+  return _linkPreviewPending[url];
+}
+function attachLinkPreview(wrap,text){
+  const m=text.match(/https?:\/\/[^\s<>"']+/i);
+  if(!m)return;
+  const url=m[0].replace(/[.,!?)\]]+$/,'');
+  getLinkPreview(url).then(function(p){
+    if(!p||!wrap.isConnected)return;
+    const container=document.getElementById('messages');
+    const nearBottom=container.scrollHeight-container.scrollTop-container.clientHeight<80;
+    const a=document.createElement('a');
+    a.className='link-card';a.href=url;a.target='_blank';a.rel='noopener noreferrer';
+    if(p.image&&/^https?:\/\//i.test(p.image)){
+      const img=document.createElement('img');img.src=p.image;img.alt='';img.loading='lazy';
+      img.onerror=function(){img.remove();};
+      a.appendChild(img);
+    }
+    const body=document.createElement('div');body.className='lc-body';
+    [['lc-title',p.title],['lc-desc',p.description],['lc-site',p.site]].forEach(function(x){
+      if(!x[1])return;
+      const el=document.createElement('div');el.className=x[0];el.textContent=x[1];body.appendChild(el);
+    });
+    a.appendChild(body);
+    const receipt=wrap.querySelector('.read-receipt');
+    wrap.insertBefore(a,receipt||null);
+    if(nearBottom)container.scrollTop=container.scrollHeight;
   });
 }
 
