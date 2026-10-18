@@ -89,21 +89,17 @@ keytool -keypasswd  -keystore android.keystore -alias mandu # 키 비밀번호 �
 
 ---
 
-## assetlinks.json (웹 ↔ 앱 연결) — ⚠️ 위치 주의
+## assetlinks.json (웹 ↔ 앱 연결)
 
-안드로이드는 **도메인 최상위**의 파일만 확인합니다:
-```
-https://jinjjabg-hub.github.io/.well-known/assetlinks.json
-```
-→ `jinjjabg-hub/jinjjabg-hub.github.io` 레포의 `.well-known/assetlinks.json` 에 만두 항목(`com.tm.mandu`)을 추가해야 합니다.
-이 레포의 `MANDU/.well-known/assetlinks.json` 은 안드로이드가 읽지 않습니다 (참고용).
+도메인을 `mandu.bizmy.net`으로 옮겼으므로, 이 레포 루트의 `.well-known/assetlinks.json` 이
+`https://mandu.bizmy.net/.well-known/assetlinks.json` 으로 바로 서비스됩니다. (별도 최상위 레포 불필요)
 
 Play Store 에 올리면 Google 이 **앱 서명 키**로 다시 서명합니다.
-Play Console → 설정 → 앱 무결성 → "앱 서명 키 인증서"의 SHA-256 도 최상위 파일에 **함께** 넣어야 주소창 없이 열립니다.
+Play Console → 설정 → 앱 무결성 → "앱 서명 키 인증서"의 SHA-256 도 이 파일에 **함께** 넣어야 주소창 없이 열립니다.
 
 검증 도구:
 ```
-https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://jinjjabg-hub.github.io&relation=delegate_permission/common.handle_all_urls
+https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://mandu.bizmy.net&relation=delegate_permission/common.handle_all_urls
 ```
 
 ---

@@ -23,8 +23,8 @@ messaging.onBackgroundMessage(function(payload){
   }
   return self.registration.showNotification(d.title||'MANDU 🥟',{
     body:d.body||'새 메시지가 있어요',
-    icon:'/MANDU/icon-192.png',
-    badge:'/MANDU/icon-192.png',
+    icon:'/icon-192.png',
+    badge:'/icon-192.png',
     vibrate:[200,100,200],
     silent:false,
     data:d,
@@ -36,7 +36,7 @@ messaging.onBackgroundMessage(function(payload){
 self.addEventListener('notificationclick',function(e){
   e.notification.close();
   const roomId=(e.notification.data||{}).roomId;
-  const baseUrl='https://jinjjabg-hub.github.io/MANDU/';
+  const baseUrl='https://mandu.bizmy.net/';
   e.waitUntil(
     clients.matchAll({type:'window',includeUncontrolled:true}).then(function(list){
       for(const c of list){

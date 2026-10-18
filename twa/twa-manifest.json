@@ -1,7 +1,7 @@
 {
   "packageId": "com.tm.mandu",
-  "host": "jinjjabg-hub.github.io",
-  "startUrl": "/MANDU/",
+  "host": "mandu.bizmy.net",
+  "startUrl": "/",
   "name": "MANDU",
   "launcherName": "MANDU",
   "display": "standalone",
@@ -13,9 +13,9 @@
   "navigationDividerColorDark": "#6b38d4",
   "backgroundColor": "#f8f9ff",
   "enableNotifications": true,
-  "iconUrl": "https://jinjjabg-hub.github.io/MANDU/icon-512.png",
-  "maskableIconUrl": "https://jinjjabg-hub.github.io/MANDU/icon-512.png",
-  "monochromeIconUrl": "https://jinjjabg-hub.github.io/MANDU/icon-192.png",
+  "iconUrl": "https://mandu.bizmy.net/icon-512.png",
+  "maskableIconUrl": "https://mandu.bizmy.net/icon-512.png",
+  "monochromeIconUrl": "https://mandu.bizmy.net/icon-192.png",
   "shortcuts": [],
   "signingKey": {
     "path": "./android.keystore",
@@ -31,6 +31,6 @@
   },
   "alphaDependencies": { "enabled": false },
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://jinjjabg-hub.github.io/MANDU/manifest.json",
+  "webManifestUrl": "https://mandu.bizmy.net/manifest.json",
   "fallbackType": "customtabs"
 }

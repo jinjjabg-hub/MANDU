@@ -1,5 +1,5 @@
-const CACHE = 'mandu-v7';
-const ASSETS = ['/MANDU/', '/MANDU/index.html', '/MANDU/manifest.json', '/MANDU/icon-192.png', '/MANDU/icon-512.png'];
+const CACHE = 'mandu-v8';
+const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
