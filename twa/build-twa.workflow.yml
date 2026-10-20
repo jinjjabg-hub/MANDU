@@ -10,7 +10,7 @@ on:
       version_code:
         description: '버전 코드 (정수, 업로드마다 증가)'
         required: false
-        default: '1'
+        default: ''
   push:
     tags:
       - 'v*'
@@ -18,6 +18,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -35,7 +38,7 @@ jobs:
           node-version: '20'
 
       - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
+        run: npm install -g @bubblewrap/cli@1.27.0
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -47,52 +50,64 @@ jobs:
           cat ~/.bubblewrap/config.json
 
       - name: Restore keystore from secret
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > twa/android.keystore
-          echo "Keystore restored."
+          test -n "$KEYSTORE_BASE64" || { echo "::error::Missing KEYSTORE_BASE64 repository secret"; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "::error::Missing KEYSTORE_PASSWORD repository secret"; exit 1; }
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > twa/android.keystore
+          test -s twa/android.keystore
 
-      - name: Patch twa-manifest with version and keystore password
+      - name: Patch app version
+        env:
+          VERSION_NAME: ${{ github.event.inputs.version_name || '1.0.0' }}
+          VERSION_CODE: ${{ github.event.inputs.version_code || github.run_number }}
         run: |
-          VERSION_NAME="${{ github.event.inputs.version_name || '1.0.0' }}"
-          VERSION_CODE="${{ github.event.inputs.version_code || '1' }}"
-          # 태그 빌드면 태그에서 버전 추출
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            VERSION_NAME="${{ github.ref_name }}"
-            VERSION_NAME="${VERSION_NAME#v}"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            export VERSION_NAME="${GITHUB_REF_NAME#v}"
           fi
+          [[ "$VERSION_NAME" =~ ^[0-9A-Za-z._+-]+$ ]] || { echo "::error::Invalid version name"; exit 1; }
+          [[ "$VERSION_CODE" =~ ^[0-9]+$ ]] && (( VERSION_CODE > 0 && VERSION_CODE <= 2100000000 )) || { echo "::error::Invalid version code"; exit 1; }
           node -e "
             const fs = require('fs');
             const m = JSON.parse(fs.readFileSync('twa/twa-manifest.json','utf8'));
             m.appVersionName = process.env.VERSION_NAME;
             m.appVersionCode = parseInt(process.env.VERSION_CODE, 10);
-            m.signingKey.password = process.env.KEYSTORE_PASSWORD;
-            m.signingKey.keypassword = process.env.KEYSTORE_PASSWORD;
+            delete m.signingKey.password;
+            delete m.signingKey.keypassword;
             fs.writeFileSync('twa/twa-manifest.json', JSON.stringify(m, null, 2));
             console.log('Manifest patched:', m.appVersionName, '#' + m.appVersionCode);
           "
-        env:
-          VERSION_NAME: ${{ github.event.inputs.version_name || '1.0.0' }}
-          VERSION_CODE: ${{ github.event.inputs.version_code || '1' }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          echo "APP_VERSION=$VERSION_NAME" >> "$GITHUB_ENV"
+
+      - name: Generate Android project
+        working-directory: twa
+        run: bubblewrap update --skipVersionUpgrade
 
       - name: Bubblewrap build
         working-directory: twa
         run: bubblewrap build --skipPwaValidation
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.KEYSTORE_PASSWORD }}
 
-      - name: Rename artifacts
+      - name: Verify and rename artifacts
         run: |
-          VERSION="${{ github.event.inputs.version_name || '1.0.0' }}"
-          cp twa/app-release-signed.apk mandu-v${VERSION}.apk 2>/dev/null || true
-          cp twa/app-release-bundle.aab  mandu-v${VERSION}.aab  2>/dev/null || true
+          test -s twa/app-release-signed.apk
+          test -s twa/app-release-bundle.aab
+          cp twa/app-release-signed.apk "mandu-v${APP_VERSION}.apk"
+          cp twa/app-release-bundle.aab "mandu-v${APP_VERSION}.aab"
 
-      - name: Upload APK artifact
+      - name: Upload APK and AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mandu-apk-${{ github.event.inputs.version_name || github.ref_name }}
+          name: mandu-${{ env.APP_VERSION }}-${{ github.run_number }}
           path: |
             mandu-*.apk
             mandu-*.aab
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Create GitHub Release (태그 빌드 시)
         if: startsWith(github.ref, 'refs/tags/')
