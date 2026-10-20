@@ -24,7 +24,6 @@
   "appVersionName": "1.0.0",
   "appVersionCode": 1,
   "minSdkVersion": 19,
-  "targetSdkVersion": 34,
   "features": {
     "locationDelegation": { "enabled": false },
     "playBilling": { "enabled": false }
