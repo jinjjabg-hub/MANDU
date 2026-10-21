@@ -1257,7 +1257,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <button class="sheet-close" onclick="closePlanSheet()"><span class="ms">close</span></button>
   </div>
   <div style="padding:0 16px 16px;overflow-y:auto;">
-    <div id="plan-beta-banner" data-i18n="plan_beta_banner" style="background:linear-gradient(135deg,#ffd54f,#ffb300);color:#4a3200;font-size:13px;font-weight:800;text-align:center;padding:10px 14px;border-radius:12px;margin-bottom:14px;">🎉 베타 기간 한정, 모든 플랜 무료!</div>
     <div id="plan-status-wrap" style="font-size:13px;color:var(--outline);margin-bottom:16px;text-align:center;">현재 <strong id="plan-current-label">무료</strong> · 이번 달 <strong id="plan-used-label">0자</strong> 사용</div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;" id="plan-cards"></div>
     <button id="plan-confirm-btn" onclick="confirmPlanUpgrade()" style="width:100%;padding:15px;border-radius:14px;border:none;background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;opacity:.4;" disabled>업그레이드하기</button>
@@ -3574,18 +3573,16 @@ async function renderUsageUI(){
   if(document.documentElement.classList.contains('is-app')&&plan!=='business'&&plan!=='premium')msgEl.textContent+=' '+t('usage_web_upgrade_note');
 }
 
-// ── getUserPlan: localStorage 우선, Firestore 동기화 ────
+// ── getUserPlan: Firestore(서버가 결제 후 기록한 값) 우선, 오프라인 등 실패 시에만 localStorage ────
 async function getUserPlan(){
   if(!currentUser)return 'free';
   const localKey='mandu_plan_'+currentUser.uid;
-  const local=localStorage.getItem(localKey);
-  if(local)return local;
   try{
     const snap=await db.collection('users').doc(currentUser.uid).get();
     const plan=(snap.data()&&snap.data().plan)||'free';
     localStorage.setItem(localKey,plan);
     return plan;
-  }catch(e){return 'free';}
+  }catch(e){return localStorage.getItem(localKey)||'free';}
 }
 
 // ── 플랜 시트 ──────────────────────────────────────────
@@ -3613,7 +3610,7 @@ function renderPlanCards(){
     div.innerHTML=(p.recommended?'<div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:100px;white-space:nowrap;">'+T.plan_recommended+'</div>':'')+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'+
       '<span style="font-size:15px;font-weight:700;">'+names[p.key]+'</span>'+
-      '<span style="display:flex;align-items:baseline;gap:6px;"><span style="font-size:12px;font-weight:400;color:var(--outline);text-decoration:line-through;">'+p.price+'</span><span style="font-size:17px;font-weight:800;color:#ff9800;">'+T.plan_free+'</span></span>'+
+      '<span style="font-size:17px;font-weight:800;color:var(--primary);">'+p.price+'<span style="font-size:12px;font-weight:500;color:var(--outline);"> / '+T.plan_per_month+'</span></span>'+
       '</div>'+
       '<div style="font-size:13px;color:var(--outline);">'+fmtChars(PLAN_LIMITS[p.key])+(_uiLang==='ko'?' / ':' ')+T.plan_per_month+' · '+tags[p.key]+'</div>';
     container.appendChild(div);
@@ -3658,16 +3655,144 @@ function selectPlanCard(key,el){
   const T=UI_T[_uiLang]||UI_T.ko;
   const btn=document.getElementById('plan-confirm-btn');
   btn.disabled=false;btn.style.opacity='1';
-  btn.textContent=T.plan_upgrade_to_beta.replace('{plan}',key.toUpperCase());
+  const def=PLAN_DEFS.find(function(p){return p.key===key;});
+  const price=def?def.price:'';
+  btn.textContent=T.plan_upgrade_to.replace('{plan}',key.toUpperCase()).replace('${price}',price).replace('{price}',price);
 }
+// ── 토스페이먼츠 정기결제(빌링) — 웹 브라우저에서만 ─────────────────────
+// 구글 플레이 정책: 앱(TWA, html.is-app)에서는 결제창을 절대 열지 않는다.
+// 흐름: 서버 /prepare(주문·customerKey 발급) → 토스 카드 등록창 → successUrl 복귀
+//       → 서버 /confirm(빌링키 발급 + 첫 달 결제 + 플랜 기록) → 화면 갱신
+// 클라이언트 키는 공개돼도 되는 값 → 토스 개발자센터 > API 키 > "API 개별 연동 키"의 클라이언트 키(test_ck_... / 라이브는 live_ck_...)를 넣을 것.
+// 서버 환경변수 TOSS_SECRET_KEY 는 반드시 같은 세트의 시크릿 키여야 함. 비어 있으면 결제창을 열지 않음.
+const TOSS_CLIENT_KEY='test_ck_PBal2vxj811KJW5OMqpR85RQgOAN'; // 테스트 키 — 정식 오픈 때 live_ck_ 로 교체
+const TOSS_SDK_URL='https://js.tosspayments.com/v1/payment';
+const BILLING_API='https://mandu-server.onrender.com/api/billing';
+const BILLING_MSG={
+  ko:{preparing:'결제 준비 중...',processing:'결제를 확인하고 있어요...',success:'{plan} 플랜 결제가 완료됐어요 🎉',fail:'결제에 실패했어요',canceled:'카드 등록을 취소했어요',guest:'게스트는 결제할 수 없어요. 가입 후 이용해 주세요.',net:'서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.',notReady:'결제 준비 중이에요. 잠시 후 다시 시도해 주세요.'},
+  en:{preparing:'Preparing payment...',processing:'Confirming your payment...',success:'{plan} plan payment complete 🎉',fail:'Payment failed',canceled:'Card registration canceled',guest:'Guests can\'t pay. Please sign up first.',net:'Could not reach the server. Please try again shortly.',notReady:'Payments are not available yet. Please try again later.'}
+};
+function billingMsg(key){
+  const m=BILLING_MSG[_uiLang]||(_uiLang==='ko'?BILLING_MSG.ko:BILLING_MSG.en);
+  return m[key]||BILLING_MSG.ko[key]||key;
+}
+function isAppMode(){return document.documentElement.classList.contains('is-app');}
+
+let _tossSdkPromise=null;
+function loadTossSdk(){
+  // 결제 스크립트는 웹에서 결제 버튼을 누를 때만 불러온다 (앱에서는 아예 안 불러옴)
+  if(isAppMode())return Promise.reject(new Error('app mode'));
+  if(window.TossPayments)return Promise.resolve(window.TossPayments);
+  if(!_tossSdkPromise){
+    _tossSdkPromise=new Promise(function(resolve,reject){
+      const s=document.createElement('script');
+      s.src=TOSS_SDK_URL;
+      s.onload=function(){window.TossPayments?resolve(window.TossPayments):reject(new Error('sdk missing'));};
+      s.onerror=function(){_tossSdkPromise=null;reject(new Error('sdk load failed'));};
+      document.head.appendChild(s);
+    });
+  }
+  return _tossSdkPromise;
+}
+
+// 서버 호출 (Render 무료 플랜은 잠들어 있으면 첫 요청이 실패할 수 있어 네트워크 오류만 재시도.
+// /confirm 재시도는 서버가 orderId로 중복 처리를 막아서 안전함)
+async function billingFetch(path,body,user){
+  let lastErr=null;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const idToken=await (user||currentUser).getIdToken();
+      const res=await fetch(BILLING_API+path,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
+        body:JSON.stringify(body)
+      });
+      let data=null;
+      try{data=await res.json();}catch(e){}
+      if(res.ok)return data;
+      const d=(data&&data.detail)||{};
+      const err=new Error((typeof d==='string'?d:d.message)||('HTTP '+res.status));
+      err.code=(typeof d==='object'&&d.code)||('HTTP_'+res.status);
+      err.status=res.status;
+      throw err;
+    }catch(e){
+      if(e.status)throw e; // 서버가 응답한 오류는 그대로
+      lastErr=e;
+      if(attempt<2)await new Promise(function(r){setTimeout(r,2000+attempt*2000);});
+    }
+  }
+  const err=new Error(billingMsg('net'));err.code='NETWORK';throw err;
+}
+
+let _billingBusy=false;
 async function confirmPlanUpgrade(){
-  if(!_selectedPlanKey||!currentUser)return;
-  await db.collection('users').doc(currentUser.uid).set({plan:_selectedPlanKey},{merge:true});
-  localStorage.setItem('mandu_plan_'+currentUser.uid,_selectedPlanKey);
-  showToast(_selectedPlanKey.toUpperCase()+' 플랜으로 변경됐어요 🎉');
-  closePlanSheet();
+  if(isAppMode())return; // 앱에서는 결제창 절대 금지
+  if(!_selectedPlanKey||!currentUser||_billingBusy)return;
+  if(currentUser.isAnonymous){showToast(billingMsg('guest'));return;}
+  if(!TOSS_CLIENT_KEY){showToast(billingMsg('notReady'));return;}
+  const plan=_selectedPlanKey;
+  const btn=document.getElementById('plan-confirm-btn');
+  const prevText=btn?btn.textContent:'';
+  _billingBusy=true;
+  if(btn){btn.disabled=true;btn.style.opacity='.6';btn.textContent=billingMsg('preparing');}
+  try{
+    const order=await billingFetch('/prepare',{plan:plan});
+    const TossPayments=await loadTossSdk();
+    if(isAppMode())return;
+    const base=location.origin+location.pathname;
+    const q='&orderId='+encodeURIComponent(order.orderId)+'&plan='+encodeURIComponent(order.plan);
+    // 성공 시 successUrl 뒤에 customerKey, authKey 가 붙어서 돌아온다 / 실패 시 failUrl 뒤에 code, message
+    await TossPayments(TOSS_CLIENT_KEY).requestBillingAuth('카드',{
+      customerKey:order.customerKey,
+      successUrl:base+'?billing=success'+q,
+      failUrl:base+'?billing=fail'+q
+    });
+  }catch(e){
+    if(e&&e.code==='USER_CANCEL')showToast(billingMsg('canceled'));
+    else showToast(billingMsg('fail')+(e&&e.message?': '+e.message:''));
+  }finally{
+    _billingBusy=false;
+    if(btn){btn.disabled=false;btn.style.opacity='1';btn.textContent=prevText;}
+  }
+}
+
+// 카드 등록창에서 돌아왔을 때(successUrl/failUrl) 처리
+async function handleBillingReturn(params,user){
+  // 주소창에서 authKey 등을 바로 지운다 (새로고침·공유 시 재사용 방지)
+  try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}
+  if(isAppMode())return;
+  const status=params.get('billing');
+  if(status==='fail'){
+    const code=params.get('code');
+    showToast(code==='PAY_PROCESS_CANCELED'||code==='USER_CANCEL'?billingMsg('canceled'):billingMsg('fail')+(params.get('message')?': '+params.get('message'):''));
+    return;
+  }
+  if(status!=='success')return;
+  const authKey=params.get('authKey'),customerKey=params.get('customerKey'),orderId=params.get('orderId');
+  if(!authKey||!customerKey||!orderId){showToast(billingMsg('fail'));return;}
+  showToast(billingMsg('processing'));
+  try{
+    const r=await billingFetch('/confirm',{authKey:authKey,customerKey:customerKey,orderId:orderId,plan:params.get('plan')||null},user);
+    if(r&&r.plan){
+      localStorage.setItem('mandu_plan_'+user.uid,r.plan);
+      showToast(billingMsg('success').replace('{plan}',String(r.plan).toUpperCase()));
+    }
+  }catch(e){
+    showToast(billingMsg('fail')+(e&&e.message?': '+e.message:''));
+  }
   renderUsageUI();
 }
+(function(){
+  let params;
+  try{params=new URLSearchParams(location.search);}catch(e){return;}
+  if(!params.get('billing'))return;
+  if(isAppMode()){try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}return;}
+  const unsub=auth.onAuthStateChanged(function(user){
+    if(!user||user.isAnonymous)return;
+    unsub();
+    handleBillingReturn(params,user);
+  });
+})();
 
 // settings 탭 전환 시 사용량 렌더
 // PWA
