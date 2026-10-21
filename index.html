@@ -3665,7 +3665,7 @@ function selectPlanCard(key,el){
 //       → 서버 /confirm(빌링키 발급 + 첫 달 결제 + 플랜 기록) → 화면 갱신
 // 클라이언트 키는 공개돼도 되는 값 → 토스 개발자센터 > API 키 > "API 개별 연동 키"의 클라이언트 키(test_ck_... / 라이브는 live_ck_...)를 넣을 것.
 // 서버 환경변수 TOSS_SECRET_KEY 는 반드시 같은 세트의 시크릿 키여야 함. 비어 있으면 결제창을 열지 않음.
-const TOSS_CLIENT_KEY='';
+const TOSS_CLIENT_KEY='test_ck_PBal2vxj811KJW5OMqpR85RQgOAN'; // 테스트 키 — 정식 오픈 때 live_ck_ 로 교체
 const TOSS_SDK_URL='https://js.tosspayments.com/v1/payment';
 const BILLING_API='https://mandu-server.onrender.com/api/billing';
 const BILLING_MSG={
