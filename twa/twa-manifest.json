@@ -1,7 +1,7 @@
 {
   "packageId": "com.tm.mandu",
   "host": "mandu.bizmy.net",
-  "startUrl": "/",
+  "startUrl": "/?src=app",
   "name": "MANDU",
   "launcherName": "MANDU",
   "display": "standalone",
