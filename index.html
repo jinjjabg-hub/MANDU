@@ -153,6 +153,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .guest-login-hint{font-size:12px;color:var(--outline);text-align:center;}
 .guest-login-hint span{color:var(--primary);cursor:pointer;font-weight:600;}
 .is-app #usage-upgrade-btn,.is-app #plan-sheet,.is-app #plan-backdrop{display:none !important;}
+.is-app .web-only{display:none !important;}
 #upgrade-banner{display:none;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-container) 100%);padding:14px 16px;flex-shrink:0;}
 .upgrade-inner{display:flex;align-items:center;gap:12px;}
 .upgrade-text{flex:1;color:#fff;}
@@ -636,8 +637,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </div>
 
   <!-- 개인정보처리방침 링크 -->
-  <div style="font-size:11px;color:var(--outline);text-align:center;margin-top:8px;">
-    가입 시 <span onclick="showPrivacyPolicy()" style="color:var(--primary);cursor:pointer;text-decoration:underline;">개인정보처리방침</span>에 동의하는 것으로 간주됩니다.
+  <div id="login-legal-agree" style="font-size:11px;color:var(--outline);text-align:center;margin-top:8px;">
+    가입 시 <a href="/terms.html" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:underline;">이용약관</a> 및 <span onclick="showPrivacyPolicy()" style="color:var(--primary);cursor:pointer;text-decoration:underline;">개인정보처리방침</span>에 동의하는 것으로 간주됩니다.
+  </div>
+  <!-- 사업자 정보 (전자상거래법 표시 의무 · 결제 심사용) -->
+  <div id="biz-footer" style="font-size:10px;color:var(--outline);text-align:center;margin-top:14px;line-height:1.6;opacity:.85;">
+    티엠링크(T.M Link) · 대표 송승훈 · 사업자등록번호 253-63-00948<br>
+    통신판매업 제2026-부산사상구-0340호 · 부산광역시 사상구 가야대로378번길 1, 1704호<br>
+    010-5334-2544 · jinjjabg@gmail.com · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;">이용약관</a> · <a class="web-only" href="/refund.html" target="_blank" rel="noopener" style="color:inherit;">환불정책</a>
   </div>
 </div>
 
@@ -802,6 +809,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
             <span id="usage-limit-lbl" data-i18n="usage_limit_default">/ 5만자</span>
           </div>
           <div id="usage-msg-lbl" style="font-size:12px;color:var(--on-surface-variant);margin-bottom:14px;line-height:1.5;" data-i18n="usage_msg_default">이번 달 번역을 아직 사용하지 않았어요.</div>
+          <div id="usage-sub-line" class="web-only" style="display:none;font-size:12px;color:var(--on-surface-variant);margin:-6px 0 14px;line-height:1.5;"></div>
           <button id="usage-upgrade-btn" onclick="showPlanSheet()" style="width:100%;padding:12px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">🚀 플랜 업그레이드</button>
         </div>
       </div>
@@ -855,6 +863,23 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
             <div class="settings-row-label" data-i18n="settings_privacy">개인정보처리방침</div>
           </div>
           <div class="settings-chevron"><span class="ms">chevron_right</span></div>
+        </div>
+
+        <div class="settings-row" onclick="openLegal('terms')" style="border-top:1px solid var(--outline-variant);">
+          <div class="settings-icon-wrap"><span class="ms">description</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-legal="terms">이용약관</div>
+            <div class="settings-row-sub" data-legal="terms_sub">서비스 이용 조건</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">open_in_new</span></div>
+        </div>
+        <div class="settings-row web-only" onclick="openLegal('refund')" style="border-top:1px solid var(--outline-variant);">
+          <div class="settings-icon-wrap"><span class="ms">currency_exchange</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" data-legal="refund">환불정책</div>
+            <div class="settings-row-sub" data-legal="refund_sub">정기결제 해지·환불 기준</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">open_in_new</span></div>
         </div>
         <div class="settings-row" onclick="confirmDeleteAccount()" style="border-top:1px solid var(--outline-variant);">
           <div class="settings-icon-wrap" style="color:#e53935;"><span class="ms">delete_forever</span></div>
@@ -1156,6 +1181,22 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
       </div>
       <div class="settings-chevron"><span class="ms">chevron_right</span></div>
     </div>
+    <div class="settings-row" onclick="openLegal('terms')" style="border-top:1px solid var(--outline-variant);">
+      <div class="settings-icon-wrap"><span class="ms">description</span></div>
+      <div class="settings-row-info">
+        <div class="settings-row-label" data-legal="terms">이용약관</div>
+        <div class="settings-row-sub" data-legal="terms_sub">서비스 이용 조건</div>
+      </div>
+      <div class="settings-chevron"><span class="ms">open_in_new</span></div>
+    </div>
+    <div class="settings-row web-only" onclick="openLegal('refund')" style="border-top:1px solid var(--outline-variant);">
+      <div class="settings-icon-wrap"><span class="ms">currency_exchange</span></div>
+      <div class="settings-row-info">
+        <div class="settings-row-label" data-legal="refund">환불정책</div>
+        <div class="settings-row-sub" data-legal="refund_sub">정기결제 해지·환불 기준</div>
+      </div>
+      <div class="settings-chevron"><span class="ms">open_in_new</span></div>
+    </div>
     <div class="settings-row" onclick="confirmDeleteAccount()">
       <div class="settings-icon-wrap" style="background:#ffebee;"><span class="ms" style="color:#e53935;">delete_forever</span></div>
       <div class="settings-row-info">
@@ -1258,7 +1299,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </div>
   <div style="padding:0 16px 16px;overflow-y:auto;">
     <div id="plan-status-wrap" style="font-size:13px;color:var(--outline);margin-bottom:16px;text-align:center;">현재 <strong id="plan-current-label">무료</strong> · 이번 달 <strong id="plan-used-label">0자</strong> 사용</div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;" id="plan-cards"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;" id="plan-cards"></div>
+    <div id="plan-legal-notice" style="font-size:11.5px;color:var(--outline);line-height:1.6;margin-bottom:16px;text-align:center;">매월 같은 날 자동결제 · 언제든 해지 가능 · 결제하면 <a href="/terms.html" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:underline;">이용약관</a>과 <a href="/refund.html" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:underline;">환불정책</a>에 동의하는 것으로 봐요. 결제 후 유료 한도로 번역을 쓰면 청약 철회가 제한될 수 있어요.</div>
     <button id="plan-confirm-btn" onclick="confirmPlanUpgrade()" style="width:100%;padding:15px;border-radius:14px;border:none;background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;opacity:.4;" disabled>업그레이드하기</button>
     <button id="plan-cancel-btn" onclick="closePlanSheet()" style="width:100%;padding:11px;border:none;background:none;color:var(--outline);font-size:14px;cursor:pointer;margin-top:8px;font-family:'Plus Jakarta Sans',sans-serif;">취소</button>
   </div>
@@ -1720,6 +1762,8 @@ async function confirmDeleteAccount(){
     const user=auth.currentUser;
     if(!user){showToast('로그인 상태를 확인해주세요');return;}
     showToast('계정 삭제 중...');
+    // 유료 플랜 정기결제도 함께 해지 (이용약관 제7조) — 구독이 없으면 서버가 404를 돌려주므로 무시
+    try{if(window._myBilling&&window._myBilling.status==='active')await billingFetch('/cancel',{resume:false},user);}catch(e){}
     if(currentManduid){
       await db.collection('manduid_index').doc(currentManduid).delete().catch(()=>{});
     }
@@ -3461,6 +3505,7 @@ function applyUILanguage(lang){
   _uiLang=lang||'ko';
   document.documentElement.dir=(lang==='ar')?'rtl':'ltr';
   const T=UI_T[_uiLang]||UI_T.ko;
+  try{renderLegalLabels();}catch(e){}
   // Plan sheet
   const pst=document.getElementById('plan-sheet-title');if(pst)pst.textContent=T.plan_title;
   const pcb=document.getElementById('plan-cancel-btn');if(pcb)pcb.textContent=T.plan_cancel;
@@ -3571,6 +3616,7 @@ async function renderUsageUI(){
   }
   // 앱에서는 링크 없는 안내 문구만 허용
   if(document.documentElement.classList.contains('is-app')&&plan!=='business'&&plan!=='premium')msgEl.textContent+=' '+t('usage_web_upgrade_note');
+  try{renderSubscriptionLine();}catch(e){}
 }
 
 // ── getUserPlan: Firestore(서버가 결제 후 기록한 값) 우선, 오프라인 등 실패 시에만 localStorage ────
@@ -3579,7 +3625,12 @@ async function getUserPlan(){
   const localKey='mandu_plan_'+currentUser.uid;
   try{
     const snap=await db.collection('users').doc(currentUser.uid).get();
-    const plan=(snap.data()&&snap.data().plan)||'free';
+    const data=snap.data()||{};
+    let plan=data.plan||'free';
+    window._myBilling=data.billing||null;
+    // 결제 기간이 끝났는데 갱신되지 않은 유료 플랜은 무료로 표시 (서버도 같은 기준으로 한도 계산)
+    const nb=data.billing&&data.billing.nextBillingAt;
+    if(nb&&['soft','light','business'].indexOf(plan)>=0&&(nb.toDate?nb.toDate():new Date(nb.seconds*1000))<=new Date())plan='free';
     localStorage.setItem(localKey,plan);
     return plan;
   }catch(e){return localStorage.getItem(localKey)||'free';}
@@ -3619,6 +3670,8 @@ function renderPlanCards(){
 
 function showPlanSheet(){
   if(document.documentElement.classList.contains('is-app'))return; // 앱에서는 플랜 선택/결제 화면 금지
+  wakeServer();
+  try{renderLegalLabels();}catch(e){}
   getMonthlyUsage().then(function(used){
     getUserPlan().then(function(plan){
       const T=UI_T[_uiLang]||UI_T.ko;
@@ -3793,6 +3846,75 @@ async function handleBillingReturn(params,user){
     handleBillingReturn(params,user);
   });
 })();
+
+// ── 약관·환불정책·구독 해지 (웹) ───────────────────────────────────
+// 서버 깨우기: Render 무료 서버가 잠들어 있으면 첫 요청이 30초 가까이 걸려서, 화면을 열 때 미리 한 번 부른다.
+function wakeServer(){
+  try{fetch('https://mandu-server.onrender.com/api/ping',{mode:'no-cors',cache:'no-store'}).catch(function(){});}catch(e){}
+}
+wakeServer();
+
+const LEGAL_MSG={
+  ko:{terms:'이용약관',terms_sub:'서비스 이용 조건',refund:'환불정책',refund_sub:'정기결제 해지·환불 기준',
+      plan_notice:'매월 같은 날 자동결제 · 언제든 해지 가능 · 결제하면 {terms}과 {refund}에 동의하는 것으로 봐요. 결제 후 유료 한도로 번역을 쓰면 청약 철회가 제한될 수 있어요.',
+      next:'다음 결제일 {date}',cancel:'구독 해지',canceled:'해지됨 · {date}까지 이용',resume:'해지 취소',
+      cancel_confirm:'정기결제를 해지할까요?\n\n{date}까지는 지금 플랜을 그대로 쓸 수 있고, 그 뒤로는 결제되지 않아요.',
+      cancel_done:'해지됐어요. {date}까지 이용할 수 있어요.',resume_done:'해지를 취소했어요. 다음 결제일에 자동결제돼요.',
+      login_agree:'가입 시 {terms} 및 {privacy}에 동의하는 것으로 간주됩니다.',privacy:'개인정보처리방침'},
+  en:{terms:'Terms of Service',terms_sub:'Conditions of use',refund:'Refund Policy',refund_sub:'Cancellation and refunds',
+      plan_notice:'Billed monthly on the same day · Cancel anytime · By paying you agree to the {terms} and {refund}. Withdrawal may be limited once you use the paid quota.',
+      next:'Next payment {date}',cancel:'Cancel subscription',canceled:'Canceled · active until {date}',resume:'Undo cancel',
+      cancel_confirm:'Cancel your subscription?\n\nYou keep your current plan until {date}, and you won\'t be charged after that.',
+      cancel_done:'Canceled. You can use your plan until {date}.',resume_done:'Cancellation undone. You will be billed on the next payment date.',
+      login_agree:'By signing up you agree to the {terms} and {privacy}.',privacy:'Privacy Policy'}
+};
+function legalMsg(k){const m=LEGAL_MSG[_uiLang]||(_uiLang==='ko'?LEGAL_MSG.ko:LEGAL_MSG.en);return m[k]||LEGAL_MSG.ko[k]||k;}
+function openLegal(page){window.open('/'+page+'.html','_blank','noopener');}
+function legalLink(page,label){return '<a href="/'+page+'.html" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:underline;">'+label+'</a>';}
+function fmtBillingDate(ts){
+  if(!ts)return '';
+  const d=ts.toDate?ts.toDate():new Date(ts.seconds?ts.seconds*1000:ts);
+  return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate();
+}
+function renderLegalLabels(){
+  document.querySelectorAll('[data-legal]').forEach(function(el){el.textContent=legalMsg(el.getAttribute('data-legal'));});
+  const n=document.getElementById('plan-legal-notice');
+  if(n)n.innerHTML=legalMsg('plan_notice').replace('{terms}',legalLink('terms',legalMsg('terms'))).replace('{refund}',legalLink('refund',legalMsg('refund')));
+  const la=document.getElementById('login-legal-agree');
+  if(la)la.innerHTML=legalMsg('login_agree').replace('{terms}',legalLink('terms',legalMsg('terms')))
+    .replace('{privacy}','<span onclick="showPrivacyPolicy()" style="color:var(--primary);cursor:pointer;text-decoration:underline;">'+legalMsg('privacy')+'</span>');
+}
+document.addEventListener('DOMContentLoaded',renderLegalLabels);
+
+// 사용량 카드 아래 구독 상태 줄 (웹에서만 — 앱에서는 .web-only 로 숨김)
+function renderSubscriptionLine(){
+  const el=document.getElementById('usage-sub-line');
+  if(!el)return;
+  const b=window._myBilling;
+  const nb=b&&b.nextBillingAt;
+  const active=nb&&((nb.toDate?nb.toDate():new Date(nb.seconds*1000))>new Date());
+  if(!active||isAppMode()){el.style.display='none';el.innerHTML='';return;}
+  const date=fmtBillingDate(nb);
+  const linkStyle='color:var(--primary);cursor:pointer;text-decoration:underline;font-weight:600;';
+  if(b.status==='canceled'){
+    el.innerHTML=legalMsg('canceled').replace('{date}',date)+' · <span style="'+linkStyle+'" onclick="cancelSubscription(true)">'+legalMsg('resume')+'</span>';
+  }else{
+    el.innerHTML=legalMsg('next').replace('{date}',date)+' · <span style="'+linkStyle+'" onclick="cancelSubscription(false)">'+legalMsg('cancel')+'</span>';
+  }
+  el.style.display='';
+}
+async function cancelSubscription(resume){
+  if(isAppMode()||!currentUser)return;
+  const date=fmtBillingDate(window._myBilling&&window._myBilling.nextBillingAt);
+  if(!resume&&!confirm(legalMsg('cancel_confirm').replace('{date}',date)))return;
+  try{
+    await billingFetch('/cancel',{resume:!!resume});
+    showToast(resume?legalMsg('resume_done'):legalMsg('cancel_done').replace('{date}',date));
+  }catch(e){
+    showToast(billingMsg('fail')+(e&&e.message?': '+e.message:''));
+  }
+  renderUsageUI();
+}
 
 // settings 탭 전환 시 사용량 렌더
 // PWA
