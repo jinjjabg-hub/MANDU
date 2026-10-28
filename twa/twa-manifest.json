@@ -1,35 +1,48 @@
 {
   "packageId": "com.tm.mandu",
   "host": "mandu.bizmy.net",
-  "startUrl": "/?src=app",
   "name": "MANDU",
   "launcherName": "MANDU",
   "display": "standalone",
-  "orientation": "portrait",
   "themeColor": "#6b38d4",
+  "themeColorDark": "#6b38d4",
   "navigationColor": "#6b38d4",
   "navigationColorDark": "#6b38d4",
   "navigationDividerColor": "#6b38d4",
   "navigationDividerColorDark": "#6b38d4",
   "backgroundColor": "#f8f9ff",
   "enableNotifications": true,
+  "startUrl": "/?src=app",
   "iconUrl": "https://mandu.bizmy.net/icon-512.png",
   "maskableIconUrl": "https://mandu.bizmy.net/icon-512.png",
   "monochromeIconUrl": "https://mandu.bizmy.net/icon-192.png",
-  "shortcuts": [],
+  "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "./android.keystore",
     "alias": "mandu"
   },
   "appVersionName": "1.0.0",
   "appVersionCode": 1,
-  "minSdkVersion": 19,
-  "features": {
-    "locationDelegation": { "enabled": false },
-    "playBilling": { "enabled": false }
-  },
-  "alphaDependencies": { "enabled": false },
+  "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://mandu.bizmy.net/manifest.json",
-  "fallbackType": "customtabs"
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": false
+    },
+    "playBilling": {
+      "enabled": false
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://mandu.bizmy.net/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "launchHandlerClientMode": ""
 }
