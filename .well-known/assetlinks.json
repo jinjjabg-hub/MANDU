@@ -1,11 +1,14 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.tm.mandu",
       "sha256_cert_fingerprints": [
-        "69:48:37:E0:F4:66:02:76:35:3B:D1:9D:88:E1:78:43:5E:69:90:F4:64:39:14:BF:51:A5:87:5A:01:BC:E5:74"
+        "3A:2F:FE:9D:80:61:C1:B1:59:47:7A:D8:35:67:ED:80:ED:5E:B9:A5:64:44:92:C0:F0:AD:60:E1:F6:1A:18:D6",
+        "6D:21:18:2F:E1:D1:4B:78:25:51:DE:E7:49:1C:39:08:EA:A2:5F:A9:F0:C2:C4:69:42:E3:DC:EE:8B:71:FD:87"
       ]
     }
   }
