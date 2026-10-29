@@ -413,6 +413,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 
 /* 다크모드 */
 [data-theme="dark"]{--background:#0f0f1a;--surface:#1a1a2e;--surface-container:#252540;--surface-container-low:#1e1e35;--surface-container-high:#2a2a45;--on-surface:#e8e0f0;--on-surface-variant:#c4b8d8;--outline:#7b7098;--outline-variant:#3a3550;--primary:#b899ff;--primary-container:#7c4dcc;--primary-fixed:#2a1a4a;--primary-fixed-dim:#3d2a5a;--secondary-container:#2a2040;}
+.mod-sheet-bd{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9998;}
+.mod-sheet{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:var(--surface);border-radius:20px 20px 0 0;padding:12px 12px calc(12px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;box-shadow:0 -4px 24px rgba(0,0,0,.15);max-height:70vh;overflow:auto;}
+.mod-sheet-title{font-size:13px;font-weight:700;color:var(--outline);padding:8px 12px 10px;}
+.mod-sheet-btn{display:flex;align-items:center;gap:12px;width:100%;padding:14px 12px;border:none;background:none;font-size:15px;color:var(--on-surface);cursor:pointer;font-family:inherit;border-radius:12px;text-align:left;}
+.mod-sheet-btn:active{background:var(--surface-container);}
+.mod-sheet-btn.danger{color:#e53935;}
+.mod-sheet-btn.cancel{justify-content:center;font-weight:700;color:var(--outline);margin-top:4px;}
 </style>
 </head>
 <body>
@@ -857,6 +864,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
       <div class="settings-section-label" data-i18n="settings_section_account">계정</div>
       <button class="signout-btn" onclick="auth.signOut()" data-i18n="settings_signout">로그아웃</button>
       <div class="settings-card" style="margin-top:8px;">
+        <div class="settings-row" onclick="showBlockedList()" style="border-bottom:1px solid var(--outline-variant);">
+          <div class="settings-icon-wrap"><span class="ms">block</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="blocked-row-label">차단한 사용자</div>
+            <div class="settings-row-sub" id="blocked-row-sub">차단 목록 보기·해제</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">chevron_right</span></div>
+        </div>
         <div class="settings-row" onclick="showPrivacyPolicy()">
           <div class="settings-icon-wrap"><span class="ms">privacy_tip</span></div>
           <div class="settings-row-info">
@@ -920,6 +935,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
       <div class="chat-hd-sub"><span class="ms">translate</span><span data-i18n="chat_autotranslate_on">자동번역 ON</span></div>
     </div>
     <button class="back-btn" onclick="showAddMember()" title="Add member"><span class="ms">person_add</span></button>
+      <button class="back-btn" onclick="openChatSafetyMenu()" title="Report / Block"><span class="ms">more_vert</span></button>
   </div>
   <div id="upgrade-banner">
     <div class="upgrade-inner">
@@ -2065,6 +2081,7 @@ async function toggleCardbookConsent(){
 
 function updateUIAfterLogin(){
   if(!currentUser||currentUser.isAnonymous)return;
+  initBlocks();
   document.getElementById('my-avatar').src=currentUser.photoURL||'';
   document.getElementById('hero-avatar').src=currentUser.photoURL||'';
   document.getElementById('settings-avatar').src=currentUser.photoURL||'';
@@ -2207,6 +2224,7 @@ function switchDiscoverTab(tab){
 }
 
 function _buildDiscoverCard(u){
+  if(u&&isBlocked(u.uid)){const hid=document.createElement('div');hid.style.display='none';return hid;}
   const av=u.photoURL?'<img src="'+u.photoURL+'" alt="">':'👤';
   const metaParts=[u.jobTitle,u.company,_INDUSTRY_LABELS[u.industry]||'',_COUNTRY_LABELS[u.country]||''].filter(Boolean);
   const meta=metaParts.join(' · ');
@@ -2437,6 +2455,123 @@ async function saveProfile(){
   showToast('저장됐어요!');
 }
 
+// ── 신고·차단 (Google Play 사용자 제작 콘텐츠 정책) ─────────────────
+// 차단 목록은 blocks/{내uid}(본인만 읽기·쓰기), 신고는 reports(생성만 가능, 운영자가 콘솔에서 검토).
+let blockedUids=new Set();let _unsubBlocks=null;let _roomsRender=null,_lastRoomsSnap=null;
+function _L(ko,en){return (typeof _uiLang==='undefined'||_uiLang==='ko')?ko:en;}
+function initBlocks(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  const lbl=document.getElementById('blocked-row-label');if(lbl)lbl.textContent=_L('차단한 사용자','Blocked users');
+  const sub=document.getElementById('blocked-row-sub');if(sub)sub.textContent=_L('차단 목록 보기·해제','View and unblock');
+  if(_unsubBlocks)_unsubBlocks();
+  _unsubBlocks=db.collection('blocks').doc(currentUser.uid).onSnapshot(function(s){
+    const d=s.data()||{};blockedUids=new Set(d.uids||[]);
+    if(_roomsRender&&_lastRoomsSnap){try{_roomsRender(_lastRoomsSnap);}catch(e){}}
+  },function(e){console.warn('blocks listener 실패:',e);});
+}
+function isBlocked(uid){return !!uid&&blockedUids.has(uid);}
+function _roomVisible(doc){
+  const r=doc.data()||{};if(r.type==='group')return true;
+  const o=(r.members||[]).filter(function(u){return u!==currentUser.uid;});
+  return !(o.length===1&&isBlocked(o[0]));
+}
+function _dmPartnerUid(){
+  if(!currentRoomId||!currentUser)return null;
+  const m=(currentRoomMembers&&currentRoomMembers.length)?currentRoomMembers:currentRoomId.split('_');
+  const o=m.filter(function(u){return u!==currentUser.uid;});
+  return o.length===1?o[0]:null;
+}
+function closeModSheet(){['mod-sheet','mod-sheet-bd'].forEach(function(id){const e=document.getElementById(id);if(e)e.remove();});}
+function _modSheet(title,items){
+  closeModSheet();
+  const bd=document.createElement('div');bd.id='mod-sheet-bd';bd.className='mod-sheet-bd';bd.onclick=closeModSheet;
+  const sh=document.createElement('div');sh.id='mod-sheet';sh.className='mod-sheet';
+  const h=document.createElement('div');h.className='mod-sheet-title';h.textContent=title;sh.appendChild(h);
+  items.forEach(function(it){
+    const b=document.createElement('button');b.className='mod-sheet-btn'+(it.danger?' danger':'');
+    b.innerHTML='<span class="ms">'+it.icon+'</span>';
+    const sp=document.createElement('span');sp.textContent=it.label;b.appendChild(sp);
+    b.onclick=function(){closeModSheet();it.fn();};sh.appendChild(b);
+  });
+  const c=document.createElement('button');c.className='mod-sheet-btn cancel';c.textContent=_L('취소','Cancel');c.onclick=closeModSheet;sh.appendChild(c);
+  document.body.appendChild(bd);document.body.appendChild(sh);
+}
+function openChatSafetyMenu(){
+  if(!currentUser||!currentRoomId)return;
+  const p=_dmPartnerUid();const items=[];
+  if(p){
+    items.push({icon:'flag',label:_L('이 사용자 신고하기','Report this user'),fn:function(){askReport({type:'user',targetUid:p});}});
+    if(!currentUser.isAnonymous){
+      if(isBlocked(p))items.push({icon:'lock_open',label:_L('차단 해제','Unblock'),fn:function(){unblockUser(p);}});
+      else items.push({icon:'block',label:_L('이 사용자 차단하기','Block this user'),danger:true,fn:function(){blockUser(p);}});
+    }
+  }else{
+    items.push({icon:'flag',label:_L('이 대화방 신고하기','Report this chat'),fn:function(){askReport({type:'room'});}});
+  }
+  _modSheet(_L('안전 및 신고','Safety & reporting'),items);
+}
+const REPORT_REASONS=[['spam','스팸·사기·광고','Spam, scam or ads'],['harassment','괴롭힘·혐오·위협','Harassment, hate or threats'],['sexual','음란물·성적 콘텐츠','Sexual content'],['child','아동 안전 위협','Child safety concern'],['violence','폭력·불법 행위','Violence or illegal activity'],['other','기타','Other']];
+function askReport(target){
+  _modSheet(_L('신고 사유를 선택하세요','Why are you reporting this?'),REPORT_REASONS.map(function(r){
+    return {icon:'chevron_right',label:_L(r[1],r[2]),fn:function(){submitReport(target,r[0]);}};
+  }));
+}
+async function submitReport(target,reason){
+  if(!currentUser)return;
+  try{
+    await db.collection('reports').add({
+      reporterUid:currentUser.uid,type:target.type,reason:reason,roomId:currentRoomId||'',
+      targetUid:target.targetUid||'',messageText:String(target.messageText||'').slice(0,1000),
+      messageTime:target.messageTime||null,status:'open',createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast(_L('신고가 접수됐어요. 운영자가 검토할게요','Report submitted. We will review it.'));
+    if(target.targetUid&&!isBlocked(target.targetUid)&&!currentUser.isAnonymous){
+      setTimeout(function(){_modSheet(_L('이 사용자도 차단할까요?','Also block this user?'),[{icon:'block',label:_L('차단하기','Block'),danger:true,fn:function(){blockUser(target.targetUid);}}]);},500);
+    }
+  }catch(e){console.error('신고 실패:',e);showToast(_L('신고 전송에 실패했어요. 다시 시도해주세요','Could not send the report. Please try again.'));}
+}
+async function blockUser(uid){
+  if(!uid||!currentUser||currentUser.isAnonymous)return;
+  if(!confirm(_L('차단하면 이 사용자의 메시지와 1:1 대화방이 보이지 않고, 새 대화를 시작할 수 없어요. 차단할까요?','Messages and chats from this user will be hidden and you won\'t be able to start new chats. Block?')))return;
+  try{
+    await db.collection('blocks').doc(currentUser.uid).set({uids:firebase.firestore.FieldValue.arrayUnion(uid),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    blockedUids.add(uid);
+    showToast(_L('차단했어요. 설정 > 차단한 사용자에서 해제할 수 있어요','Blocked. You can unblock in Settings > Blocked users.'));
+    if(_dmPartnerUid()===uid)handleBack();else if(currentRoomId)loadMessages();
+  }catch(e){console.error('차단 실패:',e);showToast(_L('차단에 실패했어요','Could not block'));}
+}
+async function unblockUser(uid){
+  if(!uid||!currentUser)return;
+  try{
+    await db.collection('blocks').doc(currentUser.uid).set({uids:firebase.firestore.FieldValue.arrayRemove(uid),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    blockedUids.delete(uid);showToast(_L('차단을 해제했어요','Unblocked'));
+  }catch(e){showToast(_L('해제에 실패했어요','Could not unblock'));}
+}
+async function showBlockedList(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  const ids=Array.from(blockedUids);
+  if(ids.length===0){showToast(_L('차단한 사용자가 없어요','No blocked users'));return;}
+  const items=[];
+  for(const uid of ids){
+    let name=uid.slice(0,6);
+    try{const s=await db.collection('users').doc(uid).get();if(s.exists){const d=s.data();name=(d.displayName||name)+(d.manduid?' @'+d.manduid:'');}}catch(e){}
+    items.push({icon:'lock_open',label:_L('차단 해제: ','Unblock: ')+name,fn:function(){unblockUser(uid);}});
+  }
+  _modSheet(_L('차단한 사용자','Blocked users'),items);
+}
+function _attachMsgReport(el,d){
+  if(!d||!d.uid||(currentUser&&d.uid===currentUser.uid))return;
+  const open=function(){
+    const items=[{icon:'flag',label:_L('이 메시지 신고하기','Report this message'),fn:function(){askReport({type:'message',targetUid:d.uid,messageText:d.text||d.imageUrl||d.fileUrl||'',messageTime:d.createdAt||null});}}];
+    if(currentUser&&!currentUser.isAnonymous&&!isBlocked(d.uid))items.push({icon:'block',label:_L('보낸 사람 차단하기','Block sender'),danger:true,fn:function(){blockUser(d.uid);}});
+    _modSheet(_L('메시지','Message'),items);
+  };
+  el.addEventListener('contextmenu',function(e){e.preventDefault();open();});
+  let tm=null;
+  el.addEventListener('touchstart',function(){tm=setTimeout(function(){tm=null;open();},600);},{passive:true});
+  ['touchend','touchmove','touchcancel'].forEach(function(ev){el.addEventListener(ev,function(){if(tm){clearTimeout(tm);tm=null;}},{passive:true});});
+}
+
 function handleBack(){
   if(isGuest){show('guest-screen');}else{currentTab='chats';showMain();}
 }
@@ -2445,14 +2580,15 @@ function loadRooms(){
   const list=document.getElementById('room-list');
   const sub=document.getElementById('chats-sub');
   db.collection('rooms').where('members','array-contains',currentUser.uid)
-    .onSnapshot(function(snap){
+    .onSnapshot(_roomsRender=function(snap){
+      _lastRoomsSnap=snap;
       list.innerHTML='';
       if(snap.empty){
         sub.textContent=t('chats_empty_title');
         list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc')+'</div></div>';
         return;
       }
-      const docs=snap.docs.sort(function(a,b){
+      const docs=snap.docs.filter(_roomVisible).sort(function(a,b){
         const at=a.data().lastMessageTime,bt=b.data().lastMessageTime;
         if(!at)return 1;if(!bt)return -1;return bt.toMillis()-at.toMillis();
       });
@@ -2551,6 +2687,7 @@ function renderUserList(keyword){
 function filterFriends(keyword){renderUserList(keyword);}
 
 async function startDM(partner){
+  if(partner&&isBlocked(partner.uid)){showToast(_L('차단한 사용자예요. 설정 > 차단한 사용자에서 해제할 수 있어요','You blocked this user. Unblock in Settings > Blocked users.'));return;}
   const ids=[currentUser.uid,partner.uid].sort();
   const roomId=ids.join('_');
   await db.collection('rooms').doc(roomId).set({
@@ -2930,6 +3067,7 @@ function renderMsg(d,skipTranslate){
     return;
   }
   const mine=d.uid===currentUser.uid;
+  if(!mine&&isBlocked(d.uid))return;
   const myLang=document.getElementById('my-lang').value;
   const w=document.createElement('div');
   w.className='msg-wrap '+(mine?'mine':'theirs');
@@ -2953,6 +3091,7 @@ function renderMsg(d,skipTranslate){
   const timeEl=document.createElement('div');timeEl.className='msg-time';
   timeEl.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
   row.appendChild(b);row.appendChild(timeEl);w.appendChild(row);container.appendChild(w);
+  if(!mine)_attachMsgReport(b,d);
   if(!d.imageUrl&&!d.fileUrl&&d.text)attachLinkPreview(w,d.text);
   if(mine){
     if(lastMyMsgWrap){const p=lastMyMsgWrap.querySelector('.read-receipt');if(p)p.remove();}
@@ -3165,7 +3304,7 @@ function sendPushNotification(toUids,body){
   fetch('https://mandu-server.onrender.com/api/notify',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({toUids:toUids,roomId:currentRoomId,senderName:senderName,body:body})
+    body:JSON.stringify({toUids:toUids,roomId:currentRoomId,senderName:senderName,body:body,senderUid:currentUser?currentUser.uid:''})
   }).catch(function(e){console.warn('푸시 알림 전송 실패:',e);});
 }
 
