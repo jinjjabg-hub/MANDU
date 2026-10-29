@@ -2079,12 +2079,14 @@ async function toggleCardbookConsent(){
   }catch(e){showToast(t('cardbook_consent_fail'));}
 }
 
+// 프로필 사진이 없는 계정(이메일 가입 등)용 기본 아바타 — 빈 src로 깨진 이미지 아이콘이 보이는 것 방지
+const DEFAULT_AVATAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#e9ddff"/><circle cx="32" cy="25" r="11" fill="#6b38d4"/><path d="M12 56c2-11 10-17 20-17s18 6 20 17z" fill="#6b38d4"/></svg>');
 function updateUIAfterLogin(){
   if(!currentUser||currentUser.isAnonymous)return;
   initBlocks();
-  document.getElementById('my-avatar').src=currentUser.photoURL||'';
-  document.getElementById('hero-avatar').src=currentUser.photoURL||'';
-  document.getElementById('settings-avatar').src=currentUser.photoURL||'';
+  document.getElementById('my-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
+  document.getElementById('hero-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
+  document.getElementById('settings-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('hero-name').textContent=currentUser.displayName||'—';
   document.getElementById('settings-name').textContent=currentUser.displayName||'—';
   document.getElementById('settings-email').textContent=currentUser.email||'';
@@ -2356,7 +2358,7 @@ async function discoverStartDM(uid){
 
 function showProfile(){
   if(!currentUser||currentUser.isAnonymous)return;
-  document.getElementById('pe-photo').src=currentUser.photoURL||'';
+  document.getElementById('pe-photo').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('pe-name').value=currentUser.displayName||'';
   document.getElementById('pe-email').textContent=currentUser.email||'';
   document.getElementById('pe-manduid').textContent='@'+(currentManduid||'—');
