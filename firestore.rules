@@ -54,6 +54,22 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // 차단 목록 — 본인만 읽고 쓴다. (uids: 내가 차단한 사용자 uid 배열)
+    match /blocks/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // 신고 — 로그인 사용자(게스트 포함)는 본인 명의로 생성만 가능. 읽기·수정·삭제는 운영자(콘솔/Admin SDK)만.
+    match /reports/{reportId} {
+      allow create: if request.auth != null
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['reporterUid', 'type', 'reason', 'roomId', 'targetUid', 'messageText', 'messageTime', 'status', 'createdAt'])
+        && request.resource.data.type in ['user', 'message', 'room']
+        && request.resource.data.messageText is string
+        && request.resource.data.messageText.size() <= 1000;
+      allow read, update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
