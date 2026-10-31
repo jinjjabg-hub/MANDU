@@ -3001,6 +3001,32 @@ function getYearMonth(){
 
 // getUserPlan은 아래(2110행 근처)에 Firestore 연동 버전으로 통합됨
 
+// ── 번역 결과 기기 저장 (한 번 번역한 메시지는 다시 열어도 서버를 안 부름 → 사용량·대기시간 절약) ──
+// 메시지 문서는 수정 금지(firestore.rules)라 기기 localStorage에 '언어|원문' → 번역문으로 보관
+const TR_CACHE_KEY='mandu_tr_cache';
+const TR_CACHE_MAX=2000;
+let _trCache={};
+try{_trCache=JSON.parse(localStorage.getItem(TR_CACHE_KEY)||'{}')||{};}catch(e){_trCache={};}
+let _trCacheSaveTimer=null;
+function getCachedTranslation(text,targetLang){
+  if(!text||!targetLang)return null;
+  return _trCache[targetLang+'|'+text]||null;
+}
+function setCachedTranslation(text,targetLang,tr){
+  const k=targetLang+'|'+text;
+  delete _trCache[k];_trCache[k]=tr; // 맨 뒤로 → 오래 안 쓴 것부터 정리
+  const keys=Object.keys(_trCache);
+  if(keys.length>TR_CACHE_MAX)keys.slice(0,keys.length-TR_CACHE_MAX).forEach(function(x){delete _trCache[x];});
+  clearTimeout(_trCacheSaveTimer);
+  _trCacheSaveTimer=setTimeout(function(){
+    try{localStorage.setItem(TR_CACHE_KEY,JSON.stringify(_trCache));}
+    catch(e){ // 저장공간 부족 → 오래된 절반 정리 후 재시도
+      const ks=Object.keys(_trCache);ks.slice(0,Math.floor(ks.length/2)).forEach(function(x){delete _trCache[x];});
+      try{localStorage.setItem(TR_CACHE_KEY,JSON.stringify(_trCache));}catch(e2){}
+    }
+  },500);
+}
+
 // ── 메인 번역 함수 (서버가 인증+사용량 검증까지 전담) ─────────────
 let _usage80WarnShown=false;
 async function translate(text,targetLang){
@@ -3020,6 +3046,10 @@ async function translate(text,targetLang){
   // 2.5단계: 내 사전
   const myDictResult=lookupMyDict(text,srcLang,targetLang);
   if(myDictResult)return myDictResult;
+
+  // 2.7단계: 이전에 번역해 둔 결과
+  const cached=getCachedTranslation(text,targetLang);
+  if(cached)return cached;
 
   if(!currentUser)return '';
 
@@ -3046,6 +3076,7 @@ async function translate(text,targetLang){
         _usage80WarnShown=true;
         showToast(t('usage_80_warn_toast'));
       }
+      if(data.translated)setCachedTranslation(text,targetLang,data.translated);
       return data.translated||'';
     }catch(e){
       if(attempt<2){await new Promise(function(r){setTimeout(r,2000+attempt*2000);});continue;}
@@ -3063,7 +3094,9 @@ function renderMsg(d,skipTranslate){
     sysEl.textContent=d.text;
     container.appendChild(sysEl);
     const myLang0=document.getElementById('my-lang').value;
-    if(myLang0){
+    const cached0=myLang0&&getCachedTranslation(d.text,myLang0);
+    if(cached0){sysEl.textContent=cached0;}
+    else if(myLang0){
       translate(d.text,myLang0).then(function(tr){if(tr&&tr!==d.text)sysEl.textContent=tr;});
     }
     return;
@@ -3101,6 +3134,15 @@ function renderMsg(d,skipTranslate){
     const r=document.createElement('div');r.className='read-receipt';w.appendChild(r);
   }
   if(!mine&&myLang){
+    // 이미 번역해 둔 메시지는 '번역 중' 없이 바로 고정 표시 (오래된 메시지도 버튼 없이)
+    const cachedTr=getCachedTranslation(d.text,myLang);
+    if(cachedTr&&cachedTr!==d.text){
+      b.textContent=cachedTr;
+      const orig=document.createElement('div');orig.className='msg-translated';
+      orig.innerHTML='<span class="ms">translate</span>'+d.text;
+      w.appendChild(orig);
+      return;
+    }
     if(skipTranslate){
       return {bubble:b,wrap:w,text:d.text,myLang:myLang};
     }
