@@ -350,6 +350,28 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .link-card .lc-title{font-size:13px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .link-card .lc-desc{font-size:11px;color:var(--on-surface-variant);margin-top:3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .link-card .lc-site{font-size:10px;color:var(--outline);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.img-tr-btn{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:5px 10px;border-radius:100px;border:1px solid var(--outline-variant);background:var(--surface);color:var(--primary);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
+.img-tr-btn .ms{font-size:14px !important;}
+.img-tr-box{margin-top:6px;padding:10px 12px;border-radius:14px;background:var(--surface-container);color:var(--on-surface);font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;max-width:260px;text-align:left;}
+.img-tr-box .img-tr-toggle{display:block;margin-top:8px;padding:0;border:none;background:none;color:var(--primary);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
+.store-screen{position:fixed;inset:0;z-index:600;background:var(--surface);display:flex;flex-direction:column;}
+.store-hd{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--outline-variant);font-size:17px;font-weight:700;}
+.store-hd button{border:none;background:none;color:var(--on-surface);cursor:pointer;display:flex;}
+.store-body{flex:1;overflow:auto;padding:16px;max-width:560px;width:100%;margin:0 auto;}
+.store-sec{margin-bottom:22px;}
+.store-sec-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px;font-size:15px;font-weight:700;}
+.store-sec-desc{font-size:12px;color:var(--on-surface-variant);line-height:1.5;margin-bottom:8px;}
+.store-ta,.store-in{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--outline-variant);background:var(--surface);color:var(--on-surface);font-size:14px;font-family:inherit;}
+.store-ta{min-height:64px;resize:vertical;}
+.store-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;background:var(--surface-container);margin-bottom:6px;font-size:14px;}
+.store-item span.tx{flex:1;word-break:break-word;}
+.store-item button{border:none;background:none;color:var(--outline);cursor:pointer;display:flex;}
+.store-item.pick{cursor:pointer;}
+.store-item.pick.on{outline:2px solid var(--primary);}
+.store-add{display:flex;gap:8px;margin-top:6px;}
+.store-add button,.store-save{border:none;border-radius:12px;background:var(--primary);color:#fff;font-weight:700;cursor:pointer;font-family:inherit;}
+.store-add button{padding:0 14px;font-size:13px;flex-shrink:0;}
+.store-save{display:block;width:100%;padding:14px;font-size:15px;margin-top:8px;}
 .msg-image{max-width:220px;border-radius:14px;display:block;cursor:pointer;margin:2px 0;}
 .img-btn{width:34px;height:34px;background:var(--surface-container);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--primary);}
 .img-btn .ms{font-size:22px !important;}
@@ -841,6 +863,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div class="toggle" id="dark-toggle"></div>
         </div>
       </div>
+      <div class="settings-section-label" id="store-section-label">매장</div>
+      <div class="settings-card">
+        <div class="settings-row" onclick="showStoreSettings()">
+          <div class="settings-icon-wrap"><span class="ms">storefront</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="store-row-label">매장 설정</div>
+            <div class="settings-row-sub" id="store-row-sub">자동 인사말 · 부재 응답 · 자주 쓰는 답변 · 직원</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">chevron_right</span></div>
+        </div>
+      </div>
       <div class="settings-section-label" data-i18n="settings_section_dict">내 사전</div>
       <div class="settings-card">
         <div class="settings-row" onclick="showDictSheet()">
@@ -1008,6 +1041,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <button onclick="document.getElementById('file-input').click();closeAttachMenu();">
       <span class="attach-menu-icon" style="background:#fef7e0;"><span class="ms" style="color:#e37400;">attach_file</span></span>
       <span data-i18n="attach_menu_file">파일</span>
+    </button>
+    <button id="quick-reply-menu-btn" onclick="closeAttachMenu();openQuickReplies();">
+      <span class="attach-menu-icon" style="background:#e6f4ea;"><span class="ms" style="color:#188038;">bolt</span></span>
+      <span id="quick-reply-menu-lbl">자주 쓰는 답변</span>
     </button>
     <button onclick="toggleEmojiPicker();closeAttachMenu();">
       <span class="attach-menu-icon" style="background:#fce8e6;"><span class="ms" style="color:#d93025;">mood</span></span>
@@ -1704,7 +1741,7 @@ async function initFCM(){
         const isGroup=r.type==='group';
         const entries=r.memberNames?Object.entries(r.memberNames):[];
         const otherEntry=entries.find(function(en){return en[0]!==currentUser.uid;});
-        const name=isGroup?r.name:(otherEntry?otherEntry[1]:t('chat_default_room_name'));
+        const name=isGroup?((r.customerUid===currentUser.uid&&r.memberNames&&r.memberNames[r.storeUid])||r.name):(otherEntry?otherEntry[1]:t('chat_default_room_name'));
         openRoom(roomId,name,r.photoURL||'',isGroup);
       }).catch(function(){});
     });
@@ -1958,7 +1995,11 @@ auth.onAuthStateChanged(async function(user){
     }
     if(hostUID&&hostUID!==user.uid){
       const hostDoc=await db.collection('users').doc(hostUID).get();
-      if(hostDoc.exists){await startDM(hostDoc.data());return;}
+      if(hostDoc.exists){
+        const hd=hostDoc.data();
+        if(_storeStaff(hd,hostUID).length){await openStoreRoom(hd,hostUID);}else{await startDM(hd);}
+        return;
+      }
     }
     showMain();
   }else{
@@ -2007,6 +2048,8 @@ async function startGuestChat(){
   const name=document.getElementById('guest-name-input').value.trim();
   if(!name){showToast('이름을 입력해주세요');return;}
   try{
+    // 로그인 직후 바로 대화방이 만들어지므로, 이름을 먼저 저장해 둬야 방에 손님 이름이 들어간다
+    localStorage.setItem('mandu_guest_name',name);
     await auth.signInAnonymously();
     await db.collection('users').doc(auth.currentUser.uid).set({
       uid:auth.currentUser.uid,displayName:name,photoURL:'',email:'',
@@ -2041,15 +2084,7 @@ async function openGuestRoom(){
     applyUILanguage(detectedLang);
     const myLangEl=document.getElementById('my-lang');
     if(myLangEl)myLangEl.value=detectedLang;
-    const roomId='guest_'+currentUser.uid+'_'+hostUID;
-    await db.collection('rooms').doc(roomId).set({
-      type:'direct',members:[currentUser.uid,hostUID],
-      memberNames:{[currentUser.uid]:guestName,[hostUID]:host.displayName},
-      memberPhotos:{[currentUser.uid]:'',[hostUID]:host.photoURL||''},
-      lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),
-      isGuestRoom:true
-    },{merge:true});
-    openRoom(roomId,host.displayName,host.photoURL,false);
+    await openStoreRoom(host,hostUID);
   }catch(e){showToast('오류가 발생했어요');}
 }
 
@@ -2106,7 +2141,7 @@ async function toggleCardbookConsent(){
 const DEFAULT_AVATAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#e9ddff"/><circle cx="32" cy="25" r="11" fill="#6b38d4"/><path d="M12 56c2-11 10-17 20-17s18 6 20 17z" fill="#6b38d4"/></svg>');
 function updateUIAfterLogin(){
   if(!currentUser||currentUser.isAnonymous)return;
-  initBlocks();initAiTranslate();
+  initBlocks();initAiTranslate();initStoreLabels();
   document.getElementById('my-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('hero-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('settings-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
@@ -2598,6 +2633,272 @@ function _attachMsgReport(el,d){
   ['touchend','touchmove','touchcancel'].forEach(function(ev){el.addEventListener(ev,function(){if(tm){clearTimeout(tm);tm=null;}},{passive:true});});
 }
 
+
+// ── 매장용 기능 ─────────────────────────────────────────────────
+// 설정은 users/{uid}.store 에 저장: {greetOn, greeting, awayOn, awayMsg, quick:[문장], staff:[uid]}
+//  · 자동 인사말 : 손님이 처음 대화방에 들어오면 매장 이름으로 인사말이 올라간다
+//  · 부재 응답   : 부재 중을 켜두면 손님이 메시지를 보냈을 때 안내 문구가 올라간다 (방마다 1시간에 한 번)
+//  · 자주 쓰는 답변 : 채팅 입력창 + 메뉴에서 골라 넣는다
+//  · 직원        : 내 QR·링크로 들어온 손님 대화방에 직원이 함께 들어가 누구든 응대할 수 있다
+// 자동 메시지는 손님 쪽 앱이 uid 없이(asUid=매장 주인) 기록한다.
+let _currentRoomData=null;
+const _storeCache={};
+function initStoreLabels(){
+  const set=function(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt;};
+  set('store-section-label',_L('매장','Store'));
+  set('store-row-label',_L('매장 설정','Store settings'));
+  set('store-row-sub',_L('자동 인사말 · 부재 응답 · 자주 쓰는 답변 · 직원','Greeting · Away reply · Quick replies · Staff'));
+  set('quick-reply-menu-lbl',_L('자주 쓰는 답변','Quick replies'));
+  const qb=document.getElementById('quick-reply-menu-btn');if(qb)qb.style.display=(currentUser&&!currentUser.isAnonymous)?'':'none';
+}
+async function _getStore(uid){
+  if(!uid)return {};
+  if(usersMap[uid])return usersMap[uid].store||{};
+  const c=_storeCache[uid];
+  if(c&&Date.now()-c.t<60000)return c.d;
+  let d={};
+  try{const snap=await db.collection('users').doc(uid).get();d=(snap.exists&&snap.data().store)||{};}catch(e){}
+  _storeCache[uid]={t:Date.now(),d:d};
+  return d;
+}
+function _storeStaff(host,hostUid){
+  const st=(host&&host.store)||{};
+  return (st.staff||[]).filter(function(u){return u&&u!==hostUid&&(!currentUser||u!==currentUser.uid);}).slice(0,10);
+}
+// 이 방을 처음 여는지 — 방이 아직 없으면(읽기 권한 없음으로 나온다) 처음으로 본다
+async function _isFirstOpen(roomId){
+  try{if(localStorage.getItem('mandu_greet_'+roomId))return false;}catch(e){}
+  try{
+    const snap=await db.collection('rooms').doc(roomId).get();
+    return !snap.exists;
+  }catch(e){return !!(e&&e.code==='permission-denied');}
+}
+async function _postAutoMsg(roomId,asUid,name,text,kind){
+  await db.collection('rooms').doc(roomId).collection('messages').add({
+    text:String(text).slice(0,500),asUid:asUid,auto:kind,displayName:name||'',
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+async function _autoGreet(roomId,hostUid,host){
+  try{
+    try{localStorage.setItem('mandu_greet_'+roomId,'1');}catch(e){}
+    const st=(host&&host.store)||await _getStore(hostUid);
+    if(!st.greetOn||!(st.greeting||'').trim())return;
+    await _postAutoMsg(roomId,hostUid,host&&host.displayName,st.greeting.trim(),'greeting');
+  }catch(e){console.warn('자동 인사말 실패:',e);}
+}
+let _awayBusy=false;
+async function _autoAway(){
+  try{
+    const room=_currentRoomData;const roomId=currentRoomId;
+    if(!room||!roomId||_awayBusy)return;
+    const storeUid=room.storeUid||_dmPartnerUid();
+    if(!storeUid||storeUid===currentUser.uid||(room.staff||[]).indexOf(currentUser.uid)>=0)return;
+    if(room.awayAt&&room.awayAt.toMillis&&Date.now()-room.awayAt.toMillis()<3600000)return;
+    _awayBusy=true;
+    const st=await _getStore(storeUid);
+    if(st.awayOn&&(st.awayMsg||'').trim()){
+      const name=(room.memberNames&&room.memberNames[storeUid])||'';
+      await _postAutoMsg(roomId,storeUid,name,st.awayMsg.trim(),'away');
+      await db.collection('rooms').doc(roomId).set({awayAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+      if(_currentRoomData)_currentRoomData.awayAt={toMillis:function(){return Date.now();}};
+    }
+  }catch(e){console.warn('부재 응답 실패:',e);}
+  _awayBusy=false;
+}
+// 매장 링크·QR로 들어온 손님의 대화방. 직원이 있으면 주인+직원이 함께 들어가는 방으로 만든다.
+async function openStoreRoom(host,hostUid){
+  const me=currentUser.uid;
+  const myName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
+  const staff=_storeStaff(host,hostUid);
+  const anon=!!currentUser.isAnonymous;
+  const roomId=(anon?'guest_':'store_')+me+'_'+hostUid;
+  const firstOpen=await _isFirstOpen(roomId);
+  const data={
+    type:'direct',members:[me,hostUid],
+    memberNames:{[me]:myName,[hostUid]:host.displayName||''},
+    memberPhotos:{[me]:currentUser.photoURL||'',[hostUid]:host.photoURL||''},
+    lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),
+    storeUid:hostUid,customerUid:me,staff:staff
+  };
+  if(firstOpen)data.lastMessage='';
+  if(anon)data.isGuestRoom=true;
+  if(staff.length){
+    data.type='group';data.name=myName;data.members=[me,hostUid].concat(staff);
+    const docs=await Promise.all(staff.map(function(u){return db.collection('users').doc(u).get().catch(function(){return null;});}));
+    docs.forEach(function(sd,i){const u=sd&&sd.exists?sd.data():{};data.memberNames[staff[i]]=u.displayName||'';data.memberPhotos[staff[i]]=u.photoURL||'';});
+  }
+  await db.collection('rooms').doc(roomId).set(data,{merge:true});
+  openRoom(roomId,host.displayName,host.photoURL,false);
+  if(firstOpen)_autoGreet(roomId,hostUid,host);
+}
+// 자주 쓰는 답변: 내 것 + (매장 대화방의 직원이면) 매장 주인 것
+async function openQuickReplies(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  let list=((await _getStore(currentUser.uid)).quick||[]).slice();
+  const room=_currentRoomData;
+  if(room&&room.storeUid&&room.storeUid!==currentUser.uid&&(room.staff||[]).indexOf(currentUser.uid)>=0){
+    ((await _getStore(room.storeUid)).quick||[]).forEach(function(q){if(list.indexOf(q)<0)list.push(q);});
+  }
+  if(!list.length){showToast(_L('설정 > 매장 설정에서 자주 쓰는 답변을 추가해 주세요','Add quick replies in Settings > Store settings'));return;}
+  _modSheet(_L('자주 쓰는 답변','Quick replies'),list.map(function(q){
+    return {icon:'bolt',label:q,fn:function(){
+      const input=document.getElementById('msg-input');
+      input.value=(input.value?input.value+' ':'')+q;
+      autoResize(input);updateCharCounter(input);input.focus();
+    }};
+  }));
+}
+// ── 매장 설정 화면 ──
+let _storeDraft=null;
+async function showStoreSettings(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  let st={};
+  try{const snap=await db.collection('users').doc(currentUser.uid).get();st=(snap.exists&&snap.data().store)||{};}catch(e){}
+  _storeDraft={greetOn:!!st.greetOn,greeting:st.greeting||'',awayOn:!!st.awayOn,awayMsg:st.awayMsg||'',quick:(st.quick||[]).slice(0,20),staff:(st.staff||[]).slice(0,10)};
+  closeStoreSettings();
+  const el=document.createElement('div');el.id='store-screen';el.className='store-screen';
+  el.innerHTML=
+    '<div class="store-hd"><button onclick="closeStoreSettings()"><span class="ms">arrow_back</span></button><span>'+_L('매장 설정','Store settings')+'</span></div>'+
+    '<div class="store-body">'+
+      '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('자동 인사말','Greeting message')+'</span><div class="toggle" id="store-greet-toggle"></div></div>'+
+        '<div class="store-sec-desc">'+_L('손님이 처음 대화방에 들어오면 자동으로 보내요. 손님 언어로 번역돼 보여요.','Sent automatically when a customer first opens the chat. Shown in the customer\'s language.')+'</div>'+
+        '<textarea class="store-ta" id="store-greeting" maxlength="300"></textarea></div>'+
+      '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('부재 중 자동 응답','Away reply')+'</span><div class="toggle" id="store-away-toggle"></div></div>'+
+        '<div class="store-sec-desc">'+_L('켜두면 손님이 메시지를 보냈을 때 자동으로 답해요. 자리로 돌아오면 꺼주세요.','While on, customers get this reply when they message you. Turn it off when you are back.')+'</div>'+
+        '<textarea class="store-ta" id="store-away" maxlength="300"></textarea></div>'+
+      '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('자주 쓰는 답변','Quick replies')+'</span></div>'+
+        '<div class="store-sec-desc">'+_L('채팅 입력창의 + 버튼에서 골라 바로 넣을 수 있어요. (최대 20개)','Pick them from the + button in a chat. (Up to 20)')+'</div>'+
+        '<div id="store-quick-list"></div>'+
+        '<div class="store-add"><input class="store-in" id="store-quick-input" maxlength="300"><button onclick="_storeAddQuick()">'+_L('추가','Add')+'</button></div></div>'+
+      '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('함께 응대할 직원','Staff')+'</span></div>'+
+        '<div class="store-sec-desc">'+_L('선택한 친구는 내 QR·링크로 들어온 손님과의 대화방에 함께 들어가 누구든 답할 수 있어요. 앞으로 새로 들어오는 손님부터 적용돼요. (최대 10명)','Selected friends join chats with customers who come through your QR or link, so anyone can reply. Applies to customers who enter from now on. (Up to 10)')+'</div>'+
+        '<div id="store-staff-list"></div></div>'+
+      '<button class="store-save" onclick="saveStoreSettings()">'+_L('저장','Save')+'</button>'+
+    '</div>';
+  document.body.appendChild(el);
+  document.getElementById('store-greeting').value=_storeDraft.greeting;
+  document.getElementById('store-away').value=_storeDraft.awayMsg;
+  [['store-greet-toggle','greetOn'],['store-away-toggle','awayOn']].forEach(function(x){
+    const tg=document.getElementById(x[0]);
+    tg.className='toggle '+(_storeDraft[x[1]]?'on':'');
+    tg.onclick=function(){_storeDraft[x[1]]=!_storeDraft[x[1]];tg.className='toggle '+(_storeDraft[x[1]]?'on':'');};
+  });
+  _storeRenderQuick();_storeRenderStaff();
+}
+function closeStoreSettings(){const e=document.getElementById('store-screen');if(e)e.remove();}
+function _storeRenderQuick(){
+  const list=document.getElementById('store-quick-list');if(!list)return;
+  list.innerHTML='';
+  _storeDraft.quick.forEach(function(q,i){
+    const it=document.createElement('div');it.className='store-item';
+    const tx=document.createElement('span');tx.className='tx';tx.textContent=q;it.appendChild(tx);
+    const del=document.createElement('button');del.innerHTML='<span class="ms">close</span>';
+    del.onclick=function(){_storeDraft.quick.splice(i,1);_storeRenderQuick();};
+    it.appendChild(del);list.appendChild(it);
+  });
+}
+function _storeAddQuick(){
+  const input=document.getElementById('store-quick-input');const v=input.value.trim();
+  if(!v)return;
+  if(_storeDraft.quick.length>=20){showToast(_L('최대 20개까지 등록할 수 있어요','You can add up to 20'));return;}
+  if(_storeDraft.quick.indexOf(v)<0)_storeDraft.quick.push(v);
+  input.value='';_storeRenderQuick();
+}
+function _storeRenderStaff(){
+  const list=document.getElementById('store-staff-list');if(!list)return;
+  list.innerHTML='';
+  const friends=allUsers.filter(function(u){return myContactUids.has(u.uid)||_storeDraft.staff.indexOf(u.uid)>=0;});
+  if(!friends.length){list.innerHTML='<div class="store-sec-desc">'+_L('먼저 친구 탭에서 직원을 친구로 추가해 주세요.','Add your staff as friends first.')+'</div>';return;}
+  friends.forEach(function(u){
+    const on=_storeDraft.staff.indexOf(u.uid)>=0;
+    const it=document.createElement('div');it.className='store-item pick'+(on?' on':'');
+    const ic=document.createElement('span');ic.className='ms';ic.textContent=on?'check_circle':'radio_button_unchecked';it.appendChild(ic);
+    const tx=document.createElement('span');tx.className='tx';tx.textContent=(u.displayName||'')+(u.manduid?' @'+u.manduid:'');it.appendChild(tx);
+    it.onclick=function(){
+      const i=_storeDraft.staff.indexOf(u.uid);
+      if(i>=0)_storeDraft.staff.splice(i,1);
+      else if(_storeDraft.staff.length>=10){showToast(_L('최대 10명까지 선택할 수 있어요','You can select up to 10'));return;}
+      else _storeDraft.staff.push(u.uid);
+      _storeRenderStaff();
+    };
+    list.appendChild(it);
+  });
+}
+async function saveStoreSettings(){
+  if(!currentUser||!_storeDraft)return;
+  _storeAddQuick();
+  _storeDraft.greeting=document.getElementById('store-greeting').value.trim().slice(0,300);
+  _storeDraft.awayMsg=document.getElementById('store-away').value.trim().slice(0,300);
+  if(_storeDraft.greetOn&&!_storeDraft.greeting){showToast(_L('인사말 내용을 입력해 주세요','Please enter a greeting'));return;}
+  if(_storeDraft.awayOn&&!_storeDraft.awayMsg){showToast(_L('부재 응답 내용을 입력해 주세요','Please enter an away reply'));return;}
+  try{
+    await db.collection('users').doc(currentUser.uid).update({store:_storeDraft});
+    if(usersMap[currentUser.uid])usersMap[currentUser.uid].store=_storeDraft;
+    showToast(_L('매장 설정을 저장했어요','Store settings saved'));
+    closeStoreSettings();
+  }catch(e){console.error('매장 설정 저장 실패:',e);showToast(_L('저장에 실패했어요. 다시 시도해주세요','Could not save. Please try again.'));}
+}
+
+// ── 사진 속 글자 번역 ───────────────────────────────────────────
+function _attachImageTranslate(w,url){
+  const myLang=document.getElementById('my-lang').value;
+  if(!myLang||!/^https:\/\/res\.cloudinary\.com\//.test(url))return;
+  const btn=document.createElement('button');btn.className='img-tr-btn';
+  const setIdle=function(){btn.disabled=false;btn.innerHTML='<span class="ms">translate</span>';btn.appendChild(document.createTextNode(_L('사진 속 글자 번역','Translate text in photo')));};
+  setIdle();
+  btn.onclick=async function(){
+    btn.disabled=true;btn.textContent=t('translating_loading');
+    const r=await translateImage(url,document.getElementById('my-lang').value||myLang);
+    if(!r){setIdle();return;}
+    btn.remove();
+    const box=document.createElement('div');box.className='img-tr-box';
+    const body=document.createElement('div');box.appendChild(body);
+    const tg=document.createElement('button');tg.className='img-tr-toggle';box.appendChild(tg);
+    let showOrig=false;
+    const paint=function(){
+      body.textContent=(showOrig?r.original:r.translated)+(r.truncated?'\n…':'');
+      tg.textContent=showOrig?_L('번역 보기','Show translation'):_L('원문 보기','Show original');
+    };
+    tg.onclick=function(){showOrig=!showOrig;paint();};
+    paint();
+    const container=document.getElementById('messages');
+    const nearBottom=container.scrollHeight-container.scrollTop-container.clientHeight<120;
+    const receipt=w.querySelector('.read-receipt');
+    w.insertBefore(box,receipt||null);
+    if(nearBottom)container.scrollTop=container.scrollHeight;
+  };
+  w.appendChild(btn);
+}
+// 서버가 사진의 글자를 읽어 번역한다. 같은 사진은 이 기기에 저장해 두고 다시 부르지 않는다. 실패하면 null.
+async function translateImage(url,lang){
+  if(!currentUser)return null;
+  const key='mandu_imgtr_'+lang+'_'+url;
+  try{const c=JSON.parse(localStorage.getItem(key)||'null');if(c&&c.translated)return c;}catch(e){}
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const idToken=await currentUser.getIdToken();
+      const res=await fetch('https://mandu-server.onrender.com/api/translate/image',{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
+        body:JSON.stringify({imageUrl:url,target:lang})
+      });
+      if(res.status===402){showToast(t('usage_limit_exceeded_toast'));return null;}
+      if(res.status===503||res.status===404){showToast(_L('사진 글자 번역은 아직 준비 중이에요','Photo translation is not available yet'));return null;}
+      if(res.status===422||res.status===400){showToast(_L('이 사진은 번역할 수 없어요','This photo cannot be translated'));return null;}
+      if(!res.ok)throw new Error('http '+res.status);
+      const d=await res.json();
+      if(!d.original){showToast(_L('사진에서 글자를 찾지 못했어요','No text found in this photo'));return null;}
+      const out={original:d.original,translated:d.translated||d.original,truncated:!!d.truncated};
+      try{localStorage.setItem(key,JSON.stringify(out));}catch(e){}
+      return out;
+    }catch(e){
+      if(attempt<1){await new Promise(function(r){setTimeout(r,3000);});continue;}
+    }
+  }
+  showToast(_L('번역에 실패했어요. 잠시 후 다시 시도해주세요','Translation failed. Please try again later.'));
+  return null;
+}
+
 function handleBack(){
   if(isGuest){show('guest-screen');}else{currentTab='chats';showMain();}
 }
@@ -2642,7 +2943,7 @@ function loadRooms(){
       docs.forEach(function(doc){
         const r=doc.data();
         const isGroup=r.type==='group';
-        const name=isGroup?r.name:(r.memberNames&&Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})?Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})[1]:t('chat_default_room_name'));
+        const name=isGroup?((r.customerUid===currentUser.uid&&r.memberNames&&r.memberNames[r.storeUid])||r.name):(r.memberNames&&Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})?Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})[1]:t('chat_default_room_name'));
         const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).filter(function(e){return e[0]!==currentUser.uid;})[0]?.[1]:'';
         const partnerUid=!isGroup?Object.keys(r.memberNames||{}).find(function(k){return k!==currentUser.uid;}):null;
         const rb=r.readBy||{};const mr=rb[currentUser.uid];
@@ -2716,6 +3017,7 @@ async function startDM(partner){
   if(partner&&isBlocked(partner.uid)){showToast(_L('차단한 사용자예요. 설정 > 차단한 사용자에서 해제할 수 있어요','You blocked this user. Unblock in Settings > Blocked users.'));return;}
   const ids=[currentUser.uid,partner.uid].sort();
   const roomId=ids.join('_');
+  const firstOpen=await _isFirstOpen(roomId);
   await db.collection('rooms').doc(roomId).set({
     type:'direct',members:ids,
     memberNames:{[currentUser.uid]:currentUser.displayName,[partner.uid]:partner.displayName},
@@ -2723,6 +3025,7 @@ async function startDM(partner){
     lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
   openRoom(roomId,partner.displayName,partner.photoURL,false);
+  if(firstOpen)_autoGreet(roomId,partner.uid,partner);
 }
 
 function showCreate(){
@@ -2759,7 +3062,7 @@ async function createRoom(){
 }
 
 function openRoom(roomId,name,photo,isGroup){
-  currentRoomId=roomId;lastMyMsgWrap=null;
+  currentRoomId=roomId;lastMyMsgWrap=null;_currentRoomData=null;
   document.getElementById('chat-title').textContent=name;
   const icon=document.getElementById('chat-icon');
   icon.innerHTML=photo?'<img src="'+photo+'" alt="" style="width:100%;height:100%;object-fit:cover;">':(isGroup?'👥':'👤');
@@ -2771,7 +3074,7 @@ function openRoom(roomId,name,photo,isGroup){
   if(unsubRoom)unsubRoom();
   unsubRoom=db.collection('rooms').doc(roomId).onSnapshot(function(snap){
     const data=snap.data();if(!data)return;
-    currentRoomMembers=data.members||[];
+    currentRoomMembers=data.members||[];_currentRoomData=data;
     updateReadReceipt(data.readBy||{});
   },function(err){console.error('room listener 실패:',err);});
 }
@@ -3180,7 +3483,8 @@ function renderMsg(d,skipTranslate){
     }
     return;
   }
-  const mine=d.uid===currentUser.uid;
+  // 자동 메시지(인사말·부재 응답)는 uid 없이 asUid(매장 주인)로 기록된다 — 주인 화면에서는 내 메시지로 보인다
+  const mine=d.uid===currentUser.uid||(!!d.asUid&&d.asUid===currentUser.uid);
   if(!mine&&isBlocked(d.uid))return;
   const myLang=document.getElementById('my-lang').value;
   const ctx=_recentCtx.slice(-4); // 이 메시지 바로 앞 대화 (AI 번역 문맥)
@@ -3206,7 +3510,9 @@ function renderMsg(d,skipTranslate){
   }else{b.textContent=d.text;}
   const timeEl=document.createElement('div');timeEl.className='msg-time';
   timeEl.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
+  if(d.auto)timeEl.textContent=_L('자동 메시지','Auto message')+(timeEl.textContent?' · '+timeEl.textContent:'');
   row.appendChild(b);row.appendChild(timeEl);w.appendChild(row);container.appendChild(w);
+  if(d.imageUrl)_attachImageTranslate(w,d.imageUrl);
   if(!mine)_attachMsgReport(b,d);
   if(!d.imageUrl&&!d.fileUrl&&d.text)attachLinkPreview(w,d.text);
   if(mine){
@@ -3362,6 +3668,7 @@ async function sendMessage(){
   markRead(currentRoomId);
   sendPushNotification(others,text);
   if(isGuest)checkGuestUpgrade();
+  _autoAway();
 }
 
 // ── 첨부 메뉴(+ 버튼) — 사진/파일/이모티콘을 한데 모음 ──
@@ -3814,6 +4121,7 @@ function applyUILanguage(lang){
   if(typeof renderUsageUI==='function'&&currentUser)renderUsageUI();
   if(typeof renderUserList==='function'&&currentUser)renderUserList();
   if(typeof initAiTranslate==='function')initAiTranslate();
+  if(typeof initStoreLabels==='function')initStoreLabels();
 }
 
 // ── 사용량 UI 렌더 ──────────────────────────────────────
