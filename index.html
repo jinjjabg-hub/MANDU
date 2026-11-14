@@ -136,6 +136,15 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .login-sub{font-size:11px;color:var(--outline);letter-spacing:3px;font-weight:600;}
 .login-desc{text-align:center;color:var(--on-surface-variant);font-size:14px;line-height:1.8;max-width:280px;}
 .login-desc strong{color:var(--primary);}
+.invite-sheet{text-align:center;}
+.invite-sheet .inv-name{font-size:17px;font-weight:800;margin:4px 0 2px;}
+.invite-sheet .inv-sub{font-size:12px;color:var(--on-surface-variant);margin-bottom:14px;line-height:1.5;}
+.invite-sheet #room-invite-qr{display:flex;justify-content:center;margin:0 auto 12px;min-height:200px;}
+.invite-sheet .inv-link{font-size:12px;color:var(--outline);word-break:break-all;margin-bottom:14px;}
+.invite-sheet .inv-btns{display:flex;gap:8px;}
+.invite-sheet .inv-btns button{flex:1;padding:12px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.invite-sheet .inv-btns button.sub{background:var(--surface-container);color:var(--on-surface);}
+.invite-sheet .inv-reset{margin-top:12px;border:none;background:none;color:var(--outline);font-size:12px;text-decoration:underline;cursor:pointer;font-family:inherit;}
 .login-alt-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 16px;border-radius:100px;border:1px solid var(--outline-variant);background:var(--surface);color:var(--on-surface);font-size:15px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;}
 .phone-sheet input,.phone-sheet select{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--outline-variant);background:var(--surface);color:var(--on-surface);font-size:16px;font-family:inherit;box-sizing:border-box;}
 .phone-sheet .row{display:flex;gap:8px;margin-bottom:10px;}
@@ -1411,6 +1420,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <span class="sheet-title" data-i18n="addmember_sheet_title">멤버 추가</span>
     <button class="sheet-close" onclick="closeAddMember()"><span class="ms">close</span></button>
   </div>
+  <button id="addmember-invite-btn" onclick="closeAddMember();showRoomInvite();" style="display:none;align-items:center;gap:10px;margin:0 16px 8px;padding:12px 14px;border-radius:14px;border:1px dashed var(--primary);background:var(--surface);color:var(--primary);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;width:calc(100% - 32px);">
+    <span class="ms">qr_code_2</span><span id="addmember-invite-lbl">링크·QR로 초대하기</span>
+  </button>
   <div class="scroll-area" id="add-member-list" style="max-height:50vh;"></div>
   <div style="padding:0 16px 16px;">
     <button id="addmember-confirm-btn" onclick="confirmAddMember()" data-i18n="addmember_confirm_btn" style="width:100%;padding:15px;border-radius:14px;border:none;background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;opacity:.4;" disabled>추가하기</button>
@@ -1467,7 +1479,8 @@ let _pendingNewUser=null; // ← 최초 로그인 언어선택 대기용
 const urlParams=new URLSearchParams(window.location.search);
 hostUID=urlParams.get('host'); // 기존 호환
 const guestManduidParam=urlParams.get('u'); // 새 방식
-isGuest=!!(hostUID||guestManduidParam);
+const joinCode=(urlParams.get('join')||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,40)||null; // 그룹 초대 링크·QR
+isGuest=!!(hostUID||guestManduidParam||joinCode);
 
 // ── 온보딩 ────────────────────────────────────────────────
 let _onbStep=0;
@@ -1928,6 +1941,7 @@ async function selectInitialLang(lang){
     currentManduid=autoId;
     updateUIAfterLogin();
     showMain();
+    if(joinCode){joinByInvite();}
     showToast(t('welcome_toast').replace('{id}',autoId));
   }catch(e){
     console.error('autoCreateManduid error:',e);
@@ -1962,6 +1976,7 @@ auth.onAuthStateChanged(async function(user){
   try{
   if(user){
     currentUser=user;
+    if(isGuest&&user.isAnonymous&&joinCode){await joinByInvite();return;}
     if(isGuest&&user.isAnonymous){
       // ?u=만두ID 방식으로 들어온 경우 hostUID 변환
       if(guestManduidParam&&!hostUID){
@@ -2017,6 +2032,7 @@ auth.onAuthStateChanged(async function(user){
 
     currentManduid=userData.manduid;
     updateUIAfterLogin();
+    if(joinCode){showMain();await joinByInvite();return;}
 
     // ?u= 또는 ?host= 로 접근한 경우 DM 바로 열기
     if(guestManduidParam&&!hostUID){
@@ -2037,7 +2053,10 @@ auth.onAuthStateChanged(async function(user){
   }else{
     if(heartbeatInterval){clearInterval(heartbeatInterval);heartbeatInterval=null;}
     currentUser=null;currentManduid=null;
-    if(isGuest&&(hostUID||guestManduidParam)){
+    if(isGuest&&joinCode){
+      await loadInviteInfo();
+      show('guest-screen');
+    }else if(isGuest&&(hostUID||guestManduidParam)){
       if(guestManduidParam&&!hostUID){
         try{
           const idDoc=await db.collection('manduid_index').doc(guestManduidParam).get();
@@ -2598,9 +2617,10 @@ function openChatSafetyMenu(){
       else items.push({icon:'block',label:_L('이 사용자 차단하기','Block this user'),danger:true,fn:function(){blockUser(p);}});
     }
   }else{
+    if(_canInviteRoom())items.push({icon:'qr_code_2',label:_L('링크·QR로 초대하기','Invite with link or QR'),fn:showRoomInvite});
     items.push({icon:'flag',label:_L('이 대화방 신고하기','Report this chat'),fn:function(){askReport({type:'room'});}});
   }
-  _modSheet(_L('안전 및 신고','Safety & reporting'),items);
+  _modSheet(_L('메뉴','Menu'),items);
 }
 const REPORT_REASONS=[['spam','스팸·사기·광고','Spam, scam or ads'],['harassment','괴롭힘·혐오·위협','Harassment, hate or threats'],['sexual','음란물·성적 콘텐츠','Sexual content'],['child','아동 안전 위협','Child safety concern'],['violence','폭력·불법 행위','Violence or illegal activity'],['other','기타','Other']];
 function askReport(target){
@@ -3100,6 +3120,110 @@ function askDisplayName(){
     setTimeout(function(){input.focus();},50);
   });
 }
+
+// ── 그룹 초대 링크·QR ─────────────────────────────────────────────
+// 그룹 대화방 멤버가 링크·QR을 만들어 공유하면, 받은 사람은 (가입 안 해도) 이름만 넣고 그 방에 들어온다.
+// 초대 코드 발급과 멤버 추가는 서버가 한다 (/api/rooms/invite, /api/rooms/join).
+function _canInviteRoom(){
+  const r=_currentRoomData;
+  return !!(r&&currentUser&&!currentUser.isAnonymous&&r.type==='group'&&!r.storeUid);
+}
+function _inviteLink(code){return BASE_URL+'?join='+encodeURIComponent(code);}
+async function _serverPost(path,body,needAuth){
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const headers={'Content-Type':'application/json'};
+      if(needAuth)headers.Authorization='Bearer '+await currentUser.getIdToken();
+      const res=await fetch('https://mandu-server.onrender.com'+path,{method:'POST',headers:headers,body:JSON.stringify(body)});
+      if(res.ok)return {ok:true,data:await res.json()};
+      if(res.status<500){let d=null;try{d=await res.json();}catch(e){}return {ok:false,status:res.status,data:d};}
+    }catch(e){}
+    if(attempt<2)await new Promise(function(r){setTimeout(r,2500+attempt*2500);}); // 서버가 잠들어 있으면 깨어날 때까지
+  }
+  return {ok:false,status:0};
+}
+function closeRoomInvite(){['invite-sheet','invite-sheet-bd'].forEach(function(id){const e=document.getElementById(id);if(e)e.remove();});}
+async function showRoomInvite(reset){
+  if(!_canInviteRoom())return;
+  const roomId=currentRoomId,roomName=(_currentRoomData&&_currentRoomData.name)||document.getElementById('chat-title').textContent;
+  if(reset&&!confirm(_L('새 링크를 만들면 지금까지 공유한 링크와 QR로는 더 이상 들어올 수 없어요. 새로 만들까요?','A new link will stop the old link and QR from working. Create a new one?')))return;
+  showToast(_L('초대 링크를 만드는 중…','Creating invite link…'));
+  const r=await _serverPost('/api/rooms/invite',{roomId:roomId,reset:!!reset},true);
+  if(!r.ok){showToast(_L('초대 링크를 만들지 못했어요. 잠시 후 다시 시도해주세요','Could not create the invite link. Please try again.'));return;}
+  if(currentRoomId!==roomId)return;
+  const link=_inviteLink(r.data.code);
+  closeRoomInvite();
+  const bd=document.createElement('div');bd.id='invite-sheet-bd';bd.className='mod-sheet-bd';bd.onclick=closeRoomInvite;
+  const sh=document.createElement('div');sh.id='invite-sheet';sh.className='mod-sheet invite-sheet';
+  sh.innerHTML='<div class="mod-sheet-title"></div><div class="inv-name"></div><div class="inv-sub"></div><div id="room-invite-qr"></div><div class="inv-link"></div>'+
+    '<div class="inv-btns"><button id="inv-copy"></button><button class="sub" id="inv-save"></button></div><button class="inv-reset" id="inv-reset"></button>';
+  document.body.appendChild(bd);document.body.appendChild(sh);
+  sh.querySelector('.mod-sheet-title').textContent=_L('링크·QR로 초대','Invite with link or QR');
+  sh.querySelector('.inv-name').textContent=roomName;
+  sh.querySelector('.inv-sub').textContent=_L('QR을 찍거나 링크를 열면 가입하지 않아도 이름만 넣고 바로 이 방에 들어와요. 각자 자기 언어로 번역돼 보여요.','Anyone who scans the QR or opens the link can join this chat with just a name, no sign-up. Everyone reads in their own language.');
+  sh.querySelector('.inv-link').textContent=link;
+  generateQR('room-invite-qr',link,200);
+  const copy=document.getElementById('inv-copy');copy.textContent=_L('링크 복사','Copy link');
+  copy.onclick=function(){
+    if(navigator.share&&/Android|iPhone|iPad/i.test(navigator.userAgent)){navigator.share({title:roomName,text:_L('만두 대화방에 초대합니다','Join my MANDU chat'),url:link}).catch(function(){});return;}
+    navigator.clipboard.writeText(link).then(function(){showToast(_L('초대 링크를 복사했어요','Invite link copied'));}).catch(function(){prompt(_L('링크 복사','Copy link')+':',link);});
+  };
+  const save=document.getElementById('inv-save');save.textContent=_L('QR 저장','Save QR');
+  save.onclick=function(){
+    const c=document.querySelector('#room-invite-qr canvas');if(!c)return;
+    const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='mandu-invite.png';a.click();
+    showToast(t('toast_qr_saved'));
+  };
+  const rs=document.getElementById('inv-reset');rs.textContent=_L('새 링크 만들기 (예전 링크 막기)','New link (disable the old one)');
+  rs.onclick=function(){showRoomInvite(true);};
+}
+// 초대받은 사람: 로그인 전 화면에 방 이름 보여주기
+async function loadInviteInfo(){
+  const nameEl=document.getElementById('guest-host-name'),photo=document.getElementById('guest-host-photo');
+  const sub=document.querySelector('#guest-screen .guest-host-sub');
+  if(sub)sub.textContent='🥟 '+_L('그룹 대화에 초대받았어요','You are invited to a group chat');
+  if(photo)photo.src=DEFAULT_AVATAR;
+  const r=await _serverPost('/api/rooms/invite-info',{code:joinCode},false);
+  if(r.ok){
+    if(nameEl)nameEl.textContent=r.data.name||_L('그룹 대화','Group chat');
+    if(sub)sub.textContent='🥟 '+_L('그룹 대화에 초대받았어요 · {n}명','Group chat invite · {n} people').replace('{n}',r.data.memberCount);
+  }else if(r.status===404){
+    if(nameEl)nameEl.textContent=_L('만료된 초대 링크예요','This invite link has expired');
+  }
+}
+let _joining=false;
+async function joinByInvite(){
+  if(!joinCode||!currentUser||_joining)return;
+  _joining=true;
+  try{
+    if(currentUser.isAnonymous){
+      const lang=detectBrowserLang();
+      localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
+      localStorage.setItem('mandu_ui_lang_'+currentUser.uid,lang);
+      applyUILanguage(lang);
+      const myLangEl=document.getElementById('my-lang');if(myLangEl)myLangEl.value=lang;
+    }
+    const r=await _serverPost('/api/rooms/join',{code:joinCode},true);
+    if(!r.ok){
+      showToast(r.status===404?_L('초대 링크가 만료됐거나 잘못됐어요','This invite link is invalid or expired'):
+        r.status===409?_L('대화방 인원이 가득 찼어요','This chat is full'):_L('대화방에 들어가지 못했어요. 다시 시도해주세요','Could not join the chat. Please try again.'));
+      if(currentUser.isAnonymous){await loadInviteInfo();show('guest-screen');}
+      return;
+    }
+    history.replaceState(null,'',location.pathname); // 새로고침해도 다시 참여 요청하지 않도록
+    const myName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'';
+    if(r.data.joined){
+      const msg=t('addmember_system_msg').replace('{names}',myName||_L('새 멤버','A new member'));
+      const roomRef=db.collection('rooms').doc(r.data.roomId);
+      try{
+        await roomRef.collection('messages').add({type:'system',text:msg,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        await roomRef.set({lastMessage:msg,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+      }catch(e){console.warn('입장 메시지 실패:',e);}
+    }
+    openRoom(r.data.roomId,r.data.name||_L('그룹 대화','Group chat'),'',true);
+  }finally{_joining=false;}
+}
+
 function handleBack(){
   if(isGuest){show('guest-screen');}else{currentTab='chats';showMain();}
 }
@@ -3374,6 +3498,8 @@ function playNotificationSound(){
 let _addMemberSelected=[];
 function showAddMember(){
   if(!currentRoomId)return;
+  const ib=document.getElementById('addmember-invite-btn');
+  if(ib){ib.style.display=_canInviteRoom()?'flex':'none';document.getElementById('addmember-invite-lbl').textContent=_L('링크·QR로 초대하기','Invite with link or QR');}
   _addMemberSelected=[];
   const list=document.getElementById('add-member-list');
   list.innerHTML='';
