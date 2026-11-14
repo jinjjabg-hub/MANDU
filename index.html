@@ -333,7 +333,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .msg-bubble{padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;}
 .mine .msg-bubble{background:var(--primary);color:#fff;border-bottom-right-radius:4px;}
 .theirs .msg-bubble{background:var(--surface);color:var(--on-surface);border:1.5px solid var(--outline-variant);border-bottom-left-radius:4px;}
-.msg-translated{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--outline);margin-top:4px;padding:0 4px;font-style:italic;}
+.msg-translated{cursor:pointer;display:flex;align-items:center;gap:3px;font-size:11px;color:var(--outline);margin-top:4px;padding:0 4px;font-style:italic;}
 .msg-translated .ms{font-size:13px !important;color:var(--primary);}
 .msg-time{font-size:10px;color:var(--outline);flex-shrink:0;padding-bottom:2px;font-weight:500;}
 .read-receipt{font-size:10px;color:var(--primary-container);margin-top:2px;padding:0 4px;text-align:right;min-height:14px;}
@@ -819,6 +819,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div id="usage-msg-lbl" style="font-size:12px;color:var(--on-surface-variant);margin-bottom:14px;line-height:1.5;" data-i18n="usage_msg_default">이번 달 번역을 아직 사용하지 않았어요.</div>
           <div id="usage-sub-line" class="web-only" style="display:none;font-size:12px;color:var(--on-surface-variant);margin:-6px 0 14px;line-height:1.5;"></div>
           <button id="usage-upgrade-btn" onclick="showPlanSheet()" style="width:100%;padding:12px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">🚀 플랜 업그레이드</button>
+        </div>
+      </div>
+      <div class="settings-section-label" id="ai-tr-section-label">번역</div>
+      <div class="settings-card">
+        <div class="settings-row" onclick="toggleAiTranslate()">
+          <div class="settings-icon-wrap"><span class="ms">auto_awesome</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="ai-tr-row-label">AI 번역 (베타)</div>
+            <div class="settings-row-sub" id="ai-tr-row-sub">앞 대화 흐름과 말투를 살려 더 자연스럽게 번역해요</div>
+          </div>
+          <div class="toggle" id="ai-tr-toggle"></div>
         </div>
       </div>
       <div class="settings-section-label" data-i18n="settings_section_screen">화면</div>
@@ -2089,7 +2100,7 @@ async function toggleCardbookConsent(){
 const DEFAULT_AVATAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#e9ddff"/><circle cx="32" cy="25" r="11" fill="#6b38d4"/><path d="M12 56c2-11 10-17 20-17s18 6 20 17z" fill="#6b38d4"/></svg>');
 function updateUIAfterLogin(){
   if(!currentUser||currentUser.isAnonymous)return;
-  initBlocks();
+  initBlocks();initAiTranslate();
   document.getElementById('my-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('hero-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('settings-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
@@ -2572,7 +2583,8 @@ function _attachMsgReport(el,d){
   const open=function(){
     const items=[{icon:'flag',label:_L('이 메시지 신고하기','Report this message'),fn:function(){askReport({type:'message',targetUid:d.uid,messageText:d.text||d.imageUrl||d.fileUrl||'',messageTime:d.createdAt||null});}}];
     if(currentUser&&!currentUser.isAnonymous&&!isBlocked(d.uid))items.push({icon:'block',label:_L('보낸 사람 차단하기','Block sender'),danger:true,fn:function(){blockUser(d.uid);}});
-    _modSheet(_L('메시지','Message'),items);
+    const w=el.closest('.msg-wrap');
+    _modSheet(_L('메시지','Message'),(w&&w._tr?_translationMenuItems(w):[]).concat(items));
   };
   el.addEventListener('contextmenu',function(e){e.preventDefault();open();});
   let tm=null;
@@ -2764,7 +2776,7 @@ const MSG_PAGE=50;
 let msgLimit=MSG_PAGE;
 function loadMessages(keepLimit){
   if(!keepLimit)msgLimit=MSG_PAGE;
-  lastMyMsgWrap=null;
+  lastMyMsgWrap=null;_recentCtx=[];
   const container=document.getElementById('messages');
   container.innerHTML='';
   if(unsubMsg)unsubMsg();
@@ -2802,12 +2814,11 @@ function loadMessages(keepLimit){
           btn.onclick=function(){
             btn.disabled=true;btn.textContent=t('translating_loading');
             Promise.all(pendingOldMsgs.map(function(it){
-              return translate(it.text,it.myLang).then(function(tr){
-                if(tr&&tr!==it.text){
-                  it.bubble.textContent=tr;
+              return translateEx(it.text,it.myLang,{context:it.ctx}).then(function(r){
+                if(r.text&&r.text!==it.text){
                   const orig=document.createElement('div');orig.className='msg-translated';
-                  orig.innerHTML='<span class="ms">translate</span>'+it.text;
                   it.wrap.appendChild(orig);
+                  _showTranslation(it.wrap,it.bubble,orig,it.text,r,it.myLang,it.ctx);
                 }
               });
             })).then(function(){banner.remove();});
@@ -3009,25 +3020,44 @@ function getYearMonth(){
 
 // ── 메인 번역 함수 (서버가 인증+사용량 검증까지 전담) ─────────────
 let _usage80WarnShown=false;
+// 기존 호출부용 — 번역문만 돌려준다
 async function translate(text,targetLang){
-  if(!text||!targetLang)return '';
+  return (await translateEx(text,targetLang)).text;
+}
+// 번역문과 함께 어떤 엔진이 번역했는지 돌려준다: {text, engine} — engine: 'dict'|'google'|'ai'|''
+// opts.engine='ai' 로 AI 번역을 강제(다시 번역), opts.context 로 바로 앞 대화를 문맥으로 넘긴다
+async function translateEx(text,targetLang,opts){
+  opts=opts||{};
+  const none={text:'',engine:''};
+  if(!text||!targetLang)return none;
 
   // 1단계: 스킵 필터
-  if(isSkippable(text))return '';
+  if(isSkippable(text))return none;
 
   // 언어 감지
   const srcLang=detectLang(text);
-  if(srcLang===targetLang)return '';
+  if(srcLang===targetLang)return none;
 
-  // 2단계: 로컬 사전
-  const dictResult=lookupDict(text,srcLang,targetLang);
-  if(dictResult)return dictResult;
+  const useAi=opts.engine==='ai'||(!opts.engine&&isAiTranslateOn());
 
-  // 2.5단계: 내 사전
-  const myDictResult=lookupMyDict(text,srcLang,targetLang);
-  if(myDictResult)return myDictResult;
+  // 2단계: 로컬 사전 → 2.5단계: 내 사전 (AI로 "다시 번역"할 때는 건너뛴다)
+  if(opts.engine!=='ai'){
+    const dictResult=lookupDict(text,srcLang,targetLang)||lookupMyDict(text,srcLang,targetLang);
+    if(dictResult)return {text:dictResult,engine:'dict'};
+  }
 
-  if(!currentUser)return '';
+  if(!currentUser)return none;
+
+  const payload={text:text,target:targetLang};
+  if(useAi){
+    payload.engine='ai';
+    if(opts.context&&opts.context.length)payload.context=opts.context;
+    // 내 사전에 등록한 단어가 문장 안에 들어 있으면 AI가 그 번역을 쓰도록 함께 보낸다
+    const prefix=srcLang+'|'+targetLang+'|';
+    const glossary=Object.keys(myDictCache).filter(function(k){return k.indexOf(prefix)===0&&text.indexOf(k.slice(prefix.length))>=0;})
+      .slice(0,30).map(function(k){return [k.slice(prefix.length),myDictCache[k].trans];});
+    if(glossary.length)payload.glossary=glossary;
+  }
 
   // 3단계: 서버 호출 — 로그인 토큰만 보내고, 사용량 체크/기록은 서버가 전담
   // (Render 무료 플랜은 오래 쉬면 잠들어서 첫 요청이 실패할 수 있어 최대 2번 재시도)
@@ -3037,28 +3067,94 @@ async function translate(text,targetLang){
       const res=await fetch('https://mandu-server.onrender.com/api/translate',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
-        body:JSON.stringify({text:text,target:targetLang})
+        body:JSON.stringify(payload)
       });
       if(res.status===402){
         showToast(t('usage_limit_exceeded_toast'));
-        return '';
+        return none;
       }
       if(!res.ok){
         if(attempt<2){await new Promise(function(r){setTimeout(r,2000+attempt*2000);});continue;}
-        return '';
+        return none;
       }
       const data=await res.json();
       if(data.limit&&!_usage80WarnShown&&data.used/data.limit>=0.8){
         _usage80WarnShown=true;
         showToast(t('usage_80_warn_toast'));
       }
-      return data.translated||'';
+      return {text:data.translated||'',engine:data.engine||'google'};
     }catch(e){
       if(attempt<2){await new Promise(function(r){setTimeout(r,2000+attempt*2000);});continue;}
-      return '';
+      return none;
     }
   }
-  return '';
+  return none;
+}
+
+// ── AI 번역 설정 (기기별 저장) ──────────────────────────────────
+function isAiTranslateOn(){try{return localStorage.getItem('mandu_ai_tr')==='1';}catch(e){return false;}}
+function initAiTranslate(){
+  const set=function(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt;};
+  set('ai-tr-section-label',_L('번역','Translation'));
+  set('ai-tr-row-label',_L('AI 번역 (베타)','AI translation (beta)'));
+  set('ai-tr-row-sub',_L('앞 대화 흐름과 말투를 살려 더 자연스럽게 번역해요','More natural translations that follow the conversation and tone'));
+  const tg=document.getElementById('ai-tr-toggle');if(tg)tg.className='toggle '+(isAiTranslateOn()?'on':'');
+}
+function toggleAiTranslate(){
+  const on=!isAiTranslateOn();
+  try{localStorage.setItem('mandu_ai_tr',on?'1':'0');}catch(e){}
+  initAiTranslate();
+  showToast(on?_L('AI 번역을 켰어요. 새로 받는 메시지부터 적용돼요','AI translation is on for new messages'):_L('AI 번역을 껐어요','AI translation is off'));
+}
+
+// ── 번역 결과 표시 · 번역 신고 · AI로 다시 번역 ──────────────────
+let _recentCtx=[]; // 지금 열린 방의 최근 메시지 원문 (AI 번역 문맥용)
+// 말풍선에 번역문을, 그 아래 줄(line)에 원문을 보여준다. 원문 줄을 누르면 번역 메뉴가 열린다.
+function _showTranslation(w,b,line,orig,r,target,ctx){
+  b.textContent=r.text;
+  line.textContent='';
+  const ic=document.createElement('span');ic.className='ms';ic.textContent=r.engine==='ai'?'auto_awesome':'translate';
+  line.appendChild(ic);line.appendChild(document.createTextNode(orig));
+  w._tr={orig:orig,translated:r.text,engine:r.engine,target:target,ctx:ctx||[],bubble:b,line:line};
+  line.onclick=function(){_modSheet(_L('번역','Translation'),_translationMenuItems(w));};
+}
+function _translationMenuItems(w){
+  const items=[];
+  if(w._tr.engine!=='ai')items.push({icon:'auto_awesome',label:_L('AI로 다시 번역','Retranslate with AI'),fn:function(){retranslateWithAi(w);}});
+  items.push({icon:'report',label:_L('번역이 이상해요','Report a bad translation'),fn:function(){askTranslationReport(w);}});
+  return items;
+}
+async function retranslateWithAi(w){
+  const tr=w._tr;if(!tr||tr.busy)return;
+  tr.busy=true;showToast(_L('AI로 다시 번역하는 중…','Retranslating with AI…'));
+  const r=await translateEx(tr.orig,tr.target,{engine:'ai',context:tr.ctx});
+  tr.busy=false;
+  if(r.engine==='ai'&&r.text){_showTranslation(w,tr.bubble,tr.line,tr.orig,r,tr.target,tr.ctx);}
+  else if(r.text||r.engine===''){showToast(_L('지금은 AI 번역을 쓸 수 없어요. 잠시 후 다시 시도해주세요','AI translation is unavailable right now. Please try again later.'));}
+}
+const TR_REPORT_REASONS=[['wrong_meaning','뜻이 틀려요','The meaning is wrong'],['awkward','문장이 어색해요','It sounds unnatural'],['tone','말투·존댓말이 안 맞아요','Wrong tone or politeness'],['missing','빠진 내용이 있어요','Something is missing'],['other','기타','Other']];
+function askTranslationReport(w){
+  _modSheet(_L('어떤 점이 이상한가요?','What is wrong with it?'),TR_REPORT_REASONS.map(function(r){
+    return {icon:'chevron_right',label:_L(r[1],r[2]),fn:function(){submitTranslationReport(w,r[0]);}};
+  }));
+}
+async function submitTranslationReport(w,reason){
+  const tr=w._tr;if(!tr||!currentUser)return;
+  const body=JSON.stringify({original:tr.orig,translated:tr.translated,target:tr.target,engine:tr.engine==='ai'?'ai':'google',reason:reason,roomId:currentRoomId||''});
+  let ok=false;
+  for(let attempt=0;attempt<2&&!ok;attempt++){
+    try{
+      const idToken=await currentUser.getIdToken();
+      const res=await fetch('https://mandu-server.onrender.com/api/translate/report',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:body});
+      ok=res.ok;
+    }catch(e){}
+    if(!ok&&attempt<1)await new Promise(function(r){setTimeout(r,3000);});
+  }
+  if(!ok){showToast(_L('전송에 실패했어요. 다시 시도해주세요','Could not send. Please try again.'));return;}
+  showToast(_L('알려주셔서 고마워요. 번역 품질 개선에 쓸게요','Thanks! We will use this to improve translations.'));
+  if(tr.engine!=='ai'){
+    setTimeout(function(){_modSheet(_L('AI로 다시 번역해 볼까요?','Try retranslating with AI?'),[{icon:'auto_awesome',label:_L('AI로 다시 번역','Retranslate with AI'),fn:function(){retranslateWithAi(w);}}]);},500);
+  }
 }
 
 function renderMsg(d,skipTranslate){
@@ -3077,6 +3173,8 @@ function renderMsg(d,skipTranslate){
   const mine=d.uid===currentUser.uid;
   if(!mine&&isBlocked(d.uid))return;
   const myLang=document.getElementById('my-lang').value;
+  const ctx=_recentCtx.slice(-4); // 이 메시지 바로 앞 대화 (AI 번역 문맥)
+  if(d.text&&!d.imageUrl&&!d.fileUrl){_recentCtx.push(String(d.text).slice(0,300));if(_recentCtx.length>20)_recentCtx.shift();}
   const w=document.createElement('div');
   w.className='msg-wrap '+(mine?'mine':'theirs');
   if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}
@@ -3108,15 +3206,14 @@ function renderMsg(d,skipTranslate){
   }
   if(!mine&&myLang){
     if(skipTranslate){
-      return {bubble:b,wrap:w,text:d.text,myLang:myLang};
+      return {bubble:b,wrap:w,text:d.text,myLang:myLang,ctx:ctx};
     }
     const loadingOrig=document.createElement('div');loadingOrig.className='msg-translated';
     loadingOrig.innerHTML='<span class="ms">translate</span>'+t('translating_loading');
     w.appendChild(loadingOrig);
-    translate(d.text,myLang).then(function(tr){
-      if(tr&&tr!==d.text){
-        b.textContent=tr;
-        loadingOrig.innerHTML='<span class="ms">translate</span>'+d.text;
+    translateEx(d.text,myLang,{context:ctx}).then(function(r){
+      if(r.text&&r.text!==d.text){
+        _showTranslation(w,b,loadingOrig,d.text,r,myLang,ctx);
       }else{
         loadingOrig.remove();
       }
@@ -3705,6 +3802,7 @@ function applyUILanguage(lang){
   if(typeof loadRooms==='function'&&currentUser)loadRooms();
   if(typeof renderUsageUI==='function'&&currentUser)renderUsageUI();
   if(typeof renderUserList==='function'&&currentUser)renderUserList();
+  if(typeof initAiTranslate==='function')initAiTranslate();
 }
 
 // ── 사용량 UI 렌더 ──────────────────────────────────────
