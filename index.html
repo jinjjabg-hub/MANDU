@@ -415,6 +415,15 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .emoji-search-wrap{padding:6px 12px;flex-shrink:0;}
 .emoji-search{width:100%;background:var(--surface-container-low);border:1.5px solid var(--outline-variant);border-radius:100px;padding:7px 14px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;color:var(--on-surface);outline:none;}
 .emoji-search:focus{border-color:var(--primary);}
+.emoji-cat-btn.sticker-tab{padding:3px 6px;display:flex;align-items:center;}
+.emoji-cat-btn.sticker-tab img{width:30px;height:30px;display:block;}
+.emoji-grid.sticker-mode{grid-template-columns:repeat(4,1fr);gap:6px;}
+.sticker-item{border:none;background:none;cursor:pointer;border-radius:14px;padding:4px;aspect-ratio:1/1;transition:background .1s,transform .1s;}
+.sticker-item:hover{background:var(--surface-container);}
+.sticker-item:active{background:var(--surface-container);transform:scale(.92);}
+.sticker-item img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;}
+.msg-bubble.sticker-bubble{padding:0;background:none !important;border:none !important;}
+.msg-sticker{width:132px;height:132px;object-fit:contain;display:block;-webkit-user-drag:none;user-select:none;}
 #profile-screen{flex:1;display:none;flex-direction:column;min-height:0;overflow-y:auto;overflow-x:hidden;width:100%;box-sizing:border-box;}
 .pe-hero{display:flex;flex-direction:column;align-items:center;padding:24px 20px;background:var(--surface);border-bottom:1.5px solid var(--outline-variant);gap:14px;}
 .pe-avatar{width:88px;height:88px;border-radius:50%;border:3px solid var(--primary);overflow:hidden;}
@@ -2674,7 +2683,7 @@ async function showBlockedList(){
 function _attachMsgReport(el,d){
   if(!d||!d.uid||(currentUser&&d.uid===currentUser.uid))return;
   const open=function(){
-    const items=[{icon:'flag',label:_L('이 메시지 신고하기','Report this message'),fn:function(){askReport({type:'message',targetUid:d.uid,messageText:d.text||d.imageUrl||d.fileUrl||'',messageTime:d.createdAt||null});}}];
+    const items=[{icon:'flag',label:_L('이 메시지 신고하기','Report this message'),fn:function(){askReport({type:'message',targetUid:d.uid,messageText:d.text||d.imageUrl||d.fileUrl||(d.sticker?'[sticker] '+d.sticker:'')||'',messageTime:d.createdAt||null});}}];
     if(currentUser&&!currentUser.isAnonymous&&!isBlocked(d.uid))items.push({icon:'block',label:_L('보낸 사람 차단하기','Block sender'),danger:true,fn:function(){blockUser(d.uid);}});
     const w=el.closest('.msg-wrap');
     _modSheet(_L('메시지','Message'),(w&&w._tr?_translationMenuItems(w):[]).concat(items));
@@ -3821,7 +3830,13 @@ function renderMsg(d,skipTranslate){
   if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}
   const row=document.createElement('div');row.className='msg-row';
   const b=document.createElement('div');b.className='msg-bubble';
-  if(d.imageUrl){
+  const stickerSrc=stickerUrl(d.sticker);
+  if(stickerSrc){
+    // 스티커 — 말풍선 없이 그림만 보여준다
+    b.classList.add('sticker-bubble');
+    const st=document.createElement('img');st.src=stickerSrc;st.className='msg-sticker';st.alt=_stickerLabel();st.draggable=false;
+    b.appendChild(st);
+  }else if(d.imageUrl){
     const img=document.createElement('img');img.src=d.imageUrl;img.className='msg-image';
     img.onclick=function(){window.open(d.imageUrl,'_blank');};
     b.appendChild(img);
@@ -3847,6 +3862,7 @@ function renderMsg(d,skipTranslate){
     lastMyMsgWrap=w;
     const r=document.createElement('div');r.className='read-receipt';w.appendChild(r);
   }
+  if(stickerSrc&&!skipTranslate)return; // 스티커는 번역할 글자가 없다
   if(!mine&&myLang){
     if(skipTranslate){
       return {bubble:b,wrap:w,text:d.text,myLang:myLang,ctx:ctx};
@@ -3998,6 +4014,45 @@ async function sendMessage(){
   _autoAway();
 }
 
+// ── 만두 스티커 ───────────────────────────────────────────
+// 스티커 그림은 /stickers/<팩>-<번호>.webp 로 앱과 함께 배포된다. 메시지에는 sticker:'mandu-07' 같은 ID만 저장한다.
+// 새 팩 추가: stickers 폴더에 <팩ID>-01.webp … 파일을 넣고 아래 목록에 한 줄 추가.
+const STICKER_PACKS=[
+  {id:'mandu',count:24}
+];
+function stickerUrl(id){
+  if(typeof id!=='string')return '';
+  const m=/^([a-z0-9]+)-(\d{2})$/.exec(id);if(!m)return '';
+  const pack=STICKER_PACKS.find(function(p){return p.id===m[1];});
+  const n=parseInt(m[2],10);
+  if(!pack||n<1||n>pack.count)return '';
+  return 'stickers/'+id+'.webp';
+}
+function _stickerLabel(){return _L('스티커','Sticker');}
+let _stickerSending=false;
+async function sendSticker(id){
+  if(!stickerUrl(id)||!currentUser||!currentRoomId||_stickerSending)return;
+  _stickerSending=true;
+  closeEmojiPicker(true);
+  try{
+    await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+      text:'',sticker:id,uid:currentUser.uid,
+      displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const label='🥟 '+_stickerLabel();
+    const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
+    const incUpdate={lastMessage:label,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
+    others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
+    await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
+    markRead(currentRoomId);
+    sendPushNotification(others,label);
+    if(isGuest)checkGuestUpgrade();
+    _autoAway();
+  }catch(e){showToast(_L('스티커를 보내지 못했어요. 다시 시도해요','Could not send the sticker. Please try again'));}
+  _stickerSending=false;
+}
+
 // ── 첨부 메뉴(+ 버튼) — 사진/파일/이모티콘을 한데 모음 ──
 function toggleAttachMenu(){
   const popup=document.getElementById('attach-menu-popup');
@@ -4122,15 +4177,26 @@ const EMOJI_CATEGORIES=[
   {icon:'🎉',name:'특수/기념',emojis:['🎉','🎊','🎈','🎁','🎀','🎗️','🎟️','🎫','🎖️','🏆','🥇','🥈','🥉','🏅','🎯','🎲','🎮','🕹️','🎰','🎳','🎭','🎨','🖼️','🪆','🎪','🤹','🎠','🎡','🎢','🎤','🎸','🎹','🎷','🎺','🥁','🎼','🎵','🎶','🎙️','📣','📢','🔔','🔕','✨','🌟','💫','⭐','🌠','🌈','🌊','🌀','❄️','⛄','☃️','💨','🌪️','🔥','💧','🌊','✨','🎆','🎇','🧨','🎉','🎊','🎈','🎋','🎍','🎎','🎏','🎐','🎑','🧧','🎁','🎗️','🎟️','🎫','🏮','🪔','🧿','🪬','🧸','🪅']}
 ];
 
-let emojiPickerOpen=false,currentEmojiCategory=0;
+let emojiPickerOpen=false,currentEmojiCategory=-1; // -1 = 만두 스티커 탭
 
 function buildEmojiPicker(){
   const tabRow=document.getElementById('emoji-tab-row');
   const grid=document.getElementById('emoji-grid');
   tabRow.innerHTML='';
+  // 맨 앞 탭: 만두 스티커 (누르면 바로 전송)
+  const stBtn=document.createElement('button');
+  stBtn.className='emoji-cat-btn sticker-tab active';stBtn.title=_stickerLabel();
+  stBtn.innerHTML='<img src="'+stickerUrl('mandu-02')+'" alt="">';
+  stBtn.onclick=function(){
+    document.querySelectorAll('.emoji-cat-btn').forEach(b=>b.classList.remove('active'));
+    stBtn.classList.add('active');currentEmojiCategory=-1;
+    document.getElementById('emoji-search').value='';
+    renderStickerGrid();
+  };
+  tabRow.appendChild(stBtn);
   EMOJI_CATEGORIES.forEach(function(cat,idx){
     const btn=document.createElement('button');
-    btn.className='emoji-cat-btn'+(idx===0?' active':'');
+    btn.className='emoji-cat-btn';
     btn.textContent=cat.icon;btn.title=cat.name;
     btn.onclick=function(){
       document.querySelectorAll('.emoji-cat-btn').forEach(b=>b.classList.remove('active'));
@@ -4140,12 +4206,29 @@ function buildEmojiPicker(){
     };
     tabRow.appendChild(btn);
   });
-  renderEmojiGrid(EMOJI_CATEGORIES[0].emojis);
+  renderStickerGrid();
+}
+
+function renderStickerGrid(){
+  const grid=document.getElementById('emoji-grid');
+  grid.innerHTML='';grid.classList.add('sticker-mode');grid.scrollTop=0;
+  document.querySelector('.emoji-search-wrap').style.display='none';
+  STICKER_PACKS.forEach(function(pack){
+    for(let i=1;i<=pack.count;i++){
+      const id=pack.id+'-'+String(i).padStart(2,'0');
+      const btn=document.createElement('button');
+      btn.className='sticker-item';btn.setAttribute('aria-label',_stickerLabel()+' '+i);
+      btn.innerHTML='<img src="'+stickerUrl(id)+'" alt="" loading="lazy">';
+      btn.onclick=function(){sendSticker(id);};
+      grid.appendChild(btn);
+    }
+  });
 }
 
 function renderEmojiGrid(emojis){
   const grid=document.getElementById('emoji-grid');
-  grid.innerHTML='';
+  grid.innerHTML='';grid.classList.remove('sticker-mode');
+  document.querySelector('.emoji-search-wrap').style.display='';
   emojis.forEach(function(emoji){
     const btn=document.createElement('button');
     btn.className='emoji-item';btn.textContent=emoji;
@@ -4155,7 +4238,7 @@ function renderEmojiGrid(emojis){
 }
 
 function searchEmoji(keyword){
-  if(!keyword.trim()){renderEmojiGrid(EMOJI_CATEGORIES[currentEmojiCategory].emojis);return;}
+  if(!keyword.trim()){renderEmojiGrid(EMOJI_CATEGORIES[Math.max(0,currentEmojiCategory)].emojis);return;}
   const all=EMOJI_CATEGORIES.flatMap(c=>c.emojis);
   renderEmojiGrid(all.slice(0,200));
 }
@@ -4178,10 +4261,10 @@ function toggleEmojiPicker(){
     document.getElementById('msg-input').blur();
   }else{picker.classList.remove('open');document.getElementById('msg-input').focus();}
 }
-function closeEmojiPicker(){
+function closeEmojiPicker(noFocus){
   emojiPickerOpen=false;
   document.getElementById('emoji-picker').classList.remove('open');
-  document.getElementById('msg-input').focus();
+  if(noFocus!==true)document.getElementById('msg-input').focus();
 }
 document.addEventListener('DOMContentLoaded',function(){
   const msgInput=document.getElementById('msg-input');
