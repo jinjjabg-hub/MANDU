@@ -1019,6 +1019,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
       <div class="chat-hd-name" id="chat-title"></div>
       <div class="chat-hd-sub"><span class="ms">translate</span><span data-i18n="chat_autotranslate_on">자동번역 ON</span></div>
     </div>
+    <button class="back-btn" id="chat-bell" onclick="toggleRoomMute()" title="알림 켜기/끄기"><span class="ms">notifications</span></button>
     <button class="back-btn" onclick="showAddMember()" title="Add member"><span class="ms">person_add</span></button>
       <button class="back-btn" onclick="openChatSafetyMenu()" title="Report / Block"><span class="ms">more_vert</span></button>
   </div>
@@ -1772,6 +1773,7 @@ async function initFCM(){
       // 지금 보고 있는 방의 메시지는 메시지 리스너가 이미 소리를 냄 → 중복 소리·토스트 방지
       const chatOpen=document.getElementById('chat-screen').style.display==='flex';
       if(chatOpen&&d.roomId&&d.roomId===currentRoomId)return;
+      if(d.roomId&&isRoomMuted(d.roomId))return;
       // 소리는 방 목록 리스너(loadRooms)가 냄 — 알림 권한이 없는 사용자도 소리가 나도록 하고 중복 방지
       showToast('🔔 '+(d.title||'MANDU')+': '+(d.body||'새 메시지'));
     });
@@ -2294,7 +2296,7 @@ function showMain(){
   }else{
     history.replaceState({manduScreen:'main'},'');
   }
-  loadRooms();loadUsers();
+  loadRooms();loadUsers();loadMutedRooms();
   switchTab(currentTab);
 }
 
@@ -2616,9 +2618,49 @@ function _modSheet(title,items){
   const c=document.createElement('button');c.className='mod-sheet-btn cancel';c.textContent=_L('취소','Cancel');c.onclick=closeModSheet;sh.appendChild(c);
   document.body.appendChild(bd);document.body.appendChild(sh);
 }
+// ── 방별 알림 켜기/끄기 ──
+// users/{uid}.mutedRooms 배열에 저장 → 서버(/api/notify)도 이 값을 보고 푸시를 생략한다.
+let myMutedRooms=new Set();
+function isRoomMuted(roomId){return !!roomId&&myMutedRooms.has(roomId);}
+function loadMutedRooms(){
+  if(!currentUser)return;
+  db.collection('users').doc(currentUser.uid).get().then(function(d){
+    const arr=(d.exists&&d.data().mutedRooms)||[];
+    myMutedRooms=new Set(arr);
+    _updateChatBell();
+    if(_lastRoomsSnap&&typeof _roomsRender==='function')_roomsRender(_lastRoomsSnap);
+  }).catch(function(){});
+}
+function _updateChatBell(){
+  const b=document.getElementById('chat-bell');if(!b)return;
+  const m=isRoomMuted(currentRoomId);
+  b.innerHTML='<span class="ms">'+(m?'notifications_off':'notifications')+'</span>';
+  b.title=m?_L('알림 꺼짐 — 눌러서 켜기','Muted — tap to unmute'):_L('알림 켜짐 — 눌러서 끄기','Notifications on — tap to mute');
+  b.style.opacity=m?'0.55':'';
+}
+function toggleRoomMute(){
+  if(!currentUser||!currentRoomId)return;
+  const roomId=currentRoomId;
+  const mute=!isRoomMuted(roomId);
+  if(mute)myMutedRooms.add(roomId);else myMutedRooms.delete(roomId);
+  _updateChatBell();
+  if(_lastRoomsSnap&&typeof _roomsRender==='function')_roomsRender(_lastRoomsSnap);
+  showToast(mute?_L('🔕 이 방 알림을 껐어요','🔕 Chat muted'):_L('🔔 이 방 알림을 켰어요','🔔 Notifications on'));
+  const FV=firebase.firestore.FieldValue;
+  db.collection('users').doc(currentUser.uid).set({mutedRooms:mute?FV.arrayUnion(roomId):FV.arrayRemove(roomId)},{merge:true})
+    .catch(function(e){
+      console.warn('알림 설정 저장 실패:',e);
+      if(mute)myMutedRooms.delete(roomId);else myMutedRooms.add(roomId);
+      _updateChatBell();showToast(_L('알림 설정을 저장하지 못했어요','Could not save setting'));
+    });
+}
+
 function openChatSafetyMenu(){
   if(!currentUser||!currentRoomId)return;
   const p=_dmPartnerUid();const items=[];
+  items.push(isRoomMuted(currentRoomId)
+    ?{icon:'notifications_active',label:_L('이 방 알림 켜기','Turn on notifications'),fn:toggleRoomMute}
+    :{icon:'notifications_off',label:_L('이 방 알림 끄기','Mute this chat'),fn:toggleRoomMute});
   if(p){
     items.push({icon:'flag',label:_L('이 사용자 신고하기','Report this user'),fn:function(){askReport({type:'user',targetUid:p});}});
     if(!currentUser.isAnonymous){
@@ -3251,6 +3293,7 @@ function loadRooms(){
           const r=c.doc.data();
           if(!r.lastMessageTime||!r.lastMessageUid||r.lastMessageUid===currentUser.uid)return;
           if(chatOpen&&c.doc.id===currentRoomId)return; // 열린 방은 메시지 리스너가 소리를 냄
+          if(isRoomMuted(c.doc.id))return; // 알림 끈 방
           const ms=r.lastMessageTime.toMillis();
           if(ms>(_roomLastSoundMs[c.doc.id]||0)&&ms>_roomsSoundReadyAt)playNotificationSound();
         });
@@ -3303,7 +3346,7 @@ function loadRooms(){
         item.className='room-item';
         item.innerHTML=
           '<div class="av-wrap"><div class="av">'+(photo?'<img src="'+photo+'" alt="">':( isGroup?'👥':'👤'))+'</div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
-          '<div class="room-info"><div class="room-name-row"><span class="room-name">'+name+'</span>'+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
+          '<div class="room-info"><div class="room-name-row"><span class="room-name">'+name+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
           '<div class="room-last">'+(r.lastMessage||t('chat_start_hint'))+'</div></div>'+
           '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'</div>';
         item.onclick=function(){openRoom(doc.id,name,photo,isGroup);};
@@ -3412,6 +3455,7 @@ async function createRoom(){
 
 function openRoom(roomId,name,photo,isGroup){
   currentRoomId=roomId;lastMyMsgWrap=null;_currentRoomData=null;
+  _updateChatBell();
   document.getElementById('chat-title').textContent=name;
   const icon=document.getElementById('chat-icon');
   icon.innerHTML=photo?'<img src="'+photo+'" alt="" style="width:100%;height:100%;object-fit:cover;">':(isGroup?'👥':'👤');
@@ -3487,7 +3531,7 @@ function loadMessages(keepLimit){
         changes.forEach(function(c){
           const md=c.doc.data();
           renderMsg(md);
-          if(md.uid&&md.uid!==currentUser.uid)playNotificationSound();
+          if(md.uid&&md.uid!==currentUser.uid&&!isRoomMuted(currentRoomId))playNotificationSound();
         });
       }
       const wasFirst=firstLoad;
