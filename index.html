@@ -902,6 +902,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div class="toggle" id="dark-toggle"></div>
         </div>
       </div>
+      <div class="settings-section-label">알림</div>
+      <div class="settings-card">
+        <div class="settings-row" onclick="openSoundPicker()">
+          <div class="settings-icon-wrap"><span class="ms">music_note</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">알림음</div>
+            <div class="settings-row-sub sound-sub">만두 (기본)</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">chevron_right</span></div>
+        </div>
+      </div>
       <div class="settings-section-label" id="store-section-label">매장</div>
       <div class="settings-card">
         <div class="settings-row" onclick="showStoreSettings()">
@@ -1280,6 +1291,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
       <div class="settings-icon-wrap"><span class="ms">dark_mode</span></div>
       <div class="settings-row-info"><div class="settings-row-label" data-i18n="settings_row_darkmode">다크 모드</div></div>
       <div class="toggle" id="profile-dark-toggle"></div>
+    </div>
+  </div>
+  <div class="settings-section-label">알림</div>
+  <div class="settings-card" style="margin:0 20px 16px;">
+    <div class="settings-row" onclick="openSoundPicker()">
+      <div class="settings-icon-wrap"><span class="ms">music_note</span></div>
+      <div class="settings-row-info">
+        <div class="settings-row-label">알림음</div>
+        <div class="settings-row-sub sound-sub">만두 (기본)</div>
+      </div>
+      <div class="settings-chevron"><span class="ms">chevron_right</span></div>
     </div>
   </div>
   <div class="settings-section-label" data-i18n="settings_section_account">계정</div>
@@ -2627,6 +2649,7 @@ function loadMutedRooms(){
   db.collection('users').doc(currentUser.uid).get().then(function(d){
     const arr=(d.exists&&d.data().mutedRooms)||[];
     myMutedRooms=new Set(arr);
+    if(d.exists)_applySoundPrefsFromDoc(d.data());
     _updateChatBell();
     if(_lastRoomsSnap&&typeof _roomsRender==='function')_roomsRender(_lastRoomsSnap);
   }).catch(function(){});
@@ -2661,6 +2684,7 @@ function openChatSafetyMenu(){
   items.push(isRoomMuted(currentRoomId)
     ?{icon:'notifications_active',label:_L('이 방 알림 켜기','Turn on notifications'),fn:toggleRoomMute}
     :{icon:'notifications_off',label:_L('이 방 알림 끄기','Mute this chat'),fn:toggleRoomMute});
+  items.push({icon:'music_note',label:_L('이 방 알림음','Sound for this chat')+' · '+_soundName(soundForRoom(currentRoomId)),fn:openRoomSoundPicker});
   if(p){
     items.push({icon:'flag',label:_L('이 사용자 신고하기','Report this user'),fn:function(){askReport({type:'user',targetUid:p});}});
     if(!currentUser.isAnonymous){
@@ -3295,7 +3319,7 @@ function loadRooms(){
           if(chatOpen&&c.doc.id===currentRoomId)return; // 열린 방은 메시지 리스너가 소리를 냄
           if(isRoomMuted(c.doc.id))return; // 알림 끈 방
           const ms=r.lastMessageTime.toMillis();
-          if(ms>(_roomLastSoundMs[c.doc.id]||0)&&ms>_roomsSoundReadyAt)playNotificationSound();
+          if(ms>(_roomLastSoundMs[c.doc.id]||0)&&ms>_roomsSoundReadyAt)playNotificationSound(c.doc.id);
         });
       }
       snap.docs.forEach(function(d){const lt=d.data().lastMessageTime;if(lt)_roomLastSoundMs[d.id]=Math.max(_roomLastSoundMs[d.id]||0,lt.toMillis());});
@@ -3531,7 +3555,7 @@ function loadMessages(keepLimit){
         changes.forEach(function(c){
           const md=c.doc.data();
           renderMsg(md);
-          if(md.uid&&md.uid!==currentUser.uid&&!isRoomMuted(currentRoomId))playNotificationSound();
+          if(md.uid&&md.uid!==currentUser.uid&&!isRoomMuted(currentRoomId))playNotificationSound(currentRoomId);
         });
       }
       const wasFirst=firstLoad;
@@ -3567,29 +3591,107 @@ function _unlockAudio(){
   }
 }
 ['touchstart','touchend','click','keydown'].forEach(function(ev){document.addEventListener(ev,_unlockAudio,true);});
-let _lastSoundAt=0;
-function playNotificationSound(){
-  // 짧은 시간에 여러 번 불려도(메시지 여러 개 동시 도착 등) 한 번만
-  const t0=Date.now();if(t0-_lastSoundAt<700)return;_lastSoundAt=t0;
-  if(navigator.vibrate){try{navigator.vibrate([120,60,120]);}catch(e){}}
+// ── 알림음 종류 ──
+// 각 음: f=주파수, t=시작(초), d=길이, to=끝 주파수(미끄러지는 소리), w=파형, v=볼륨
+const NOTIF_SOUNDS={
+  mandu:{ko:'만두 (기본)',en:'Mandu (default)',notes:[{f:880,t:0,d:0.18},{f:1320,t:0.09,d:0.18}]},
+  ding:{ko:'딩',en:'Ding',notes:[{f:1046,t:0,d:0.6,w:'triangle',v:0.22}]},
+  chime:{ko:'차임',en:'Chime',notes:[{f:784,t:0,d:0.22},{f:988,t:0.11,d:0.22},{f:1175,t:0.22,d:0.35}]},
+  pop:{ko:'뽁',en:'Pop',notes:[{f:600,to:180,t:0,d:0.09,v:0.28}]},
+  bubble:{ko:'뽀로롱',en:'Bubble',notes:[{f:320,to:960,t:0,d:0.14},{f:480,to:1300,t:0.13,d:0.14}]},
+  knock:{ko:'똑똑',en:'Knock',notes:[{f:240,t:0,d:0.07,w:'square',v:0.12},{f:240,t:0.14,d:0.07,w:'square',v:0.12}]},
+  bell:{ko:'종소리',en:'Bell',notes:[{f:1568,t:0,d:0.9,v:0.12},{f:2093,t:0,d:0.6,v:0.06},{f:1175,t:0.35,d:0.9,v:0.12}]},
+  vibrate:{ko:'무음 (진동만)',en:'Silent (vibrate only)',notes:[]}
+};
+const NOTIF_SOUND_ORDER=['mandu','ding','chime','pop','bubble','knock','bell','vibrate'];
+// users/{uid}.soundPrefs = {default:'mandu', rooms:{roomId:'chime'}} — 기기를 바꿔도 유지
+let mySoundPrefs={default:'mandu',rooms:{}};
+try{const c=JSON.parse(localStorage.getItem('mandu_sound_prefs')||'null');if(c&&NOTIF_SOUNDS[c.default])mySoundPrefs={default:c.default,rooms:c.rooms||{}};}catch(e){}
+function _soundName(id){const x=NOTIF_SOUNDS[id]||NOTIF_SOUNDS.mandu;return _L(x.ko,x.en);}
+function soundForRoom(roomId){
+  const r=roomId&&mySoundPrefs.rooms[roomId];
+  const id=(r&&NOTIF_SOUNDS[r])?r:mySoundPrefs.default;
+  return NOTIF_SOUNDS[id]?id:'mandu';
+}
+function _cacheSoundPrefs(){try{localStorage.setItem('mandu_sound_prefs',JSON.stringify(mySoundPrefs));}catch(e){}}
+function _updateSoundSub(){
+  try{
+    const name=_soundName(mySoundPrefs.default);
+    document.querySelectorAll('.sound-sub').forEach(function(el){el.textContent=name;});
+  }catch(e){}
+}
+setTimeout(_updateSoundSub,0);
+function _applySoundPrefsFromDoc(data){
+  const sp=data&&data.soundPrefs;if(!sp)return;
+  mySoundPrefs={default:NOTIF_SOUNDS[sp.default]?sp.default:'mandu',rooms:sp.rooms||{}};
+  _cacheSoundPrefs();_updateSoundSub();
+}
+function _beep(id){
+  const snd=NOTIF_SOUNDS[id]||NOTIF_SOUNDS.mandu;
+  if(!snd.notes.length)return;
   const ctx=_getAudioCtx();if(!ctx)return;
-  const beep=function(){
+  const play=function(){
     try{
-      const now=ctx.currentTime;
-      [880,1320].forEach(function(freq,i){
-        const osc=ctx.createOscillator();
-        const gain=ctx.createGain();
-        osc.type='sine';osc.frequency.value=freq;
-        gain.gain.setValueAtTime(0,now+i*0.09);
-        gain.gain.linearRampToValueAtTime(0.18,now+i*0.09+0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001,now+i*0.09+0.18);
+      const now=ctx.currentTime+0.01;
+      snd.notes.forEach(function(n){
+        const osc=ctx.createOscillator(),gain=ctx.createGain();
+        const st=now+n.t,v=n.v||0.18;
+        osc.type=n.w||'sine';
+        osc.frequency.setValueAtTime(n.f,st);
+        if(n.to)osc.frequency.exponentialRampToValueAtTime(n.to,st+n.d);
+        gain.gain.setValueAtTime(0,st);
+        gain.gain.linearRampToValueAtTime(v,st+0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001,st+n.d);
         osc.connect(gain);gain.connect(ctx.destination);
-        osc.start(now+i*0.09);osc.stop(now+i*0.09+0.2);
+        osc.start(st);osc.stop(st+n.d+0.02);
       });
     }catch(e){/* 오디오 재생 불가 환경은 조용히 무시 */}
   };
-  if(ctx.state==='suspended')ctx.resume().then(beep).catch(function(){});
-  else beep();
+  if(ctx.state==='suspended')ctx.resume().then(play).catch(function(){});
+  else play();
+}
+function _vibrate(){if(navigator.vibrate){try{navigator.vibrate([120,60,120]);}catch(e){}}}
+let _lastSoundAt=0;
+function playNotificationSound(roomId){
+  // 짧은 시간에 여러 번 불려도(메시지 여러 개 동시 도착 등) 한 번만
+  const t0=Date.now();if(t0-_lastSoundAt<700)return;_lastSoundAt=t0;
+  _vibrate();
+  _beep(soundForRoom(roomId));
+}
+// 목록에서 고르면 바로 미리 들려주고 저장
+function _soundSheet(title,current,withDefault,onPick){
+  const items=[];
+  if(withDefault)items.push({icon:current?'radio_button_unchecked':'check_circle',label:_L('기본 알림음 따르기','Use default sound')+' ('+_soundName(mySoundPrefs.default)+')',fn:function(){onPick(null);}});
+  NOTIF_SOUND_ORDER.forEach(function(id){
+    items.push({icon:id===current?'check_circle':(id==='vibrate'?'vibration':'music_note'),label:_soundName(id),fn:function(){onPick(id);}});
+  });
+  _modSheet(title,items);
+}
+function openSoundPicker(){
+  _soundSheet(_L('기본 알림음','Default sound'),mySoundPrefs.default,false,function(id){
+    mySoundPrefs.default=id;_cacheSoundPrefs();_updateSoundSub();
+    if(id==='vibrate')_vibrate();
+    _beep(id);
+    showToast('🎵 '+_L('알림음: ','Sound: ')+_soundName(id));
+    if(currentUser)db.collection('users').doc(currentUser.uid).set({soundPrefs:{default:id}},{merge:true}).catch(function(e){console.warn('알림음 저장 실패:',e);});
+  });
+}
+function openRoomSoundPicker(){
+  if(!currentRoomId)return;
+  const roomId=currentRoomId;
+  _soundSheet(_L('이 방 알림음','Sound for this chat'),mySoundPrefs.rooms[roomId]||null,true,function(id){
+    if(id)mySoundPrefs.rooms[roomId]=id;else delete mySoundPrefs.rooms[roomId];
+    _cacheSoundPrefs();
+    const eff=soundForRoom(roomId);
+    if(eff==='vibrate')_vibrate();
+    _beep(eff);
+    showToast('🎵 '+_L('이 방 알림음: ','Chat sound: ')+(id?_soundName(id):_L('기본','Default')));
+    if(!currentUser)return;
+    const FV=firebase.firestore.FieldValue;
+    const ref=db.collection('users').doc(currentUser.uid);
+    (id?ref.set({soundPrefs:{rooms:{[roomId]:id}}},{merge:true}):ref.update({['soundPrefs.rooms.'+roomId]:FV.delete()}))
+      .catch(function(e){console.warn('알림음 저장 실패:',e);});
+  });
 }
 
 // ── 대화 중 멤버 추가 (1:1 → 그룹 전환 포함) ──────────────────
