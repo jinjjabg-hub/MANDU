@@ -888,7 +888,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
         <div class="settings-row" onclick="toggleAiTranslate()">
           <div class="settings-icon-wrap"><span class="ms">auto_awesome</span></div>
           <div class="settings-row-info">
-            <div class="settings-row-label" id="ai-tr-row-label">AI 번역 (베타)</div>
+            <div class="settings-row-label" id="ai-tr-row-label">AI 번역</div>
             <div class="settings-row-sub" id="ai-tr-row-sub">앞 대화 흐름과 말투를 살려 더 자연스럽게 번역해요</div>
           </div>
           <div class="toggle" id="ai-tr-toggle"></div>
@@ -3739,12 +3739,13 @@ async function translateEx(text,targetLang,opts){
 // ── AI 번역 설정 (기기별 저장) ──────────────────────────────────
 // 서버에 AI 번역 키가 설정돼 있을 때만(/api/ping 의 ai 값) 설정 토글과 "AI로 다시 번역" 메뉴가 보인다
 function isAiAvailable(){return window._aiAvailable===true;}
-function isAiTranslateOn(){try{return isAiAvailable()&&localStorage.getItem('mandu_ai_tr')==='1';}catch(e){return false;}}
+// AI 번역은 기본으로 켜져 있다 (설정에서 직접 끈 사람만 꺼짐). 서버에서 AI가 실패하면 자동으로 구글 번역으로 넘어간다
+function isAiTranslateOn(){if(!isAiAvailable())return false;try{return localStorage.getItem('mandu_ai_tr')!=='0';}catch(e){return true;}}
 function initAiTranslate(){
   ['ai-tr-section-label','ai-tr-card'].forEach(function(id){const el=document.getElementById(id);if(el)el.style.display=isAiAvailable()?'':'none';});
   const set=function(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt;};
   set('ai-tr-section-label',_L('번역','Translation'));
-  set('ai-tr-row-label',_L('AI 번역 (베타)','AI translation (beta)'));
+  set('ai-tr-row-label',_L('AI 번역','AI translation'));
   set('ai-tr-row-sub',_L('앞 대화 흐름과 말투를 살려 더 자연스럽게 번역해요','More natural translations that follow the conversation and tone'));
   const tg=document.getElementById('ai-tr-toggle');if(tg)tg.className='toggle '+(isAiTranslateOn()?'on':'');
 }
