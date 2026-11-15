@@ -1772,7 +1772,7 @@ async function initFCM(){
       // 지금 보고 있는 방의 메시지는 메시지 리스너가 이미 소리를 냄 → 중복 소리·토스트 방지
       const chatOpen=document.getElementById('chat-screen').style.display==='flex';
       if(chatOpen&&d.roomId&&d.roomId===currentRoomId)return;
-      playNotificationSound();
+      // 소리는 방 목록 리스너(loadRooms)가 냄 — 알림 권한이 없는 사용자도 소리가 나도록 하고 중복 방지
       showToast('🔔 '+(d.title||'MANDU')+': '+(d.body||'새 메시지'));
     });
     navigator.serviceWorker.addEventListener('message',function(e){
@@ -3237,11 +3237,26 @@ function handleBack(){
   if(isGuest){show('guest-screen');}else{currentTab='chats';showMain();}
 }
 
+let _roomsSoundReady=false,_roomsSoundReadyAt=0;const _roomLastSoundMs={};
 function loadRooms(){
   const list=document.getElementById('room-list');
   const sub=document.getElementById('chats-sub');
   db.collection('rooms').where('members','array-contains',currentUser.uid)
     .onSnapshot(_roomsRender=function(snap){
+      // 다른 방(지금 열어 둔 방 제외)에 상대가 새 메시지를 보내면 알림음 — 첫 로딩·내가 보낸 메시지는 제외
+      if(_roomsSoundReady&&snap.docChanges&&!document.hidden){
+        const chatOpen=document.getElementById('chat-screen').style.display==='flex';
+        snap.docChanges().forEach(function(c){
+          if(c.type==='removed')return;
+          const r=c.doc.data();
+          if(!r.lastMessageTime||!r.lastMessageUid||r.lastMessageUid===currentUser.uid)return;
+          if(chatOpen&&c.doc.id===currentRoomId)return; // 열린 방은 메시지 리스너가 소리를 냄
+          const ms=r.lastMessageTime.toMillis();
+          if(ms>(_roomLastSoundMs[c.doc.id]||0)&&ms>_roomsSoundReadyAt)playNotificationSound();
+        });
+      }
+      snap.docs.forEach(function(d){const lt=d.data().lastMessageTime;if(lt)_roomLastSoundMs[d.id]=Math.max(_roomLastSoundMs[d.id]||0,lt.toMillis());});
+      if(!_roomsSoundReady){_roomsSoundReady=true;_roomsSoundReadyAt=Date.now()-5000;}
       _lastRoomsSnap=snap;
       list.innerHTML='';
       if(snap.empty){
@@ -3486,21 +3501,51 @@ function loadMessages(keepLimit){
 }
 
 // ── 알림음 (Web Audio API로 직접 생성 — 별도 음원 파일 불필요) ──
+// 브라우저 자동재생 정책: 사용자 터치 없이 만든 AudioContext는 'suspended' 상태라 소리가 안 남.
+// (이전엔 매번 새 AudioContext를 만들어서 메시지 수신 시 무음 + 6개 넘으면 생성 자체가 실패)
+// → 하나만 만들어 두고 첫 터치/클릭 때 깨워(unlock) 둔 뒤 재사용한다.
+let _audioCtx=null;
+function _getAudioCtx(){
+  if(!_audioCtx){
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return null;
+    try{_audioCtx=new AC();}catch(e){return null;}
+  }
+  return _audioCtx;
+}
+function _unlockAudio(){
+  const ctx=_getAudioCtx();if(!ctx)return;
+  if(ctx.state==='suspended')ctx.resume().catch(function(){});
+  // iOS Safari는 제스처 안에서 실제로 무언가를 재생해야 잠금이 풀림 → 무음 버퍼 1회 재생
+  try{const b=ctx.createBuffer(1,1,22050);const src=ctx.createBufferSource();src.buffer=b;src.connect(ctx.destination);src.start(0);}catch(e){}
+  if(ctx.state==='running'){
+    ['touchstart','touchend','click','keydown'].forEach(function(ev){document.removeEventListener(ev,_unlockAudio,true);});
+  }
+}
+['touchstart','touchend','click','keydown'].forEach(function(ev){document.addEventListener(ev,_unlockAudio,true);});
+let _lastSoundAt=0;
 function playNotificationSound(){
-  try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
-    const now=ctx.currentTime;
-    [880,1320].forEach(function(freq,i){
-      const osc=ctx.createOscillator();
-      const gain=ctx.createGain();
-      osc.type='sine';osc.frequency.value=freq;
-      gain.gain.setValueAtTime(0,now+i*0.09);
-      gain.gain.linearRampToValueAtTime(0.18,now+i*0.09+0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001,now+i*0.09+0.18);
-      osc.connect(gain);gain.connect(ctx.destination);
-      osc.start(now+i*0.09);osc.stop(now+i*0.09+0.2);
-    });
-  }catch(e){/* 오디오 재생 불가 환경은 조용히 무시 */}
+  // 짧은 시간에 여러 번 불려도(메시지 여러 개 동시 도착 등) 한 번만
+  const t0=Date.now();if(t0-_lastSoundAt<700)return;_lastSoundAt=t0;
+  if(navigator.vibrate){try{navigator.vibrate([120,60,120]);}catch(e){}}
+  const ctx=_getAudioCtx();if(!ctx)return;
+  const beep=function(){
+    try{
+      const now=ctx.currentTime;
+      [880,1320].forEach(function(freq,i){
+        const osc=ctx.createOscillator();
+        const gain=ctx.createGain();
+        osc.type='sine';osc.frequency.value=freq;
+        gain.gain.setValueAtTime(0,now+i*0.09);
+        gain.gain.linearRampToValueAtTime(0.18,now+i*0.09+0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001,now+i*0.09+0.18);
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.start(now+i*0.09);osc.stop(now+i*0.09+0.2);
+      });
+    }catch(e){/* 오디오 재생 불가 환경은 조용히 무시 */}
+  };
+  if(ctx.state==='suspended')ctx.resume().then(beep).catch(function(){});
+  else beep();
 }
 
 // ── 대화 중 멤버 추가 (1:1 → 그룹 전환 포함) ──────────────────
