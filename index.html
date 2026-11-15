@@ -4018,7 +4018,8 @@ async function sendMessage(){
 // 스티커 그림은 /stickers/<팩>-<번호>.webp 로 앱과 함께 배포된다. 메시지에는 sticker:'mandu-07' 같은 ID만 저장한다.
 // 새 팩 추가: stickers 폴더에 <팩ID>-01.webp … 파일을 넣고 아래 목록에 한 줄 추가.
 const STICKER_PACKS=[
-  {id:'mandu',count:24}
+  {id:'mandu',count:24},
+  {id:'mandu2',count:16}   // Okay~ · No! · Sorry · 불 뿜기 · 꽃다발 … (직접 그린 2탄)
 ];
 function stickerUrl(id){
   if(typeof id!=='string')return '';
