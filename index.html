@@ -3404,7 +3404,7 @@ function loadRooms(){
         list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc')+'</div></div>';
         return;
       }
-      const docs=snap.docs.filter(_roomVisible).sort(function(a,b){
+      const docs=snap.docs.filter(function(d){return _roomVisible(d);}).sort(function(a,b){
         const at=a.data().lastMessageTime,bt=b.data().lastMessageTime;
         if(!at)return 1;if(!bt)return -1;return bt.toMillis()-at.toMillis();
       });
