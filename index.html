@@ -214,6 +214,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .room-last{font-size:13px;color:var(--on-surface-variant);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .room-meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
 .room-time{font-size:11px;color:var(--outline);font-weight:500;}
+.room-del{border:none;background:none;color:var(--outline);padding:2px;margin:-2px -4px 0 0;cursor:pointer;display:flex;border-radius:50%;opacity:.6;}
+.room-del .ms{font-size:19px !important;}
+.room-del:hover,.room-del:active{opacity:1;color:#e53935;}
 .unread-badge{background:var(--primary);color:#fff;font-size:10px;font-weight:700;border-radius:100px;padding:2px 7px;min-width:20px;text-align:center;}
 .profile-hero-card{margin:16px 20px;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-container) 100%);border-radius:20px;padding:20px;color:#fff;position:relative;overflow:hidden;}
 .profile-hero-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,.1);border-radius:50%;}
@@ -944,6 +947,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
             <div class="settings-row-sub" data-i18n="settings_row_cardbook_sub">내 이메일로 나를 찾아, 카드북에 '만두로 연락하기'를 보여주는 것을 허용합니다</div>
           </div>
           <div class="toggle" id="cardbook-consent-toggle"></div>
+        </div>
+      </div>
+      <div class="settings-section-label" id="guestttl-section-label">게스트 대화방</div>
+      <div class="settings-card">
+        <div class="settings-row" onclick="openGuestTtlPicker()">
+          <div class="settings-icon-wrap"><span class="ms">auto_delete</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="guestttl-label">게스트 대화방 자동 삭제</div>
+            <div class="settings-row-sub" id="guestttl-sub">7일 동안 대화가 없으면 삭제</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">chevron_right</span></div>
         </div>
       </div>
       <div class="settings-section-label" data-i18n="settings_section_invite">초대</div>
@@ -2614,10 +2628,64 @@ function initBlocks(){
   },function(e){console.warn('blocks listener 실패:',e);});
 }
 function isBlocked(uid){return !!uid&&blockedUids.has(uid);}
-function _roomVisible(doc){
-  const r=doc.data()||{};if(r.type==='group')return true;
+function _roomVisible(doc,ignoreHidden){
+  const r=doc.data()||{};
+  if(!ignoreHidden&&_isRoomHidden(doc.id,r))return false;
+  if(r.type==='group')return true;
   const o=(r.members||[]).filter(function(u){return u!==currentUser.uid;});
   return !(o.length===1&&isBlocked(o[0]));
+}
+// ── 대화방 삭제(내 목록에서 숨기기) ──
+// 규칙상 방 문서는 지울 수 없고 상대에게도 남아 있어야 하므로, "내 목록에서만" 숨긴다.
+// users/{uid}.hiddenRooms = {방ID: 숨긴 시각(ms)} · 숨긴 뒤 상대가 새 메시지를 보내면 다시 나타난다.
+let myHiddenRooms={};
+function _isRoomHidden(id,r){
+  const at=myHiddenRooms[id];if(!at)return false;
+  const lt=r&&r.lastMessageTime&&r.lastMessageTime.toMillis?r.lastMessageTime.toMillis():0;
+  return !(r&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&lt>at);
+}
+function _writeHidden(id,hide){
+  if(!currentUser)return Promise.resolve();
+  const FV=firebase.firestore.FieldValue;
+  return db.collection('users').doc(currentUser.uid).set({hiddenRooms:{[id]:hide?Date.now():FV.delete()}},{merge:true});
+}
+// ── 게스트 대화방 자동 삭제 기간 ──
+// 로그인 없이 들어온 손님과의 방은 마지막 대화 후 이 기간이 지나면 서버가 방과 메시지를 완전히 지운다.
+// users/{uid}.guestRoomTtlDays (0=끄기, 기본 7). 실제 삭제는 mandu-server 가 한다.
+let myGuestTtlDays=7;
+function _guestTtlText(d){return d>0?_L(d+'일 동안 대화가 없으면 삭제',"Deleted after "+d+" days without messages"):_L('자동 삭제 안 함','Never auto-delete');}
+function renderGuestTtl(){
+  const a=document.getElementById('guestttl-section-label'),b=document.getElementById('guestttl-label'),c=document.getElementById('guestttl-sub');
+  if(a)a.textContent=_L('게스트 대화방','Guest chats');
+  if(b)b.textContent=_L('게스트 대화방 자동 삭제','Auto-delete guest chats');
+  if(c)c.textContent=_guestTtlText(myGuestTtlDays);
+}
+function openGuestTtlPicker(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  const items=[3,7,14,30,0].map(function(d){
+    return {icon:d===myGuestTtlDays?'radio_button_checked':'radio_button_unchecked',
+      label:d>0?_L(d+'일','After '+d+' days'):_L('삭제 안 함','Never'),fn:function(){setGuestTtl(d);}};
+  });
+  _modSheet(_L('게스트 대화방 자동 삭제','Auto-delete guest chats'),items);
+}
+function setGuestTtl(d){
+  const prev=myGuestTtlDays;myGuestTtlDays=d;renderGuestTtl();
+  db.collection('users').doc(currentUser.uid).set({guestRoomTtlDays:d},{merge:true})
+    .then(function(){showToast(d>0?_L('게스트 대화방은 '+d+'일 후 삭제돼요','Guest chats will be deleted after '+d+' days'):_L('자동 삭제를 껐어요','Auto-delete turned off'));})
+    .catch(function(){myGuestTtlDays=prev;renderGuestTtl();showToast(_L('저장하지 못했어요','Could not save'));});
+}
+function deleteRoom(roomId,name){
+  if(!currentUser||!roomId)return;
+  if(!confirm(_L('"'+(name||'채팅방')+'" 대화방을 목록에서 삭제할까요?\n상대방에게는 영향이 없고, 상대가 새 메시지를 보내면 다시 나타나요.','Delete this chat from your list?\nThe other person is not affected, and it reappears if they send a new message.')))return;
+  myHiddenRooms[roomId]=Date.now();
+  if(currentRoomId===roomId&&document.getElementById('chat-screen').style.display==='flex')handleBack();
+  if(_lastRoomsSnap&&typeof _roomsRender==='function')_roomsRender(_lastRoomsSnap);
+  showToast(_L('대화방을 삭제했어요','Chat deleted'));
+  _writeHidden(roomId,true).catch(function(){
+    delete myHiddenRooms[roomId];
+    if(_lastRoomsSnap&&typeof _roomsRender==='function')_roomsRender(_lastRoomsSnap);
+    showToast(_L('삭제하지 못했어요. 다시 시도해주세요','Could not delete. Please try again'));
+  });
 }
 function _dmPartnerUid(){
   if(!currentRoomId||!currentUser)return null;
@@ -2649,6 +2717,10 @@ function loadMutedRooms(){
   db.collection('users').doc(currentUser.uid).get().then(function(d){
     const arr=(d.exists&&d.data().mutedRooms)||[];
     myMutedRooms=new Set(arr);
+    myHiddenRooms=(d.exists&&d.data().hiddenRooms)||{};
+    const gt=d.exists?d.data().guestRoomTtlDays:undefined;
+    if(typeof gt==='number')myGuestTtlDays=gt;
+    renderGuestTtl();
     if(d.exists)_applySoundPrefsFromDoc(d.data());
     _updateChatBell();
     if(_lastRoomsSnap&&typeof _roomsRender==='function')_roomsRender(_lastRoomsSnap);
@@ -2685,6 +2757,7 @@ function openChatSafetyMenu(){
     ?{icon:'notifications_active',label:_L('이 방 알림 켜기','Turn on notifications'),fn:toggleRoomMute}
     :{icon:'notifications_off',label:_L('이 방 알림 끄기','Mute this chat'),fn:toggleRoomMute});
   items.push({icon:'music_note',label:_L('이 방 알림음','Sound for this chat')+' · '+_soundName(soundForRoom(currentRoomId)),fn:openRoomSoundPicker});
+  items.push({icon:'delete',label:_L('대화방 삭제','Delete chat'),danger:true,fn:function(){deleteRoom(currentRoomId,document.getElementById('chat-title').textContent);}});
   if(p){
     items.push({icon:'flag',label:_L('이 사용자 신고하기','Report this user'),fn:function(){askReport({type:'user',targetUid:p});}});
     if(!currentUser.isAnonymous){
@@ -3337,7 +3410,8 @@ function loadRooms(){
       });
       // 실제로 대화해본 상대방 uid만 추려서 "친구" 탭에 반영 (전체 가입자 노출 방지)
       myContactUids=new Set();
-      docs.forEach(function(doc){
+      // 대화방을 지워도 친구 목록에서는 빠지지 않게, 숨긴 방도 포함해서 집계
+      snap.docs.filter(function(d){return _roomVisible(d,true);}).forEach(function(doc){
         (doc.data().members||[]).forEach(function(uid){
           if(uid!==currentUser.uid)myContactUids.add(uid);
         });
@@ -3356,6 +3430,11 @@ function loadRooms(){
         else navigator.clearAppBadge().catch(function(){});
       }
       sub.textContent=unread>0?t('chats_unread_count').replace('{n}',unread):t('chats_room_count').replace('{n}',docs.length);
+      if(!docs.length){
+        sub.textContent=t('chats_empty_title');
+        list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc')+'</div></div>';
+        return;
+      }
       docs.forEach(function(doc){
         const r=doc.data();
         const isGroup=r.type==='group';
@@ -3372,7 +3451,8 @@ function loadRooms(){
           '<div class="av-wrap"><div class="av">'+(photo?'<img src="'+photo+'" alt="">':( isGroup?'👥':'👤'))+'</div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
           '<div class="room-info"><div class="room-name-row"><span class="room-name">'+name+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
           '<div class="room-last">'+(r.lastMessage||t('chat_start_hint'))+'</div></div>'+
-          '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'</div>';
+          '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'<button class="room-del" title="'+_L('삭제','Delete')+'"><span class="ms">delete</span></button></div>';
+        item.querySelector('.room-del').onclick=function(e){e.stopPropagation();deleteRoom(doc.id,name);};
         item.onclick=function(){openRoom(doc.id,name,photo,isGroup);};
         list.appendChild(item);
       });
@@ -3479,6 +3559,7 @@ async function createRoom(){
 
 function openRoom(roomId,name,photo,isGroup){
   currentRoomId=roomId;lastMyMsgWrap=null;_currentRoomData=null;
+  if(myHiddenRooms[roomId]){delete myHiddenRooms[roomId];_writeHidden(roomId,false).catch(function(){});} // 삭제했던 방을 다시 열면 목록에 복귀
   _updateChatBell();
   document.getElementById('chat-title').textContent=name;
   const icon=document.getElementById('chat-icon');
