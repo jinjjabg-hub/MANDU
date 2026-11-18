@@ -2965,6 +2965,10 @@ async function openStoreRoom(host,hostUid){
     docs.forEach(function(sd,i){const u=sd&&sd.exists?sd.data():{};data.memberNames[staff[i]]=u.displayName||'';data.memberPhotos[staff[i]]=u.photoURL||'';});
   }
   await db.collection('rooms').doc(roomId).set(data,{merge:true});
+  // 예전에 직원이 함께 있던 방이면, 남아 있는 직원 이름·사진·그룹 이름을 지워 1:1 방으로 완전히 되돌린다
+  if(forceDM&&!firstOpen){
+    try{await db.collection('rooms').doc(roomId).update({memberNames:data.memberNames,memberPhotos:data.memberPhotos,name:firebase.firestore.FieldValue.delete()});}catch(e){console.warn('1:1 방 정리 실패:',e);}
+  }
   openRoom(roomId,host.displayName,host.photoURL,false);
   if(firstOpen)_autoGreet(roomId,hostUid,host);
 }
