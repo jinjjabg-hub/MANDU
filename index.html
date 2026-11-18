@@ -1808,13 +1808,11 @@ async function createManduid(){
   }
 }
 
-// ── 온라인 상태 ───────────────────────────────────────────
+// ── 알림 준비 ──────────────────────────────────────────────
+// 예전엔 여기서 접속 상태(온라인/오프라인)를 2분마다 기록했지만, 대부분 폰 알림으로 열어 의미가 없고
+// 앱이 강제로 꺼지면 '온라인'으로 남는 틀린 정보가 생겨 표시를 없앴다(카카오톡도 접속 상태를 보여주지 않음).
 function initOnline(){
   if(!currentUser||isGuest)return;
-  setOnline();
-  heartbeatInterval=setInterval(setOnline,120000);
-  document.addEventListener('visibilitychange',()=>document.hidden?setOffline():setOnline());
-  window.addEventListener('beforeunload',setOffline);
   initFCM();
 }
 
@@ -1859,13 +1857,11 @@ async function initFCM(){
     console.warn('FCM 초기화 실패:',e);
   }
 }
-function setOnline(){if(!currentUser)return;db.collection('users').doc(currentUser.uid).set({online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
-function setOffline(){if(!currentUser)return;db.collection('users').doc(currentUser.uid).set({online:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
 
 function markRead(roomId){
   if(!currentUser||!roomId)return;
   const update={readBy:{[currentUser.uid]:firebase.firestore.FieldValue.serverTimestamp()}};
-  update['unreadCount.'+currentUser.uid]=0;
+  update.unreadCount={[currentUser.uid]:0}; // 중첩 객체로 (set(merge)에서 'unreadCount.uid' 키는 점 들어간 별도 칸이 됨)
   db.collection('rooms').doc(roomId).set(update,{merge:true});
 }
 
@@ -2081,7 +2077,7 @@ auth.onAuthStateChanged(async function(user){
     // Firestore에 기본 정보 저장
     await db.collection('users').doc(user.uid).set({
       uid:user.uid,displayName:user.displayName||'',photoURL:user.photoURL||'',
-      email:user.email||'',online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
+      email:user.email||'',lastSeen:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
 
     // 만두 ID 확인 — 서버에서 직접 읽기 (캐시 무시)
@@ -2191,7 +2187,7 @@ async function startGuestChat(){
     await auth.signInAnonymously();
     await db.collection('users').doc(auth.currentUser.uid).set({
       uid:auth.currentUser.uid,displayName:name,photoURL:'',email:'',
-      online:true,isGuest:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
+      isGuest:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
     localStorage.setItem('mandu_guest_name',name);
   }catch(e){showToast('오류가 발생했어요.');}
@@ -2240,7 +2236,7 @@ function upgradeToGoogle(){
       db.collection('users').doc(currentUser.uid).set({
         uid:currentUser.uid,displayName:currentUser.displayName,
         photoURL:currentUser.photoURL,email:currentUser.email,
-        online:true,isGuest:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
+        isGuest:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
       },{merge:true});
     })
     .catch(function(){if(!window.MANDU_INAPP)auth.signInWithPopup(provider);});
@@ -3581,9 +3577,17 @@ function loadRooms(){
         const r=d.data();const rb=r.readBy||{};const mr=rb[currentUser.uid];
         return r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
       }).length;
-      // 앱 아이콘 뱃지 갱신 (지원 브라우저에서만 — iOS 16.4+ 홈화면 설치 앱, 데스크톱 Chrome/Edge)
+      // 앱 아이콘 숫자 = 안 읽은 '메시지' 수 합계 (카카오톡처럼). 알림 끈 방은 빼고 센다 — 서버(/api/notify)도 같은 기준.
+      // 지원: iOS 16.4+ 홈화면 앱, PC Chrome/Edge 설치 앱. 안드로이드는 런처가 알림 개수로 표시.
+      const badgeCount=docs.reduce(function(sum,d){
+        if(isRoomMuted(d.id))return sum;
+        const r=d.data();const rb=r.readBy||{};const mr=rb[currentUser.uid];
+        const isU=r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
+        const n=(r.unreadCount&&r.unreadCount[currentUser.uid])||0;
+        return sum+(n>0?n:(isU?1:0));
+      },0);
       if('setAppBadge' in navigator){
-        if(unread>0)navigator.setAppBadge(unread).catch(function(){});
+        if(badgeCount>0)navigator.setAppBadge(badgeCount).catch(function(){});
         else navigator.clearAppBadge().catch(function(){});
       }
       sub.textContent=unread>0?t('chats_unread_count').replace('{n}',unread):t('chats_room_count').replace('{n}',docs.length);
@@ -3600,12 +3604,11 @@ function loadRooms(){
         const partnerUid=!isGroup?Object.keys(r.memberNames||{}).find(function(k){return k!==currentUser.uid;}):null;
         const rb=r.readBy||{};const mr=rb[currentUser.uid];
         const isUnread=r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
-        const isOnline=!isGroup&&partnerUid&&usersMap[partnerUid]&&usersMap[partnerUid].online===true;
         const pLang=partnerUid&&usersMap[partnerUid]?localStorage.getItem('mandu_lang_'+partnerUid)||'':null;
         const item=document.createElement('div');
         item.className='room-item';
         item.innerHTML=
-          '<div class="av-wrap"><div class="av">'+(photo?'<img src="'+_esc(photo)+'" alt="">':( isGroup?'👥':'👤'))+'</div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
+          '<div class="av-wrap"><div class="av">'+(photo?'<img src="'+_esc(photo)+'" alt="">':( isGroup?'👥':'👤'))+'</div></div>'+
           '<div class="room-info"><div class="room-name-row"><span class="room-name">'+_esc(name)+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
           '<div class="room-last">'+(r.lastMessage?_esc(r.lastMessage):t('chat_start_hint'))+'</div></div>'+
           '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'<button class="room-del" title="'+_L('삭제','Delete')+'"><span class="ms">delete</span></button></div>';
@@ -3703,10 +3706,8 @@ function addFriend(uid){
 // 내 지인만 — 친구 탭·새 채팅방·멤버 추가에서 전체 가입자가 보이지 않게
 function isFriendHidden(uid){return !!(myFriendData.hidden&&myFriendData.hidden[uid]);}
 function isFriendFav(uid){return !!(myFriendData.fav&&myFriendData.fav[uid]);}
-// 정렬: 온라인 먼저 → 이름순(한글·영문·숫자 자연 정렬). 즐겨찾기는 목록 맨 위 별도 묶음
+// 정렬: 이름순(한글·영문·숫자 자연 정렬). 즐겨찾기는 목록 맨 위 별도 묶음
 function _friendSort(a,b){
-  const ao=a.online===true?0:1,bo=b.online===true?0:1;
-  if(ao!==bo)return ao-bo;
   return (a.displayName||'').localeCompare(b.displayName||'',['ko','en'],{sensitivity:'base',numeric:true});
 }
 function myFriends(){return allUsers.filter(function(u){return myContactUids.has(u.uid)&&!isBlocked(u.uid)&&!isFriendHidden(u.uid);}).sort(_friendSort);}
@@ -3741,16 +3742,15 @@ async function showHiddenFriends(){
   _modSheet(_L('숨긴 친구','Hidden friends'),items);
 }
 function _friendItem(u){
-  const isOnline=u.online===true;
   const lang=localStorage.getItem('mandu_lang_'+u.uid)||'';
   const item=document.createElement('div');
   item.className='user-item';
-  item.innerHTML='<div class="av-wrap"><div class="av"></div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
-    '<div class="user-info"><div class="user-name"></div><div class="user-status'+(isOnline?' online':'')+'"></div></div>'+
+  item.innerHTML='<div class="av-wrap"><div class="av"></div></div>'+
+    '<div class="user-info"><div class="user-name"></div><div class="user-status"></div></div>'+
     '<div class="friend-acts">'+(currentUser.isAnonymous?'':'<button class="act-btn friend-more" title="'+_L('더보기','More')+'"><span class="ms">more_vert</span></button>')+'<button class="act-btn"><span class="ms">chat_bubble</span></button></div>';
   _avatarInto(item.querySelector('.av'),u.photoURL);
   item.querySelector('.user-name').textContent=(u.displayName||'익명')+(lang&&LANG_FLAGS[lang]?' '+LANG_FLAGS[lang]:'');
-  item.querySelector('.user-status').textContent=(u.manduid?'@'+u.manduid+' · ':'')+(isOnline?'● '+t('status_online'):'○ '+t('status_offline'));
+  item.querySelector('.user-status').textContent=u.manduid?'@'+u.manduid:'';
   const more=item.querySelector('.friend-more');
   if(more)more.onclick=function(e){e.stopPropagation();openFriendMenu(u);};
   item.onclick=function(){startDM(u);};
@@ -3842,7 +3842,20 @@ async function createRoom(){
   openRoom(ref.id,name,'',true);
 }
 
+// 방을 열면 그 방의 알림을 알림창에서 지운다 (안드로이드는 알림 개수가 아이콘 숫자가 되므로 함께 줄어든다)
+function _clearRoomNotifications(roomId){
+  try{
+    if(!('serviceWorker' in navigator)||!navigator.serviceWorker.getRegistrations)return;
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(reg){
+        if(!reg.getNotifications)return;
+        reg.getNotifications({tag:'room-'+roomId}).then(function(ns){ns.forEach(function(n){n.close();});}).catch(function(){});
+      });
+    }).catch(function(){});
+  }catch(e){}
+}
 function openRoom(roomId,name,photo,isGroup){
+  _clearRoomNotifications(roomId);
   currentRoomId=roomId;lastMyMsgWrap=null;_currentRoomData=null;
   if(myHiddenRooms[roomId]){delete myHiddenRooms[roomId];_writeHidden(roomId,false).catch(function(){});} // 삭제했던 방을 다시 열면 목록에 복귀
   _updateChatBell();
@@ -4583,7 +4596,7 @@ async function sendImage(input){
     // 상대방 안 읽은 수 + 푸시 알림 (sendFile과 동일하게)
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:'📷 사진',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
+    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('이미지 전송 완료!');
     sendPushNotification(others,'📷 사진');
@@ -4609,7 +4622,7 @@ async function sendMessage(){
   });
   const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
   const incUpdate={lastMessage:text,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-  others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
+  incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
   await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
   markRead(currentRoomId);
   sendPushNotification(others,text);
@@ -4646,7 +4659,7 @@ async function sendSticker(id){
     const label='🥟 '+_stickerLabel();
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:label,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
+    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);
     sendPushNotification(others,label);
@@ -4735,7 +4748,7 @@ async function sendFile(input){
     });
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:'📎 '+file.name,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
+    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('파일 전송 완료!');
     sendPushNotification(others,'📎 '+file.name);
@@ -4888,11 +4901,9 @@ function closeSearch(){
 }
 let _searchSeq=0,_searchIdTimer=null;
 function _searchUserItem(u){
-  const isOnline=u.online===true;
   const el=document.createElement('div');el.className='room-item';
-  el.innerHTML='<div class="av-wrap"><div class="av"></div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
-    '<div class="room-info"><div class="room-name-row"><span class="room-name"></span>'+(u.manduid?'<span class="country-pill">@'+_esc(u.manduid)+'</span>':'')+'</div>'+
-    '<div class="room-last '+(isOnline?'online':'')+'">'+(isOnline?'● '+t('status_online'):'○ '+t('status_offline'))+'</div></div>';
+  el.innerHTML='<div class="av-wrap"><div class="av"></div></div>'+
+    '<div class="room-info"><div class="room-name-row"><span class="room-name"></span>'+(u.manduid?'<span class="country-pill">@'+_esc(u.manduid)+'</span>':'')+'</div></div>';
   _avatarInto(el.querySelector('.av'),u.photoURL);
   el.querySelector('.room-name').textContent=u.displayName||'익명';
   el.onclick=function(){closeSearch();startDM(u);};
