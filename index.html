@@ -890,6 +890,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           </div>
           <div id="usage-msg-lbl" style="font-size:12px;color:var(--on-surface-variant);margin-bottom:14px;line-height:1.5;" data-i18n="usage_msg_default">이번 달 번역을 아직 사용하지 않았어요.</div>
           <div id="usage-sub-line" class="web-only" style="display:none;font-size:12px;color:var(--on-surface-variant);margin:-6px 0 14px;line-height:1.5;"></div>
+          <button id="usage-log-btn" onclick="toggleUsageLog()" style="width:100%;padding:10px;margin-bottom:10px;border-radius:12px;border:1px solid var(--outline-variant);background:var(--surface);color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">📋 이번 달 사용 내역</button>
+          <div id="usage-log-panel" style="display:none;margin-bottom:12px;font-size:12px;line-height:1.55;color:var(--on-surface);"></div>
           <button id="usage-upgrade-btn" onclick="showPlanSheet()" style="width:100%;padding:12px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">🚀 플랜 업그레이드</button>
         </div>
       </div>
@@ -3920,7 +3922,7 @@ function loadMessages(keepLimit){
           btn.onclick=function(){
             btn.disabled=true;btn.textContent=t('translating_loading');
             Promise.all(pendingOldMsgs.map(function(it){
-              return translateEx(it.text,it.myLang,{context:it.ctx}).then(function(r){
+              return translateEx(it.text,it.myLang,{context:it.ctx,source:'older'}).then(function(r){
                 if(r.text&&r.text!==it.text){
                   const orig=document.createElement('div');orig.className='msg-translated';
                   it.wrap.appendChild(orig);
@@ -4269,8 +4271,8 @@ function setCachedTranslation(text,targetLang,r){
 // ── 메인 번역 함수 (서버가 인증+사용량 검증까지 전담) ─────────────
 let _usage80WarnShown=false;
 // 기존 호출부용 — 번역문만 돌려준다
-async function translate(text,targetLang){
-  return (await translateEx(text,targetLang)).text;
+async function translate(text,targetLang,opts){
+  return (await translateEx(text,targetLang,opts)).text;
 }
 // 번역문과 함께 어떤 엔진이 번역했는지 돌려준다: {text, engine} — engine: 'dict'|'google'|'ai'|''
 // opts.engine='ai' 로 AI 번역을 강제(다시 번역), opts.context 로 바로 앞 대화를 문맥으로 넘긴다
@@ -4299,7 +4301,8 @@ async function translateEx(text,targetLang,opts){
 
   if(!currentUser)return none;
 
-  const payload={text:text,target:targetLang};
+  // source·src·room은 '이번 달 사용 내역'용 꼬리표 (원문은 서버 기록에 남지 않는다)
+  const payload={text:text,target:targetLang,source:opts.source||'chat',src:srcLang||'',room:currentRoomId||''};
   if(useAi){
     payload.engine='ai';
     if(opts.context&&opts.context.length)payload.context=opts.context;
@@ -4384,7 +4387,7 @@ function _translationMenuItems(w){
 async function retranslateWithAi(w){
   const tr=w._tr;if(!tr||tr.busy)return;
   tr.busy=true;showToast(_L('AI로 다시 번역하는 중…','Retranslating with AI…'));
-  const r=await translateEx(tr.orig,tr.target,{engine:'ai',context:tr.ctx});
+  const r=await translateEx(tr.orig,tr.target,{engine:'ai',context:tr.ctx,source:'ai_retry'});
   tr.busy=false;
   if(r.engine==='ai'&&r.text){_showTranslation(w,tr.bubble,tr.line,tr.orig,r,tr.target,tr.ctx);}
   else if(r.text||r.engine===''){showToast(_L('지금은 AI 번역을 쓸 수 없어요. 잠시 후 다시 시도해주세요','AI translation is unavailable right now. Please try again later.'));}
@@ -4425,7 +4428,7 @@ function renderMsg(d,skipTranslate){
     const cached0=myLang0&&getCachedTranslation(d.text,myLang0);
     if(cached0){sysEl.textContent=cached0.text;}
     else if(myLang0){
-      translate(d.text,myLang0).then(function(tr){if(tr&&tr!==d.text)sysEl.textContent=tr;});
+      translate(d.text,myLang0,{source:'system'}).then(function(tr){if(tr&&tr!==d.text)sysEl.textContent=tr;});
     }
     return;
   }
@@ -4488,7 +4491,7 @@ function renderMsg(d,skipTranslate){
     const loadingOrig=document.createElement('div');loadingOrig.className='msg-translated';
     loadingOrig.innerHTML='<span class="ms">translate</span>'+t('translating_loading');
     w.appendChild(loadingOrig);
-    translateEx(d.text,myLang,{context:ctx}).then(function(r){
+    translateEx(d.text,myLang,{context:ctx,source:'chat'}).then(function(r){
       if(r.text&&r.text!==d.text){
         _showTranslation(w,b,loadingOrig,d.text,r,myLang,ctx);
       }else{
@@ -5012,7 +5015,7 @@ async function dictPreview(){
   const el=document.getElementById('dict-preview');
   if(!text){el.textContent='';return;}
   el.textContent='번역 중...';
-  const result=await translate(text,to);
+  const result=await translate(text,to,{source:'dict_preview'});
   el.textContent=result?('→ '+result):'번역 실패';
 }
 
@@ -5027,7 +5030,7 @@ async function addDictEntry(){
   if(!currentUser)return;
 
   previewEl.textContent='번역 중...';
-  const trans=await translate(orig,to);
+  const trans=await translate(orig,to,{source:'dict_save'});
   if(!trans){showToast('번역 실패. 다시 시도해요');previewEl.textContent='';return;}
 
   const key=from+'|'+to+'|'+orig;
@@ -5191,6 +5194,60 @@ function fmtChars(n){
   if(n>=1000000)return (n/1000000).toFixed(1).replace('.0','')+'M '+unit;
   if(n>=1000)return (n/1000).toFixed(1).replace('.0','')+'K '+unit;
   return n.toLocaleString()+' '+unit;
+}
+
+// ── 이번 달 사용 내역 — 서버가 차감할 때마다 users/{uid}/usage_log 에 남긴 기록을 보여준다 ──
+// "어디서 이만큼 썼지?"에 답하기 위함: 종류별 / 언어별 합계 + 최근 기록. 원문은 기록되지 않는다.
+const USAGE_SOURCE_LABELS={
+  chat:['채팅 자동 번역','Chat auto-translate'],older:['이전 메시지 번역','Older messages'],
+  ai_retry:['AI로 다시 번역','AI re-translate'],system:['안내 메시지','System messages'],
+  dict_preview:['사전 미리보기','Dictionary preview'],dict_save:['사전 저장','Dictionary save'],
+  image:['사진 번역','Photo'],other:['기타','Other']
+};
+async function toggleUsageLog(){
+  const panel=document.getElementById('usage-log-panel');
+  if(!panel||!currentUser)return;
+  if(panel.style.display==='block'){panel.style.display='none';return;}
+  panel.style.display='block';
+  panel.textContent=_L('불러오는 중...','Loading...');
+  let rows=[];
+  try{
+    const snap=await db.collection('users').doc(currentUser.uid).collection('usage_log')
+      .where('month','==',getYearMonth()).limit(2000).get();
+    snap.forEach(function(doc){rows.push(doc.data());});
+  }catch(e){panel.textContent=_L('내역을 불러오지 못했어요.','Could not load usage history.');return;}
+  if(!rows.length){
+    panel.textContent=_L('아직 기록된 내역이 없어요. (이 기능이 생긴 뒤부터 기록돼요)','No history yet. (Recorded from when this feature was added)');
+    return;
+  }
+  rows.sort(function(a,b){return ((b.at&&b.at.toMillis())||0)-((a.at&&a.at.toMillis())||0);});
+  const total=rows.reduce(function(s,r){return s+(r.chars||0);},0);
+  const label=function(src){const l=USAGE_SOURCE_LABELS[src]||USAGE_SOURCE_LABELS.other;return _L(l[0],l[1]);};
+  const group=function(keyFn){
+    const m={};
+    rows.forEach(function(r){const k=keyFn(r);m[k]=m[k]||{chars:0,n:0};m[k].chars+=r.chars||0;m[k].n++;});
+    return Object.keys(m).map(function(k){return [k,m[k]];}).sort(function(a,b){return b[1].chars-a[1].chars;});
+  };
+  const esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+  const table=function(title,items,nameFn){
+    let h='<div style="font-weight:700;margin:4px 0 6px;">'+esc(title)+'</div>';
+    items.forEach(function(it){
+      const pct=total?Math.round(it[1].chars/total*100):0;
+      h+='<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0;"><span>'+esc(nameFn(it[0]))+' <span style="color:var(--outline);">· '+it[1].n+_L('건',' times')+'</span></span><span style="font-weight:700;white-space:nowrap;">'+esc(fmtChars(it[1].chars))+' ('+pct+'%)</span></div>';
+    });
+    return '<div style="padding:10px 12px;border-radius:12px;background:var(--surface-container);margin-bottom:8px;">'+h+'</div>';
+  };
+  const pair=function(r){return (r.src||'?')+' → '+(r.target||'?');};
+  let html='<div style="margin-bottom:8px;color:var(--on-surface-variant);">'+esc(_L('기록된 합계 ','Recorded total '))+'<b>'+esc(fmtChars(total))+'</b> · '+rows.length+_L('건',' times')+'</div>';
+  html+=table(_L('어디서 썼나','By feature'),group(function(r){return r.source||'other';}),label);
+  html+=table(_L('어떤 언어를 번역했나','By language'),group(pair),function(k){return k;});
+  html+='<div style="font-weight:700;margin:10px 0 6px;">'+esc(_L('최근 기록','Recent'))+'</div>';
+  rows.slice(0,50).forEach(function(r){
+    const d=r.at&&r.at.toDate?r.at.toDate():null;
+    const when=d?(d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'):'';
+    html+='<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--outline-variant);"><span><span style="color:var(--outline);">'+esc(when)+'</span> '+esc(label(r.source))+' <span style="color:var(--outline);">'+esc(pair(r))+(r.engine==='ai'?' · AI':'')+'</span></span><span style="white-space:nowrap;">'+esc(fmtChars(r.chars||0))+'</span></div>';
+  });
+  panel.innerHTML=html;
 }
 
 async function renderUsageUI(){
