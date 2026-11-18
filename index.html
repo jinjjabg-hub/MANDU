@@ -1957,6 +1957,7 @@ async function confirmDeleteAccount(){
     const dictSnap=await db.collection('users').doc(user.uid).collection('mydict').get();
     await Promise.all(dictSnap.docs.map(function(d){return d.ref.delete();}));
     await db.collection('friends').doc(user.uid).delete().catch(function(){});
+    await db.collection('public_profiles').doc(user.uid).delete().catch(function(){});
     await db.collection('users').doc(user.uid).delete();
     await user.delete();
     showToast('탈퇴가 완료됐어요.');
@@ -2138,12 +2139,7 @@ auth.onAuthStateChanged(async function(user){
           const idDoc=await db.collection('manduid_index').doc(guestManduidParam).get();
           if(idDoc.exists){
             hostUID=idDoc.data().uid;
-            const hostUser=await db.collection('users').doc(hostUID).get();
-            if(hostUser.exists){
-              const d=hostUser.data();
-              document.getElementById('guest-host-name').textContent=d.displayName||'—';
-              document.getElementById('guest-host-photo').src=d.photoURL||'';
-            }
+            _setGuestHost(await _readPublicProfile(hostUID));
           }
         }catch(e){}
       }else{await loadGuestHostInfo();}
@@ -2160,15 +2156,29 @@ auth.onAuthStateChanged(async function(user){
   }
 });
 
+// ── 공개 명함: public_profiles/{uid} = {displayName, photoURL, manduid} ──
+// 손님은 링크를 처음 열 때 아직 로그인 전이라 users 문서를 읽을 수 없다(규칙상 로그인 필요).
+// 그래서 이름·사진·만두ID만 담은 공개 문서를 따로 두고, 주인이 앱을 열 때마다 맞춰 둔다.
+function _setGuestHost(d){
+  const n=document.getElementById('guest-host-name'),ph=document.getElementById('guest-host-photo');
+  if(n)n.textContent=(d&&d.displayName)||'—';
+  if(ph)ph.src=(d&&d.photoURL)||DEFAULT_AVATAR;
+}
+async function _readPublicProfile(uid){
+  try{const d=await db.collection('public_profiles').doc(uid).get();return d.exists?d.data():null;}catch(e){return null;}
+}
+function syncPublicProfile(){
+  if(!currentUser||currentUser.isAnonymous||!currentManduid)return;
+  const u=usersMap[currentUser.uid]||{};
+  db.collection('public_profiles').doc(currentUser.uid).set({
+    displayName:String(u.displayName||currentUser.displayName||'').slice(0,60),
+    photoURL:String(u.photoURL||currentUser.photoURL||'').slice(0,500),
+    manduid:currentManduid,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(function(e){console.warn('공개 명함 저장 실패:',e&&e.code);});
+}
 async function loadGuestHostInfo(){
-  try{
-    const doc=await db.collection('users').doc(hostUID).get();
-    if(doc.exists){
-      const d=doc.data();
-      document.getElementById('guest-host-name').textContent=d.displayName||'—';
-      document.getElementById('guest-host-photo').src=d.photoURL||'';
-    }
-  }catch(e){}
+  _setGuestHost(await _readPublicProfile(hostUID));
 }
 
 async function startGuestChat(){
@@ -2307,6 +2317,7 @@ const DEFAULT_AVATAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="
 function updateUIAfterLogin(){
   if(!currentUser||currentUser.isAnonymous)return;
   initBlocks();initAiTranslate();initStoreLabels();initIdSearch();
+  setTimeout(syncPublicProfile,1500); // 내 프로필 문서가 구독돼 usersMap에 들어온 뒤
   document.getElementById('my-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('hero-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('settings-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
@@ -2662,6 +2673,8 @@ async function uploadProfilePhoto(input){
     if(!data.secure_url)throw new Error('upload failed');
     await currentUser.updateProfile({photoURL:data.secure_url});
     await db.collection('users').doc(currentUser.uid).update({photoURL:data.secure_url});
+    if(usersMap[currentUser.uid])usersMap[currentUser.uid].photoURL=data.secure_url;
+    syncPublicProfile();
     ['pe-photo','my-avatar','hero-avatar','settings-avatar'].forEach(function(id){
       const el=document.getElementById(id);if(el)el.src=data.secure_url;
     });
@@ -2675,6 +2688,8 @@ async function saveProfile(){
   const name=document.getElementById('pe-name').value.trim();
   if(!name){showToast('이름을 입력하세요');return;}
   await db.collection('users').doc(currentUser.uid).update({displayName:name});
+  if(usersMap[currentUser.uid])usersMap[currentUser.uid].displayName=name;
+  syncPublicProfile();
   document.getElementById('hero-name').textContent=name;
   document.getElementById('settings-name').textContent=name;
   showToast('저장됐어요!');
