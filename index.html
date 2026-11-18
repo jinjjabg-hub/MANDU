@@ -2819,17 +2819,52 @@ async function showBlockedList(){
   }
   _modSheet(_L('차단한 사용자','Blocked users'),items);
 }
-function _attachMsgReport(el,d){
-  if(!d||!d.uid||(currentUser&&d.uid===currentUser.uid))return;
+// 메시지를 길게 누르거나(모바일) 우클릭(PC)하면 나오는 메뉴: 복사 · 링크 · 번역 · 신고/차단
+function _copyText(text,okMsg){
+  const done=function(){showToast(okMsg||_L('복사했어요','Copied'));};
+  const fallback=function(){
+    try{
+      const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');
+      ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';document.body.appendChild(ta);
+      ta.select();ta.setSelectionRange(0,text.length);
+      const ok=document.execCommand('copy');ta.remove();
+      if(ok){done();return;}
+    }catch(e){}
+    prompt(_L('아래 내용을 길게 눌러 복사하세요','Copy the text below'),text);
+  };
+  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).then(done,fallback);
+  else fallback();
+}
+function _msgLinks(text){
+  const out=[];
+  (String(text||'').match(/https?:\/\/[^\s<>"']+/gi)||[]).forEach(function(u){
+    u=u.replace(/[.,!?)\]]+$/,'');if(out.indexOf(u)<0&&out.length<3)out.push(u);
+  });
+  return out;
+}
+function _attachMsgMenu(el,d,mine){
+  if(!d)return;
   const open=function(){
-    const items=[{icon:'flag',label:_L('이 메시지 신고하기','Report this message'),fn:function(){askReport({type:'message',targetUid:d.uid,messageText:d.text||d.imageUrl||d.fileUrl||(d.sticker?'[sticker] '+d.sticker:'')||'',messageTime:d.createdAt||null});}}];
-    if(currentUser&&!currentUser.isAnonymous&&!isBlocked(d.uid))items.push({icon:'block',label:_L('보낸 사람 차단하기','Block sender'),danger:true,fn:function(){blockUser(d.uid);}});
-    const w=el.closest('.msg-wrap');
-    _modSheet(_L('메시지','Message'),(w&&w._tr?_translationMenuItems(w):[]).concat(items));
+    const w=el.closest('.msg-wrap');const items=[];
+    if(d.text)items.push({icon:'content_copy',label:_L('복사','Copy'),fn:function(){_copyText(d.text);}});
+    if(w&&w._tr&&w._tr.translated&&w._tr.translated!==d.text)items.push({icon:'translate',label:_L('번역문 복사','Copy translation'),fn:function(){_copyText(w._tr.translated);}});
+    _msgLinks(d.text).forEach(function(u){
+      let host=u;try{host=new URL(u).hostname;}catch(e){}
+      items.push({icon:'link',label:_L('링크 복사','Copy link')+' · '+host,fn:function(){_copyText(u,_L('링크를 복사했어요','Link copied'));}});
+      items.push({icon:'open_in_new',label:_L('링크 열기','Open link')+' · '+host,fn:function(){window.open(u,'_blank','noopener');}});
+    });
+    if(d.imageUrl)items.push({icon:'image',label:_L('이미지 주소 복사','Copy image link'),fn:function(){_copyText(d.imageUrl,_L('링크를 복사했어요','Link copied'));}});
+    if(d.fileUrl)items.push({icon:'attach_file',label:_L('파일 링크 복사','Copy file link'),fn:function(){_copyText(d.fileUrl,_L('링크를 복사했어요','Link copied'));}});
+    if(!mine&&w&&w._tr)items.push.apply(items,_translationMenuItems(w));
+    if(!mine&&d.uid){
+      items.push({icon:'flag',label:_L('이 메시지 신고하기','Report this message'),fn:function(){askReport({type:'message',targetUid:d.uid,messageText:d.text||d.imageUrl||d.fileUrl||(d.sticker?'[sticker] '+d.sticker:'')||'',messageTime:d.createdAt||null});}});
+      if(currentUser&&!currentUser.isAnonymous&&!isBlocked(d.uid))items.push({icon:'block',label:_L('보낸 사람 차단하기','Block sender'),danger:true,fn:function(){blockUser(d.uid);}});
+    }
+    if(items.length)_modSheet(_L('메시지','Message'),items);
   };
   el.addEventListener('contextmenu',function(e){e.preventDefault();open();});
   let tm=null;
-  el.addEventListener('touchstart',function(){tm=setTimeout(function(){tm=null;open();},600);},{passive:true});
+  el.addEventListener('touchstart',function(){tm=setTimeout(function(){tm=null;if(navigator.vibrate)try{navigator.vibrate(15);}catch(e){}open();},500);},{passive:true});
   ['touchend','touchmove','touchcancel'].forEach(function(ev){el.addEventListener(ev,function(){if(tm){clearTimeout(tm);tm=null;}},{passive:true});});
 }
 
@@ -4133,7 +4168,7 @@ function renderMsg(d,skipTranslate){
   if(d.auto)timeEl.textContent=_L('자동 메시지','Auto message')+(timeEl.textContent?' · '+timeEl.textContent:'');
   row.appendChild(b);row.appendChild(timeEl);w.appendChild(row);container.appendChild(w);
   if(d.imageUrl)_attachImageTranslate(w,d.imageUrl);
-  if(!mine)_attachMsgReport(b,d);
+  _attachMsgMenu(b,d,mine);
   if(!d.imageUrl&&!d.fileUrl&&d.text)attachLinkPreview(w,d.text);
   if(mine){
     if(lastMyMsgWrap){const p=lastMyMsgWrap.querySelector('.read-receipt');if(p)p.remove();}
