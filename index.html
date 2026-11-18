@@ -3227,6 +3227,7 @@ async function translateImage(url,lang){
       if(!res.ok)throw new Error('http '+res.status);
       const d=await res.json();
       if(!d.original){showToast(_L('사진에서 글자를 찾지 못했어요','No text found in this photo'));return null;}
+      if(d.sameLang){showToast(_L('이미 내 언어로 된 사진이에요 (차감 없음)','This photo is already in your language (not counted)'));return null;}
       const out={original:d.original,translated:d.translated||d.original,truncated:!!d.truncated};
       try{localStorage.setItem(key,JSON.stringify(out));}catch(e){}
       return out;
@@ -4463,7 +4464,8 @@ function renderMsg(d,skipTranslate){
   timeEl.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
   if(d.auto)timeEl.textContent=_L('자동 메시지','Auto message')+(timeEl.textContent?' · '+timeEl.textContent:'');
   row.appendChild(b);row.appendChild(timeEl);w.appendChild(row);container.appendChild(w);
-  if(d.imageUrl)_attachImageTranslate(w,d.imageUrl);
+  // 사진 속 글자 번역 버튼은 숨김 (사진은 대부분 번역보다 공유 목적). 다시 켜려면 아래 줄의 주석만 풀면 된다.
+  // if(d.imageUrl)_attachImageTranslate(w,d.imageUrl);
   _attachMsgMenu(b,d,mine);
   if(!d.imageUrl&&!d.fileUrl&&d.text)attachLinkPreview(w,d.text);
   if(mine){
