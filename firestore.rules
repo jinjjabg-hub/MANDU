@@ -97,7 +97,7 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
-        // 친구 관리 — 본인만 읽고 쓴다. (added: 직접 추가한 친구, hidden: 숨긴 친구, fav: 즐겨찾기 — 모두 {uid: 시각})
+    // 친구 관리 — 본인만 읽고 쓴다. (added: 직접 추가한 친구, hidden: 숨긴 친구, fav: 즐겨찾기 — 모두 {uid: 시각})
     match /friends/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
