@@ -4324,7 +4324,8 @@ async function translateEx(text,targetLang,opts){
         body:JSON.stringify(payload)
       });
       if(res.status===402){
-        showToast(t('usage_limit_exceeded_toast'));
+        // 게스트는 사장님 한도로 번역하므로, 업그레이드 안내 대신 가게 한도 안내를 띄운다
+        showToast(isGuest?_L('이 가게의 이번 달 번역 한도가 다 찼어요','This store has used up its translations for this month'):t('usage_limit_exceeded_toast'));
         return none;
       }
       if(!res.ok){
@@ -5223,6 +5224,9 @@ async function toggleUsageLog(){
   rows.sort(function(a,b){return ((b.at&&b.at.toMillis())||0)-((a.at&&a.at.toMillis())||0);});
   const total=rows.reduce(function(s,r){return s+(r.chars||0);},0);
   const label=function(src){const l=USAGE_SOURCE_LABELS[src]||USAGE_SOURCE_LABELS.other;return _L(l[0],l[1]);};
+  // 손님(게스트) 화면에서 번역된 건 — 사장님 한도에서 차감된 것
+  rows.forEach(function(r){if(r.guest)r.source='guest';});
+  USAGE_SOURCE_LABELS.guest=['손님 화면 번역','Guest-side translation'];
   const group=function(keyFn){
     const m={};
     rows.forEach(function(r){const k=keyFn(r);m[k]=m[k]||{chars:0,n:0};m[k].chars+=r.chars||0;m[k].n++;});
