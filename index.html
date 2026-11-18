@@ -1517,6 +1517,8 @@ try{if(firebase.messaging.isSupported())messaging=firebase.messaging();}catch(e)
 let currentUser=null,currentRoomId=null,currentRoomMembers=[];
 let unsubMsg=null,unsubRoom=null,lastMyMsgWrap=null;
 let heartbeatInterval=null,selectedUsers=[],allUsers=[],usersMap={},myContactUids=new Set();
+// 친구 관리: friends/{내 uid} = {added:{uid:ms}, hidden:{uid:ms}, fav:{uid:ms}} — 본인만 읽고 쓴다
+let myFriendData={added:{},hidden:{},fav:{}},_roomContactUids=new Set(),_profileUnsubs={},_usersLoadedFor=null,_unsubFriends=null;
 let currentTab='chats',isGuest=false,guestMsgCount=0,hostUID=null;
 let currentManduid=null; // ← 새로 추가
 let _pendingNewUser=null; // ← 최초 로그인 언어선택 대기용
@@ -1929,6 +1931,7 @@ async function confirmDeleteAccount(){
     // 내 번역 사전 → 프로필 문서 순서로 삭제 (실패하면 탈퇴를 멈추고 알림 — 데이터가 남은 채 계정만 지워지지 않도록)
     const dictSnap=await db.collection('users').doc(user.uid).collection('mydict').get();
     await Promise.all(dictSnap.docs.map(function(d){return d.ref.delete();}));
+    await db.collection('friends').doc(user.uid).delete().catch(function(){});
     await db.collection('users').doc(user.uid).delete();
     await user.delete();
     showToast('탈퇴가 완료됐어요.');
@@ -2489,7 +2492,7 @@ async function pickContacts(){
     contacts.forEach(function(c){(c.tel||[]).forEach(function(p){phones.push(p.replace(/\D/g,''));});});
     var result=document.getElementById('contacts-result');
     result.innerHTML='<div class="discover-spinner"></div>';
-    var snap=await db.collection('users').get();
+    var snap=await db.collection('users').where('discoverPublic','==',true).limit(200).get(); // 전체 가입자 조회는 규칙상 금지
     var matched=snap.docs.filter(function(d){
       var ph=(d.data().phoneNumber||'').replace(/\D/g,'');
       return ph&&phones.indexOf(ph)!==-1&&d.id!==currentUser.uid;
@@ -2766,10 +2769,22 @@ function openChatSafetyMenu(){
       else items.push({icon:'block',label:_L('이 사용자 차단하기','Block this user'),danger:true,fn:function(){blockUser(p);}});
     }
   }else{
+    if(!currentUser.isAnonymous)items.push({icon:'person_add',label:_L('멤버를 친구로 추가','Add members as friends'),fn:showAddGroupMembersAsFriends});
     if(_canInviteRoom())items.push({icon:'qr_code_2',label:_L('링크·QR로 초대하기','Invite with link or QR'),fn:showRoomInvite});
     items.push({icon:'flag',label:_L('이 대화방 신고하기','Report this chat'),fn:function(){askReport({type:'room'});}});
   }
   _modSheet(_L('메뉴','Menu'),items);
+}
+// 단톡방 멤버는 자동으로 친구가 되지 않으므로, 원하는 사람만 골라 추가
+function showAddGroupMembersAsFriends(){
+  const d=_currentRoomData||{};const names=d.memberNames||{};
+  const items=(d.members||currentRoomMembers||[]).filter(function(uid){
+    return uid!==currentUser.uid&&!myContactUids.has(uid)&&!isBlocked(uid)&&!(usersMap[uid]&&usersMap[uid].isGuest);
+  }).map(function(uid){
+    return {icon:'person_add',label:(names[uid]||_L('이름 없음','No name')),fn:function(){addFriend(uid);}};
+  });
+  if(!items.length){showToast(_L('추가할 멤버가 없어요 (이미 모두 친구예요)','Everyone here is already your friend'));return;}
+  _modSheet(_L('친구로 추가할 멤버','Add as friend'),items);
 }
 const REPORT_REASONS=[['spam','스팸·사기·광고','Spam, scam or ads'],['harassment','괴롭힘·혐오·위협','Harassment, hate or threats'],['sexual','음란물·성적 콘텐츠','Sexual content'],['child','아동 안전 위협','Child safety concern'],['violence','폭력·불법 행위','Violence or illegal activity'],['other','기타','Other']];
 function askReport(target){
@@ -3048,6 +3063,7 @@ function _storeAddQuick(){
 function _storeRenderStaff(){
   const list=document.getElementById('store-staff-list');if(!list)return;
   list.innerHTML='';
+  _watchProfiles(_storeDraft.staff);
   const friends=allUsers.filter(function(u){return myContactUids.has(u.uid)||_storeDraft.staff.indexOf(u.uid)>=0;});
   if(!friends.length){list.innerHTML='<div class="store-sec-desc">'+_L('먼저 친구 탭에서 직원을 친구로 추가해 주세요.','Add your staff as friends first.')+'</div>';return;}
   friends.forEach(function(u){
@@ -3448,18 +3464,19 @@ function loadRooms(){
         const at=a.data().lastMessageTime,bt=b.data().lastMessageTime;
         if(!at)return 1;if(!bt)return -1;return bt.toMillis()-at.toMillis();
       });
-      // 실제로 대화해본 상대방 uid만 추려서 "친구" 탭에 반영 (전체 가입자 노출 방지)
-      myContactUids=new Set();
+      // 자동 친구 = 1:1로 대화한 상대 + 매장↔손님 관계만. 단톡방 멤버는 자동으로 넣지 않는다(직접 추가).
       // 대화방을 지워도 친구 목록에서는 빠지지 않게, 숨긴 방도 포함해서 집계
+      _roomContactUids=new Set();
       snap.docs.filter(function(d){return _roomVisible(d,true);}).forEach(function(doc){
-        (doc.data().members||[]).forEach(function(uid){
-          if(uid!==currentUser.uid)myContactUids.add(uid);
-        });
+        const r=doc.data();const me=currentUser.uid;
+        if(r.type!=='group'){
+          (r.members||[]).forEach(function(uid){if(uid!==me)_roomContactUids.add(uid);});
+        }else if(r.storeUid&&r.customerUid){
+          if(me===r.storeUid)_roomContactUids.add(r.customerUid);
+          else if(me===r.customerUid)_roomContactUids.add(r.storeUid);
+        }
       });
-      if(typeof renderUserList==='function'){
-        const kw=document.getElementById('friend-search')?document.getElementById('friend-search').value:'';
-        renderUserList(kw);
-      }
+      _recomputeContacts();
       const unread=docs.filter(function(d){
         const r=d.data();const rb=r.readBy||{};const mr=rb[currentUser.uid];
         return r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
@@ -3504,19 +3521,89 @@ function loadRooms(){
     });
 }
 
+// 전체 가입자를 내려받지 않는다 — 내 프로필·친구·대화 상대 문서만 한 명씩 구독 (firestore.rules에서 목록 조회 금지)
 function loadUsers(){
-  db.collection('users').onSnapshot(function(snap){
-    snap.docs.forEach(function(d){usersMap[d.id]=d.data();});
-    allUsers=snap.docs.filter(function(d){return d.id!==currentUser.uid&&!d.data().isGuest;}).map(function(d){return d.data();});
-    const keyword=document.getElementById('friend-search')?document.getElementById('friend-search').value:'';
-    renderUserList(keyword);
-  },function(err){console.error('loadUsers 실패:',err);});
+  if(!currentUser)return;
+  if(_usersLoadedFor===currentUser.uid)return; // showMain이 여러 번 불려도 구독은 한 번만
+  if(_usersLoadedFor){Object.keys(_profileUnsubs).forEach(function(k){_profileUnsubs[k]();});_profileUnsubs={};usersMap={};allUsers=[];if(_unsubFriends)_unsubFriends();}
+  _usersLoadedFor=currentUser.uid;
+  _watchProfiles([currentUser.uid]);
+  _unsubFriends=db.collection('friends').doc(currentUser.uid).onSnapshot(function(s){
+    const d=s.data()||{};
+    myFriendData={added:d.added||{},hidden:d.hidden||{},fav:d.fav||{}};
+    _recomputeContacts();
+  },function(e){console.warn('friends listener 실패:',e);});
+}
+function _watchProfiles(uids){
+  (uids||[]).forEach(function(uid){
+    if(!uid||_profileUnsubs[uid])return;
+    _profileUnsubs[uid]=db.collection('users').doc(uid).onSnapshot(function(d){
+      if(d.exists){const u=d.data();u.uid=d.id;usersMap[d.id]=u;}else delete usersMap[d.id];
+      _scheduleFriendRender();
+    },function(e){console.warn('프로필 구독 실패:',uid,e&&e.code);});
+  });
+}
+let _friendRenderTimer=null;
+function _scheduleFriendRender(){
+  clearTimeout(_friendRenderTimer);
+  _friendRenderTimer=setTimeout(function(){
+    allUsers=Object.keys(usersMap).filter(function(k){return currentUser&&k!==currentUser.uid&&!usersMap[k].isGuest;}).map(function(k){return usersMap[k];});
+    const kw=document.getElementById('friend-search')?document.getElementById('friend-search').value:'';
+    renderUserList(kw);
+    if(_storeDraft&&document.getElementById('store-staff-list'))_storeRenderStaff();
+  },80);
+}
+// 친구 = 1:1 대화 상대(+매장↔손님) ∪ 직접 추가한 사람
+function _recomputeContacts(){
+  if(!currentUser)return;
+  const set=new Set(_roomContactUids);
+  Object.keys(myFriendData.added||{}).forEach(function(uid){set.add(uid);});
+  set.delete(currentUser.uid);
+  myContactUids=set;
+  _watchProfiles(Array.from(set));
+  _scheduleFriendRender();
+}
+function _esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function _avatarInto(el,url){el.textContent='';if(url){const img=document.createElement('img');img.src=url;img.alt='';el.appendChild(img);}else el.textContent='👤';}
+function _friendsRef(){return db.collection('friends').doc(currentUser.uid);}
+// field: added | hidden | fav — 화면에 먼저 반영하고 저장
+function _setFriendFlag(field,uid,on){
+  if(!currentUser||currentUser.isAnonymous||!uid)return Promise.resolve();
+  const FV=firebase.firestore.FieldValue;
+  const m=Object.assign({},myFriendData[field]||{});
+  if(on)m[uid]=Date.now();else delete m[uid];
+  myFriendData[field]=m;
+  _recomputeContacts();
+  return _friendsRef().set({[field]:{[uid]:on?Date.now():FV.delete()},updatedAt:FV.serverTimestamp()},{merge:true})
+    .catch(function(e){console.warn('친구 설정 저장 실패:',e);showToast(_L('저장하지 못했어요. 다시 시도해주세요','Could not save. Please try again.'));});
+}
+function addFriend(uid){
+  if(!uid||uid===currentUser.uid)return;
+  if(isBlocked(uid)){showToast(_L('차단한 사용자예요','You blocked this user'));return;}
+  _setFriendFlag('added',uid,true);
+  if(myFriendData.hidden&&myFriendData.hidden[uid])_setFriendFlag('hidden',uid,false);
+  showToast(_L('친구로 추가했어요','Added to friends'));
 }
 
-// 내 지인(실제로 대화해본 사람)만 — 친구 탭·새 채팅방·멤버 추가에서 전체 가입자가 보이지 않게
+// 내 지인만 — 친구 탭·새 채팅방·멤버 추가에서 전체 가입자가 보이지 않게
 function myFriends(){return allUsers.filter(function(u){return myContactUids.has(u.uid)&&!isBlocked(u.uid);});}
+function _friendItem(u){
+  const isOnline=u.online===true;
+  const lang=localStorage.getItem('mandu_lang_'+u.uid)||'';
+  const item=document.createElement('div');
+  item.className='user-item';
+  item.innerHTML='<div class="av-wrap"><div class="av"></div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
+    '<div class="user-info"><div class="user-name"></div><div class="user-status'+(isOnline?' online':'')+'"></div></div>'+
+    '<div class="friend-acts"><button class="act-btn"><span class="ms">chat_bubble</span></button></div>';
+  _avatarInto(item.querySelector('.av'),u.photoURL);
+  item.querySelector('.user-name').textContent=(u.displayName||'익명')+(lang&&LANG_FLAGS[lang]?' '+LANG_FLAGS[lang]:'');
+  item.querySelector('.user-status').textContent=(u.manduid?'@'+u.manduid+' · ':'')+(isOnline?'● '+t('status_online'):'○ '+t('status_offline'));
+  item.onclick=function(){startDM(u);};
+  return item;
+}
 function renderUserList(keyword){
   const list=document.getElementById('user-list');
+  if(!list)return;
   const q=(keyword||'').trim().toLowerCase();
   const contacts=myFriends();
   const filtered=q
@@ -3534,19 +3621,7 @@ function renderUserList(keyword){
     list.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><div class="empty-title">'+t('friends_no_results')+'</div></div>';
     return;
   }
-  filtered.forEach(function(u){
-    const isOnline=u.online===true;
-    const lang=localStorage.getItem('mandu_lang_'+u.uid)||'';
-    const item=document.createElement('div');
-    item.className='user-item';
-    item.innerHTML=
-      '<div class="av-wrap"><div class="av">'+(u.photoURL?'<img src="'+u.photoURL+'" alt="">':'👤')+'</div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
-      '<div class="user-info"><div class="user-name">'+(u.displayName||'익명')+' '+(lang?LANG_FLAGS[lang]||'':'')+'</div>'+
-      '<div class="user-status '+(isOnline?'online':'')+'">'+(u.manduid?'@'+u.manduid+' · ':'')+(isOnline?'● '+t('status_online'):'○ '+t('status_offline'))+'</div></div>'+
-      '<div><button class="act-btn"><span class="ms">chat_bubble</span></button></div>';
-    item.onclick=function(){startDM(u);};
-    list.appendChild(item);
-  });
+  filtered.forEach(function(u){list.appendChild(_friendItem(u));});
 }
 
 function filterFriends(keyword){renderUserList(keyword);}
@@ -3578,7 +3653,8 @@ function showCreate(){
   friends.forEach(function(u){
     const item=document.createElement('div');
     item.className='user-item';
-    item.innerHTML='<div class="av">'+(u.photoURL?'<img src="'+u.photoURL+'" alt="">':'👤')+'</div><div class="user-info"><div class="user-name">'+(u.displayName||'익명')+'</div>'+(u.manduid?'<div class="user-status">@'+u.manduid+'</div>':'')+'</div><span class="ms check-icon">check_circle</span>';
+    item.innerHTML='<div class="av"></div><div class="user-info"><div class="user-name">'+_esc(u.displayName||'익명')+'</div>'+(u.manduid?'<div class="user-status">@'+_esc(u.manduid)+'</div>':'')+'</div><span class="ms check-icon">check_circle</span>';
+    _avatarInto(item.querySelector('.av'),u.photoURL);
     item.onclick=function(){
       const idx=selectedUsers.findIndex(function(x){return x.uid===u.uid;});
       if(idx>=0){selectedUsers.splice(idx,1);item.classList.remove('selected');}
@@ -3837,7 +3913,8 @@ function showAddMember(){
     candidates.forEach(function(u){
       const item=document.createElement('div');
       item.className='user-item';
-      item.innerHTML='<div class="av">'+(u.photoURL?'<img src="'+u.photoURL+'" alt="">':'👤')+'</div><div class="user-info"><div class="user-name">'+(u.displayName||'익명')+'</div>'+(u.manduid?'<div class="user-status">@'+u.manduid+'</div>':'')+'</div><span class="ms check-icon">check_circle</span>';
+      item.innerHTML='<div class="av"></div><div class="user-info"><div class="user-name">'+_esc(u.displayName||'익명')+'</div>'+(u.manduid?'<div class="user-status">@'+_esc(u.manduid)+'</div>':'')+'</div><span class="ms check-icon">check_circle</span>';
+      _avatarInto(item.querySelector('.av'),u.photoURL);
       item.onclick=function(){
         const idx=_addMemberSelected.findIndex(function(x){return x.uid===u.uid;});
         if(idx>=0){_addMemberSelected.splice(idx,1);item.classList.remove('selected');}
@@ -4646,35 +4723,56 @@ function closeSearch(){
   document.getElementById('search-input').value='';
   document.getElementById('search-results').innerHTML='<div class="search-empty"><div class="search-empty-ico">🥟</div><div class="search-empty-txt">검색어를 입력해보세요</div></div>';
 }
+let _searchSeq=0,_searchIdTimer=null;
+function _searchUserItem(u){
+  const isOnline=u.online===true;
+  const el=document.createElement('div');el.className='room-item';
+  el.innerHTML='<div class="av-wrap"><div class="av"></div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
+    '<div class="room-info"><div class="room-name-row"><span class="room-name"></span>'+(u.manduid?'<span class="country-pill">@'+_esc(u.manduid)+'</span>':'')+'</div>'+
+    '<div class="room-last '+(isOnline?'online':'')+'">'+(isOnline?'● '+t('status_online'):'○ '+t('status_offline'))+'</div></div>';
+  _avatarInto(el.querySelector('.av'),u.photoURL);
+  el.querySelector('.room-name').textContent=u.displayName||'익명';
+  el.onclick=function(){closeSearch();startDM(u);};
+  return el;
+}
 function runSearch(keyword){
+  const seq=++_searchSeq;clearTimeout(_searchIdTimer);
   const q=keyword.trim().toLowerCase();
   const results=document.getElementById('search-results');
   if(!q){
     results.innerHTML='<div class="search-empty"><div class="search-empty-ico">🥟</div><div class="search-empty-txt">검색어를 입력해보세요</div></div>';
     return;
   }
-  // 지인은 이름·아이디 일부로 찾고, 모르는 사람은 @만두ID를 정확히 입력했을 때만 보여준다 (가입자 목록 노출 방지)
+  // 친구는 이름·아이디 일부로 찾고, 모르는 사람은 @만두ID를 정확히 입력했을 때만 서버에서 한 명 조회 (가입자 목록 노출 방지)
   const qid=q.replace('@','');
-  const matchedUsers=allUsers.filter(function(u){
-    if(isBlocked(u.uid))return false;
-    if(myContactUids.has(u.uid))return (u.displayName||'').toLowerCase().includes(q)||(u.manduid||'').toLowerCase().includes(qid);
-    return !!u.manduid&&u.manduid.toLowerCase()===qid;
+  const matchedUsers=myFriends().filter(function(u){
+    return (u.displayName||'').toLowerCase().includes(q)||(u.manduid||'').toLowerCase().includes(qid);
   });
-  let html='';
+  results.innerHTML='';
   if(matchedUsers.length>0){
-    html+='<div class="search-sec-lbl">사용자</div>';
-    matchedUsers.forEach(function(u){
-      const isOnline=u.online===true;
-      html+='<div class="room-item" onclick="closeSearch();startDM('+JSON.stringify(u).replace(/"/g,'&quot;')+')">'+
-        '<div class="av-wrap"><div class="av">'+(u.photoURL?'<img src="'+u.photoURL+'" alt="">':'👤')+'</div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
-        '<div class="room-info"><div class="room-name-row"><span class="room-name">'+(u.displayName||'익명')+'</span>'+(u.manduid?'<span class="country-pill">@'+u.manduid+'</span>':'')+'</div>'+
-        '<div class="room-last '+(isOnline?'online':'')+'">'+(isOnline?'● '+t('status_online'):'○ '+t('status_offline'))+'</div></div></div>';
-    });
+    const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent='사용자';results.appendChild(lbl);
+    matchedUsers.forEach(function(u){results.appendChild(_searchUserItem(u));});
+  }else{
+    results.innerHTML='<div class="search-empty"><div class="search-empty-ico">🔍</div><div class="search-empty-txt">"'+_esc(keyword)+'" 검색 결과가 없어요</div></div>';
   }
-  if(matchedUsers.length===0){
-    html='<div class="search-empty"><div class="search-empty-ico">🔍</div><div class="search-empty-txt">"'+keyword+'" 검색 결과가 없어요</div></div>';
+  if(/^[a-z0-9_]{3,20}$/.test(qid)&&!matchedUsers.some(function(u){return (u.manduid||'').toLowerCase()===qid;})){
+    _searchIdTimer=setTimeout(function(){_searchById(qid,seq,results);},350);
   }
-  results.innerHTML=html;
+}
+async function _searchById(qid,seq,results){
+  try{
+    const idx=await db.collection('manduid_index').doc(qid).get();
+    if(seq!==_searchSeq||!idx.exists)return;
+    const ix=idx.data()||{};
+    if(ix.searchable===false||!ix.uid||ix.uid===currentUser.uid||isBlocked(ix.uid))return;
+    const us=await db.collection('users').doc(ix.uid).get();
+    if(seq!==_searchSeq||!us.exists)return;
+    const u=us.data();u.uid=us.id;
+    if(u.isGuest)return;
+    if(results.querySelector('.search-empty'))results.innerHTML='';
+    if(!results.querySelector('.search-sec-lbl')){const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent='사용자';results.appendChild(lbl);}
+    results.appendChild(_searchUserItem(u));
+  }catch(e){console.warn('ID 검색 실패:',e&&e.code);}
 }
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSearch();});
 
