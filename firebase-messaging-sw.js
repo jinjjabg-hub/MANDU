@@ -17,9 +17,11 @@ messaging.onBackgroundMessage(function(payload){
   // 브라우저가 이 핸들러를 건너뛰고 자체 기본 알림을 띄워서 vibrate/silent 등
   // 커스텀 옵션이 무시되는 문제(안드로이드 무음 알림)가 있었기 때문
   const d=payload.data||{};
-  // 앱이 꺼져있어도 아이콘에 뱃지 표시 (iOS 16.4+ 홈화면 설치 앱, 데스크톱 Chrome/Edge — 지원 안 하는 브라우저는 조용히 무시됨)
+  // 앱이 꺼져있어도 아이콘에 안 읽은 메시지 수 표시 (카카오톡처럼 숫자). 서버가 받는 사람의 안 읽은 메시지 합계를 badge로 보내준다.
+  // 지원: iOS 16.4+ 홈화면 설치 앱, 데스크톱 Chrome/Edge — 지원 안 하는 브라우저는 조용히 무시됨 (안드로이드는 런처가 알림 개수로 표시)
   if('setAppBadge' in self.navigator){
-    self.navigator.setAppBadge(1).catch(function(){});
+    const n=parseInt(d.badge,10);
+    self.navigator.setAppBadge(n>0?n:1).catch(function(){});
   }
   return self.registration.showNotification(d.title||'MANDU 🥟',{
     body:d.body||'새 메시지가 있어요',

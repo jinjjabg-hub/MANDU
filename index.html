@@ -1861,7 +1861,7 @@ async function initFCM(){
 function markRead(roomId){
   if(!currentUser||!roomId)return;
   const update={readBy:{[currentUser.uid]:firebase.firestore.FieldValue.serverTimestamp()}};
-  update['unreadCount.'+currentUser.uid]=0;
+  update.unreadCount={[currentUser.uid]:0}; // 중첩 객체로 (set(merge)에서 'unreadCount.uid' 키는 점 들어간 별도 칸이 됨)
   db.collection('rooms').doc(roomId).set(update,{merge:true});
 }
 
@@ -3577,9 +3577,17 @@ function loadRooms(){
         const r=d.data();const rb=r.readBy||{};const mr=rb[currentUser.uid];
         return r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
       }).length;
-      // 앱 아이콘 뱃지 갱신 (지원 브라우저에서만 — iOS 16.4+ 홈화면 설치 앱, 데스크톱 Chrome/Edge)
+      // 앱 아이콘 숫자 = 안 읽은 '메시지' 수 합계 (카카오톡처럼). 알림 끈 방은 빼고 센다 — 서버(/api/notify)도 같은 기준.
+      // 지원: iOS 16.4+ 홈화면 앱, PC Chrome/Edge 설치 앱. 안드로이드는 런처가 알림 개수로 표시.
+      const badgeCount=docs.reduce(function(sum,d){
+        if(isRoomMuted(d.id))return sum;
+        const r=d.data();const rb=r.readBy||{};const mr=rb[currentUser.uid];
+        const isU=r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
+        const n=(r.unreadCount&&r.unreadCount[currentUser.uid])||0;
+        return sum+(n>0?n:(isU?1:0));
+      },0);
       if('setAppBadge' in navigator){
-        if(unread>0)navigator.setAppBadge(unread).catch(function(){});
+        if(badgeCount>0)navigator.setAppBadge(badgeCount).catch(function(){});
         else navigator.clearAppBadge().catch(function(){});
       }
       sub.textContent=unread>0?t('chats_unread_count').replace('{n}',unread):t('chats_room_count').replace('{n}',docs.length);
@@ -3834,7 +3842,20 @@ async function createRoom(){
   openRoom(ref.id,name,'',true);
 }
 
+// 방을 열면 그 방의 알림을 알림창에서 지운다 (안드로이드는 알림 개수가 아이콘 숫자가 되므로 함께 줄어든다)
+function _clearRoomNotifications(roomId){
+  try{
+    if(!('serviceWorker' in navigator)||!navigator.serviceWorker.getRegistrations)return;
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(reg){
+        if(!reg.getNotifications)return;
+        reg.getNotifications({tag:'room-'+roomId}).then(function(ns){ns.forEach(function(n){n.close();});}).catch(function(){});
+      });
+    }).catch(function(){});
+  }catch(e){}
+}
 function openRoom(roomId,name,photo,isGroup){
+  _clearRoomNotifications(roomId);
   currentRoomId=roomId;lastMyMsgWrap=null;_currentRoomData=null;
   if(myHiddenRooms[roomId]){delete myHiddenRooms[roomId];_writeHidden(roomId,false).catch(function(){});} // 삭제했던 방을 다시 열면 목록에 복귀
   _updateChatBell();
@@ -4575,7 +4596,7 @@ async function sendImage(input){
     // 상대방 안 읽은 수 + 푸시 알림 (sendFile과 동일하게)
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:'📷 사진',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
+    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('이미지 전송 완료!');
     sendPushNotification(others,'📷 사진');
@@ -4601,7 +4622,7 @@ async function sendMessage(){
   });
   const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
   const incUpdate={lastMessage:text,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-  others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
+  incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
   await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
   markRead(currentRoomId);
   sendPushNotification(others,text);
@@ -4638,7 +4659,7 @@ async function sendSticker(id){
     const label='🥟 '+_stickerLabel();
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:label,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
+    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);
     sendPushNotification(others,label);
@@ -4727,7 +4748,7 @@ async function sendFile(input){
     });
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:'📎 '+file.name,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    others.forEach(u=>{incUpdate['unreadCount.'+u]=firebase.firestore.FieldValue.increment(1);});
+    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('파일 전송 완료!');
     sendPushNotification(others,'📎 '+file.name);
