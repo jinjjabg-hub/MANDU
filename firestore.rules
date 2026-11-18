@@ -18,6 +18,12 @@ service cloud.firestore {
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['usage', 'plan', 'billing']);
       allow delete: if request.auth != null && request.auth.uid == uid;   // 회원 탈퇴 시 본인 프로필 삭제
 
+      // 번역 사용 내역 — 서버(Admin SDK)만 기록하고, 본인만 읽는다. (원문은 저장되지 않음)
+      match /usage_log/{logId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false;
+      }
+
       // 내 사전 — 본인만 읽고 쓴다.
       match /mydict/{entryId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
