@@ -256,6 +256,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .discover-subtab.active{background:var(--primary);color:#fff;}
 .discover-panel{display:none;flex-direction:column;flex:1;overflow-y:auto;}
 .discover-panel.active{display:flex;}
+.discover-chips{display:flex;gap:6px;overflow-x:auto;padding:10px 16px 4px;scrollbar-width:none;}
+.discover-chips::-webkit-scrollbar{display:none;}
+.discover-chip{flex-shrink:0;padding:6px 12px;border-radius:100px;border:1.5px solid var(--outline-variant);background:var(--surface);color:var(--on-surface-variant);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.discover-chip.on{background:var(--primary);border-color:var(--primary);color:#fff;}
+.discover-btns{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.discover-add-btn{flex-shrink:0;padding:6px 12px;background:var(--surface);color:var(--primary);border:1.5px solid var(--primary);border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.discover-more-btn{display:block;margin:4px auto 16px;padding:9px 18px;border-radius:100px;border:1.5px solid var(--outline-variant);background:var(--surface);color:var(--on-surface-variant);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .discover-card{margin:0 16px 10px;background:var(--surface);border-radius:16px;border:1.5px solid var(--outline-variant);padding:14px;display:flex;gap:12px;align-items:flex-start;}
 .discover-card-av{width:46px;height:46px;border-radius:50%;overflow:hidden;background:var(--surface-container-low);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;}
 .discover-card-av img{width:100%;height:100%;object-fit:cover;}
@@ -825,7 +832,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     </div>
     <!-- 비즈니스 패널 -->
     <div class="discover-panel active" id="dpanel-business">
-      <div id="discover-biz-list" style="padding:14px 0 0;"></div>
+      <div class="discover-chips" id="discover-biz-chips"></div>
+      <div id="discover-biz-list" style="padding:6px 0 0;"></div>
     </div>
     <!-- 글로벌 패널 -->
     <div class="discover-panel" id="dpanel-global">
@@ -835,6 +843,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <button onclick="shuffleGlobal()" style="padding:5px 12px;background:var(--primary);color:#fff;border:none;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0;">🔀 새로고침</button>
         </div>
       </div>
+      <div class="discover-chips" id="discover-global-chips"></div>
       <div id="discover-global-list" style="padding:6px 0 0;"></div>
     </div>
     <!-- 지인찾기 패널 -->
@@ -1258,7 +1267,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
         <div class="settings-row-label" data-i18n="biz_discover_label">Discover 공개</div>
         <div style="font-size:12px;color:var(--on-surface-variant);margin-top:2px;" data-i18n="biz_discover_sub">내 비즈니스 프로필을 공개합니다</div>
       </div>
-      <div class="toggle on" id="biz-discover-toggle"></div>
+      <div class="toggle" id="biz-discover-toggle"></div>
     </div>
   </div>
   <button id="biz-save-btn" onclick="saveBusinessProfile()" data-i18n="biz_save_btn" style="display:block;width:calc(100% - 40px);margin:8px 20px 16px;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">비즈니스 프로필 저장 🌏</button>
@@ -1957,6 +1966,7 @@ async function confirmDeleteAccount(){
     await Promise.all(dictSnap.docs.map(function(d){return d.ref.delete();}));
     await db.collection('friends').doc(user.uid).delete().catch(function(){});
     await db.collection('public_profiles').doc(user.uid).delete().catch(function(){});
+    await db.collection('discover_profiles').doc(user.uid).delete().catch(function(){});
     await db.collection('users').doc(user.uid).delete();
     await user.delete();
     showToast('탈퇴가 완료됐어요.');
@@ -2175,6 +2185,7 @@ function syncPublicProfile(){
     manduid:currentManduid,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   }).catch(function(e){console.warn('공개 명함 저장 실패:',e&&e.code);});
+  syncDiscoverProfile();
 }
 async function loadGuestHostInfo(){
   _setGuestHost(await _readPublicProfile(hostUID));
@@ -2443,9 +2454,17 @@ function switchTab(tab){
 const _INDUSTRY_LABELS={food:'🍽️ 식품',finance:'💰 금융/보험',it:'💻 IT/소프트웨어',legal:'⚖️ 법률',realestate:'🏠 부동산',manufacturing:'🏭 제조',distribution:'🚚 유통/물류',education:'📚 교육',healthcare:'🏥 의료/헬스',marketing:'📣 마케팅/광고',consulting:'💡 컨설팅',construction:'🏗️ 건설',beauty:'💄 뷰티/패션',media:'🎬 미디어/콘텐츠',other:'📌 기타'};
 const _COUNTRY_LABELS={KR:'🇰🇷 대한민국',US:'🇺🇸 미국',JP:'🇯🇵 일본',CN:'🇨🇳 중국',VN:'🇻🇳 베트남',TH:'🇹🇭 태국',ID:'🇮🇩 인도네시아',MN:'🇲🇳 몽골',IN:'🇮🇳 인도',SG:'🇸🇬 싱가포르',MY:'🇲🇾 말레이시아',PH:'🇵🇭 필리핀',GB:'🇬🇧 영국',DE:'🇩🇪 독일',FR:'🇫🇷 프랑스',ES:'🇪🇸 스페인',IT:'🇮🇹 이탈리아',NL:'🇳🇱 네덜란드',CH:'🇨🇭 스위스',CA:'🇨🇦 캐나다',AU:'🇦🇺 호주',BR:'🇧🇷 브라질',MX:'🇲🇽 멕시코',AR_C:'🇦🇷 아르헨티나',RU:'🇷🇺 러시아',TR:'🇹🇷 터키',AE:'🇦🇪 아랍에미리트',SA:'🇸🇦 사우디아라비아',PT:'🇵🇹 포르투갈'};
 
+// ── 탐색(Discover) ──────────────────────────────────────────
+// discover_profiles/{uid}: 'Discover 공개'를 켠 사람의 공개용 정보만 담는다(이름·사진·ID·회사·직함·업종·나라·언어·소개).
+// 예전엔 users 문서를 그대로 조회해서, 화면엔 안 보이는 이메일·알림 토큰까지 받아갈 수 있었다.
+// 비즈니스 탭 = 업종 필터, 글로벌 탭 = 나라 필터. 나·차단한 사람·이미 친구인 사람은 빼고 보여준다.
 let _discoverActiveTab='business';
-let _globalUsers=[];
 let _discoverLoaded={business:false,global:false};
+const DISCOVER_PAGE=30;
+const _dState={
+  business:{filter:'',docs:[],last:null,done:false,loading:false,err:false},
+  global:{filter:'',docs:[],last:null,done:false,loading:false,err:false}
+};
 
 function loadDiscover(){
   if(_discoverActiveTab==='business'&&!_discoverLoaded.business)loadDiscoverBusiness();
@@ -2464,24 +2483,30 @@ function switchDiscoverTab(tab){
   else if(tab==='contacts')initDiscoverContacts();
 }
 
+function _discoverMe(){return (currentUser&&usersMap[currentUser.uid])||{};}
+function _discoverVisible(u){
+  return !!(u&&u.uid&&currentUser&&u.uid!==currentUser.uid&&!isBlocked(u.uid)&&!myContactUids.has(u.uid));
+}
+
 function _buildDiscoverCard(u){
-  if(u&&isBlocked(u.uid)){const hid=document.createElement('div');hid.style.display='none';return hid;}
-  const av=u.photoURL?'<img src="'+u.photoURL+'" alt="">':'👤';
-  const metaParts=[u.jobTitle,u.company,_INDUSTRY_LABELS[u.industry]||'',_COUNTRY_LABELS[u.country]||''].filter(Boolean);
-  const meta=metaParts.join(' · ');
-  const lang=(LANG_FLAGS&&u.lang)?LANG_FLAGS[u.lang]||'':'';
-  const uid=u.uid||'';
   const div=document.createElement('div');
   div.className='discover-card';
-  div.innerHTML=
-    '<div class="discover-card-av">'+av+'</div>'+
-    '<div class="discover-card-body">'+
-      '<div class="discover-card-name">'+(u.displayName||'이름 없음')+(lang?' '+lang:'')+'</div>'+
-      (u.manduid?'<div class="discover-card-mid">@'+u.manduid+'</div>':'')+
-      (meta?'<div class="discover-card-meta">'+meta+'</div>':'')+
-      (u.bio?'<div class="discover-card-bio">"'+u.bio+'"</div>':'')+
-    '</div>'+
-    '<button class="discover-chat-btn" onclick="discoverStartDM(\''+uid+'\')">채팅하기</button>';
+  div.innerHTML='<div class="discover-card-av"></div><div class="discover-card-body"><div class="discover-card-name"></div>'+
+    '<div class="discover-card-mid"></div><div class="discover-card-meta"></div><div class="discover-card-bio"></div></div>'+
+    '<div class="discover-btns"><button class="discover-add-btn"></button><button class="discover-chat-btn"></button></div>';
+  _avatarInto(div.querySelector('.discover-card-av'),u.photoURL);
+  const lang=(typeof LANG_FLAGS!=='undefined'&&u.lang)?(LANG_FLAGS[u.lang]||''):'';
+  div.querySelector('.discover-card-name').textContent=(u.displayName||_L('이름 없음','No name'))+(lang?' '+lang:'');
+  const mid=div.querySelector('.discover-card-mid');if(u.manduid)mid.textContent='@'+u.manduid;else mid.remove();
+  const meta=[u.jobTitle,u.company,_INDUSTRY_LABELS[u.industry]||'',_COUNTRY_LABELS[u.country]||''].filter(Boolean).join(' · ');
+  const me=div.querySelector('.discover-card-meta');if(meta)me.textContent=meta;else me.remove();
+  const bio=div.querySelector('.discover-card-bio');if(u.bio)bio.textContent='"'+u.bio+'"';else bio.remove();
+  const add=div.querySelector('.discover-add-btn');
+  add.textContent=_L('친구 추가','Add');
+  add.onclick=function(){addFriend(u.uid);}; // 친구가 되면 목록에서 바로 빠진다(_scheduleFriendRender → 다시 그림)
+  const chat=div.querySelector('.discover-chat-btn');
+  chat.textContent=_L('채팅하기','Chat');
+  chat.onclick=function(){discoverStartDM(u.uid);};
   return div;
 }
 
@@ -2490,62 +2515,106 @@ function _discoverSpinner(container){
 }
 
 function _discoverEmpty(container,icon,msg){
-  container.innerHTML='<div class="discover-empty"><span class="ms" style="font-size:44px;color:var(--primary-fixed-dim);">'+icon+'</span><div style="font-size:14px;color:var(--outline);">'+msg+'</div></div>';
+  container.innerHTML='<div class="discover-empty"><span class="ms" style="font-size:44px;color:var(--primary-fixed-dim);">'+icon+'</span><div style="font-size:14px;color:var(--outline);">'+_esc(msg)+'</div></div>';
 }
 
-async function loadDiscoverBusiness(){
-  const list=document.getElementById('discover-biz-list');
-  _discoverSpinner(list);
+// 필터 버튼 줄: 비즈니스=업종, 글로벌=나라. 내 업종·나라는 앞쪽에.
+function _renderDiscoverChips(tab){
+  const box=document.getElementById(tab==='business'?'discover-biz-chips':'discover-global-chips');if(!box)return;
+  const st=_dState[tab];const me=_discoverMe();
+  const labels=tab==='business'?_INDUSTRY_LABELS:_COUNTRY_LABELS;
+  const mine=tab==='business'?me.industry:me.country;
+  let keys=Object.keys(labels);
+  if(mine&&labels[mine])keys=[mine].concat(keys.filter(function(k){return k!==mine;}));
+  box.innerHTML='';
+  [''].concat(keys).forEach(function(k){
+    const b=document.createElement('button');
+    b.className='discover-chip'+(st.filter===k?' on':'');
+    b.textContent=k?labels[k]:_L('전체','All');
+    b.onclick=function(){if(st.filter===k)return;st.filter=k;_renderDiscoverChips(tab);_loadDiscoverPage(tab,true);};
+    box.appendChild(b);
+  });
+}
+
+async function _loadDiscoverPage(tab,reset){
+  const st=_dState[tab];
+  const list=document.getElementById(tab==='business'?'discover-biz-list':'discover-global-list');
+  if(reset){st.docs=[];st.last=null;st.done=false;st.err=false;if(list)_discoverSpinner(list);}
+  if(st.loading||st.done)return;
+  st.loading=true;
+  const want=st.filter;
   try{
-    const snap=await db.collection('users').where('discoverPublic','==',true).limit(50).get();
-    const docs=snap.docs.filter(function(d){return d.id!==currentUser.uid&&!d.data().isGuest;});
-    if(!docs.length){_discoverEmpty(list,'work','아직 등록된 비즈니스 프로필이 없어요');return;}
-    const mySnap=await db.collection('users').doc(currentUser.uid).get();
-    const myIndustry=mySnap.exists?mySnap.data().industry:'';
-    docs.sort(function(a,b){
-      return (a.data().industry===myIndustry?0:1)-(b.data().industry===myIndustry?0:1);
-    });
-    list.innerHTML='';
-    docs.forEach(function(d){
-      const u=d.data();u.uid=d.id;
-      list.appendChild(_buildDiscoverCard(u));
-    });
-    _discoverLoaded.business=true;
-  }catch(e){
-    _discoverEmpty(list,'error','불러오기 실패. 다시 시도해주세요');
-  }
+    let q=db.collection('discover_profiles');
+    if(want)q=q.where(tab==='business'?'industry':'country','==',want);
+    q=q.limit(DISCOVER_PAGE);
+    if(st.last)q=q.startAfter(st.last);
+    const snap=await q.get();
+    if(want!==st.filter){st.loading=false;return;} // 기다리는 사이 다른 필터를 눌렀으면 버린다
+    snap.docs.forEach(function(d){const u=d.data();u.uid=d.id;st.docs.push(u);});
+    if(snap.docs.length)st.last=snap.docs[snap.docs.length-1];
+    if(snap.size<DISCOVER_PAGE)st.done=true;
+  }catch(e){console.warn('탐색 불러오기 실패:',e&&e.code);st.err=true;st.done=true;}
+  st.loading=false;
+  _discoverLoaded[tab]=true;
+  _renderDiscover(tab);
+  // 나·친구를 빼고 나니 보이는 사람이 너무 적으면 자동으로 한 번 더 불러온다
+  if(!st.done&&st.docs.filter(_discoverVisible).length<10)_loadDiscoverPage(tab,false);
 }
 
-async function loadDiscoverGlobal(){
-  const list=document.getElementById('discover-global-list');
-  _discoverSpinner(list);
-  try{
-    const myCountry=(usersMap[currentUser.uid]||{}).country||'';
-    const snap=await db.collection('users').where('discoverPublic','==',true).limit(50).get();
-    _globalUsers=snap.docs.filter(function(d){return d.id!==currentUser.uid&&!d.data().isGuest;}).map(function(d){const u=d.data();u.uid=d.id;return u;});
-    _globalUsers.sort(function(a,b){
-      return (a.country===myCountry?1:0)-(b.country===myCountry?1:0);
-    });
-    renderGlobalList(list);
-    _discoverLoaded.global=true;
-  }catch(e){
-    _discoverEmpty(list,'public','불러오기 실패. 다시 시도해주세요');
+function _renderDiscover(tab){
+  const st=_dState[tab];
+  const list=document.getElementById(tab==='business'?'discover-biz-list':'discover-global-list');
+  if(!list||!_discoverLoaded[tab])return;
+  const me=_discoverMe();
+  let users=st.docs.filter(_discoverVisible);
+  if(!st.filter){
+    if(tab==='business'&&me.industry)users=users.slice().sort(function(a,b){return (a.industry===me.industry?0:1)-(b.industry===me.industry?0:1);});
+    if(tab==='global'&&me.country)users=users.slice().sort(function(a,b){return (a.country===me.country?1:0)-(b.country===me.country?1:0);});
   }
-}
-
-function renderGlobalList(listEl){
-  var list=listEl||document.getElementById('discover-global-list');
   list.innerHTML='';
-  if(!_globalUsers.length){_discoverEmpty(list,'public','아직 등록된 글로벌 프로필이 없어요');return;}
-  _globalUsers.forEach(function(u){list.appendChild(_buildDiscoverCard(u));});
+  if(!users.length){
+    if(st.err)_discoverEmpty(list,'error',_L('불러오기 실패. 다시 시도해주세요','Could not load. Please try again.'));
+    else _discoverEmpty(list,tab==='business'?'work':'public',st.filter?_L('이 조건에 맞는 공개 프로필이 아직 없어요','No public profiles match yet'):_L('아직 공개된 프로필이 없어요','No public profiles yet'));
+  }else{
+    users.forEach(function(u){list.appendChild(_buildDiscoverCard(u));});
+  }
+  if(!st.done){
+    const more=document.createElement('button');more.className='discover-more-btn';
+    more.textContent=st.loading?_L('불러오는 중…','Loading…'):_L('더 보기','Load more');
+    more.onclick=function(){more.textContent=_L('불러오는 중…','Loading…');_loadDiscoverPage(tab,false);};
+    list.appendChild(more);
+  }
 }
 
+function loadDiscoverBusiness(){_renderDiscoverChips('business');_loadDiscoverPage('business',true);}
+function loadDiscoverGlobal(){_renderDiscoverChips('global');_loadDiscoverPage('global',true);}
+function renderGlobalList(){_renderDiscover('global');}
 function shuffleGlobal(){
-  for(var i=_globalUsers.length-1;i>0;i--){
-    var j=Math.floor(Math.random()*(i+1));
-    var tmp=_globalUsers[i];_globalUsers[i]=_globalUsers[j];_globalUsers[j]=tmp;
-  }
-  renderGlobalList();
+  const a=_dState.global.docs;
+  for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tmp=a[i];a[i]=a[j];a[j]=tmp;}
+  _renderDiscover('global');
+}
+// 친구가 바뀌면(친구 추가 등) 탐색 목록도 다시 그려 친구를 뺀다
+function _refreshDiscoverLists(){['business','global'].forEach(function(t){if(_discoverLoaded[t])_renderDiscover(t);});}
+
+// 내 공개용 탐색 문서 — 'Discover 공개'를 켠 경우에만 저장, 끄면 삭제
+function syncDiscoverProfile(forceDelete){
+  if(!currentUser||currentUser.isAnonymous)return Promise.resolve();
+  const ref=db.collection('discover_profiles').doc(currentUser.uid);
+  const u=usersMap[currentUser.uid]||{};
+  if(forceDelete)return ref.delete().catch(function(){});
+  if(u.discoverPublic!==true||!currentManduid)return Promise.resolve();
+  const str=function(v,n){return String(v||'').slice(0,n);};
+  return ref.set({
+    displayName:str(u.displayName||currentUser.displayName,60),
+    photoURL:str(u.photoURL||currentUser.photoURL,500),
+    manduid:str(currentManduid,20),
+    company:str(u.company,60),jobTitle:str(u.jobTitle,50),
+    industry:str(u.industry,20),country:str(u.country,5),
+    lang:str(localStorage.getItem('mandu_lang_'+currentUser.uid),8),
+    bio:str(u.bio,100),
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(function(e){console.warn('탐색 프로필 저장 실패:',e&&e.code);});
 }
 
 function initDiscoverContacts(){
@@ -2571,11 +2640,8 @@ async function pickContacts(){
     contacts.forEach(function(c){(c.tel||[]).forEach(function(p){phones.push(p.replace(/\D/g,''));});});
     var result=document.getElementById('contacts-result');
     result.innerHTML='<div class="discover-spinner"></div>';
-    var snap=await db.collection('users').where('discoverPublic','==',true).limit(200).get(); // 전체 가입자 조회는 규칙상 금지
-    var matched=snap.docs.filter(function(d){
-      var ph=(d.data().phoneNumber||'').replace(/\D/g,'');
-      return ph&&phones.indexOf(ph)!==-1&&d.id!==currentUser.uid;
-    });
+    // 만두는 가입 때 전화번호를 저장하지 않아 연락처 번호로 회원을 찾을 수 없다(전체 가입자 조회도 규칙상 금지)
+    var matched=[];
     result.innerHTML='';
     if(!matched.length){_discoverEmpty(result,'person_search','연락처에서 MANDU 사용자를 찾지 못했어요');return;}
     matched.forEach(function(d){var u=d.data();u.uid=d.id;result.appendChild(_buildDiscoverCard(u));});
@@ -2623,7 +2689,7 @@ function loadBusinessProfile(){
       bioEl.value=d.bio;
       updateBizBioCounter(bioEl);
     }
-    _bizDiscoverOn=d.discoverPublic!==false;
+    _bizDiscoverOn=d.discoverPublic===true; // 직접 켠 사람만 공개 (예전엔 기본 켜짐이라 모르는 사이 공개됐다)
     const tog=document.getElementById('biz-discover-toggle');
     if(tog)tog.className='toggle'+(_bizDiscoverOn?' on':'');
   }).catch(function(){});
@@ -2634,7 +2700,7 @@ function updateBizBioCounter(el){
   if(c)c.textContent=el.value.length+' / 100';
 }
 
-let _bizDiscoverOn=true;
+let _bizDiscoverOn=false;
 
 function toggleBizDiscover(){
   _bizDiscoverOn=!_bizDiscoverOn;
@@ -2657,6 +2723,8 @@ async function saveBusinessProfile(){
   };
   try{
     await db.collection('users').doc(currentUser.uid).update(data);
+    if(usersMap[currentUser.uid])Object.assign(usersMap[currentUser.uid],data);
+    await syncDiscoverProfile(!data.discoverPublic);
     showToast('비즈니스 프로필이 저장됐어요 🌏');
   }catch(e){
     showToast('저장 실패. 다시 시도해주세요');
@@ -3657,6 +3725,7 @@ function _scheduleFriendRender(){
     const kw=document.getElementById('friend-search')?document.getElementById('friend-search').value:'';
     renderUserList(kw);
     if(_storeDraft&&document.getElementById('store-staff-list'))_storeRenderStaff();
+    if(typeof _refreshDiscoverLists==='function')_refreshDiscoverLists();
   },80);
 }
 // 친구 = 1:1 대화 상대(+매장↔손님) ∪ 직접 추가한 사람
