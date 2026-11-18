@@ -1525,6 +1525,7 @@ let _pendingNewUser=null; // ← 최초 로그인 언어선택 대기용
 const urlParams=new URLSearchParams(window.location.search);
 hostUID=urlParams.get('host'); // 기존 호환
 const guestManduidParam=urlParams.get('u'); // 새 방식
+const forceDM=urlParams.get('dm')==='1'; // 비즈홈 링크: 직원 등록과 상관없이 1:1 개인톡방으로 연다
 const joinCode=(urlParams.get('join')||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,40)||null; // 그룹 초대 링크·QR
 isGuest=!!(hostUID||guestManduidParam||joinCode);
 
@@ -2092,7 +2093,7 @@ auth.onAuthStateChanged(async function(user){
       const hostDoc=await db.collection('users').doc(hostUID).get();
       if(hostDoc.exists){
         const hd=hostDoc.data();
-        if(_storeStaff(hd,hostUID).length){await openStoreRoom(hd,hostUID);}else{await startDM(hd);}
+        if(!forceDM&&_storeStaff(hd,hostUID).length){await openStoreRoom(hd,hostUID);}else{await startDM(hd);}
         return;
       }
     }
@@ -2945,7 +2946,7 @@ async function _autoAway(){
 async function openStoreRoom(host,hostUid){
   const me=currentUser.uid;
   const myName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
-  const staff=_storeStaff(host,hostUid);
+  const staff=forceDM?[]:_storeStaff(host,hostUid);
   const anon=!!currentUser.isAnonymous;
   const roomId=(anon?'guest_':'store_')+me+'_'+hostUid;
   const firstOpen=await _isFirstOpen(roomId);
