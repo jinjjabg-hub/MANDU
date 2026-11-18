@@ -622,6 +622,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 </div>
 
 <div id="login-screen">
+  <div id="login-back-guest" onclick="backToGuest()" style="display:none;align-self:flex-start;font-size:14px;font-weight:700;color:var(--primary);cursor:pointer;padding:4px 0;">← 로그인 없이 바로 대화하기</div>
   <div class="login-logo">
     <svg width="100%" height="100%" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="100" cy="88" rx="72" ry="70" fill="#6b38d4"/>
@@ -738,7 +739,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <input class="guest-input" id="guest-name-input" type="text" placeholder="홍길동">
   </div>
   <button class="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기 🥟</button>
-  <div class="guest-login-hint">이미 계정이 있으신가요? <span onclick="showLoginFromGuest()" id="guest-login-lnk">Google 로그인</span></div>
+  <div class="guest-login-hint">이미 계정이 있으신가요? <span onclick="showLoginFromGuest()" id="guest-login-lnk">로그인</span></div>
 </div>
 
 <div id="main-screen">
@@ -1551,8 +1552,8 @@ let _pendingNewUser=null; // ← 최초 로그인 언어선택 대기용
 // URL 파라미터 파싱 — ?u=만두ID 방식 추가
 const urlParams=new URLSearchParams(window.location.search);
 hostUID=urlParams.get('host'); // 기존 호환
-const guestManduidParam=urlParams.get('u'); // 새 방식
-const forceDM=urlParams.get('dm')==='1'; // 비즈홈 링크: 직원 등록과 상관없이 1:1 개인톡방으로 연다
+let guestManduidParam=urlParams.get('u'); // 새 방식 (카카오 로그인에서 돌아올 때 복원하므로 let)
+let forceDM=urlParams.get('dm')==='1'; // 비즈홈 링크: 직원 등록과 상관없이 1:1 개인톡방으로 연다
 const joinCode=(urlParams.get('join')||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,40)||null; // 그룹 초대 링크·QR
 isGuest=!!(hostUID||guestManduidParam||joinCode);
 
@@ -2244,9 +2245,15 @@ function upgradeToGoogle(){
     })
     .catch(function(){if(!window.MANDU_INAPP)auth.signInWithPopup(provider);});
 }
+// 손님 화면 → 로그인 화면(구글·카카오·이메일 등 모든 방식). 로그인하면 이 가게와의 대화로 바로 이어진다.
 function showLoginFromGuest(){
-  if(window.MANDU_INAPP){show('login-screen');return;} // 앱 안 브라우저: 카카오·이메일·전화번호로 로그인
-  auth.signInWithPopup(provider);
+  show('login-screen');
+  const b=document.getElementById('login-back-guest');
+  if(b){b.style.display='block';b.textContent='← '+_L('로그인 없이 바로 대화하기','Chat without signing in');}
+}
+function backToGuest(){
+  const b=document.getElementById('login-back-guest');if(b)b.style.display='none';
+  show('guest-screen');
 }
 function hideBanner(){document.getElementById('upgrade-banner').style.display='none';}
 function checkGuestUpgrade(){
@@ -3252,7 +3259,7 @@ function initLoginOptions(cfg){
   set('extra-logins',on('kakao')||on('apple')||on('phone'));
   const txt=function(id,v){const el=document.getElementById(id);if(el)el.textContent=v;};
   txt('kakao-login-lbl',_L('카카오로 시작하기','Continue with Kakao'));
-  if(window.MANDU_INAPP)txt('guest-login-lnk',_L('로그인','Sign in'));
+  txt('guest-login-lnk',_L('로그인','Sign in'));
   txt('inapp-google-hint',_L('Google 로그인은 이 앱 안에서 막혀 있어요. ','Google sign-in is blocked inside this app. '));
   txt('inapp-open-lnk',_L('Chrome·Safari로 열기','Open in Chrome/Safari'));
   txt('apple-login-lbl',_L('Apple로 시작하기','Continue with Apple'));
@@ -3275,6 +3282,8 @@ function kakaoLogin(){
   if(!_loginCfg.kakaoClientId)return;
   const state=Math.random().toString(36).slice(2)+Date.now().toString(36);
   try{sessionStorage.setItem('mandu_kakao_state',state);}catch(e){}
+  // 손님 링크(?u=가게ID)에서 로그인하면, 돌아온 뒤 그 가게와의 대화로 바로 이어지도록 기억해 둔다
+  try{sessionStorage.setItem('mandu_kakao_from',JSON.stringify({u:guestManduidParam||'',host:hostUID||'',dm:forceDM}));}catch(e){}
   location.href='https://kauth.kakao.com/oauth/authorize?response_type=code'+
     '&client_id='+encodeURIComponent(_loginCfg.kakaoClientId)+
     '&redirect_uri='+encodeURIComponent(_kakaoRedirectUri())+'&state='+encodeURIComponent(state);
@@ -3285,6 +3294,12 @@ async function handleKakaoReturn(){
   if(!code&&!err)return;
   let saved=null;try{saved=sessionStorage.getItem('mandu_kakao_state');sessionStorage.removeItem('mandu_kakao_state');}catch(e){}
   if(!saved||saved!==state)return; // 우리가 보낸 요청이 아니면 무시
+  try{
+    const from=JSON.parse(sessionStorage.getItem('mandu_kakao_from')||'{}');sessionStorage.removeItem('mandu_kakao_from');
+    if(from.u)guestManduidParam=from.u;
+    if(from.host)hostUID=from.host;
+    if(from.dm)forceDM=true;
+  }catch(e){}
   history.replaceState(null,'',location.pathname); // 주소창에서 코드 지우기
   if(err){if(err!=='access_denied')showToast(_L('카카오 로그인에 실패했어요','Kakao sign-in failed'));return;}
   showToast(_L('카카오 로그인 중…','Signing in with Kakao…'));
