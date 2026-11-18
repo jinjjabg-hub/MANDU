@@ -3473,10 +3473,12 @@ function loadUsers(){
   },function(err){console.error('loadUsers 실패:',err);});
 }
 
+// 내 지인(실제로 대화해본 사람)만 — 친구 탭·새 채팅방·멤버 추가에서 전체 가입자가 보이지 않게
+function myFriends(){return allUsers.filter(function(u){return myContactUids.has(u.uid)&&!isBlocked(u.uid);});}
 function renderUserList(keyword){
   const list=document.getElementById('user-list');
   const q=(keyword||'').trim().toLowerCase();
-  const contacts=allUsers.filter(function(u){return myContactUids.has(u.uid);});
+  const contacts=myFriends();
   const filtered=q
     ?contacts.filter(function(u){
         return (u.displayName||'').toLowerCase().includes(q)||
@@ -3529,7 +3531,11 @@ function showCreate(){
   show('create-screen');
   const list=document.getElementById('select-user-list');
   list.innerHTML='';
-  allUsers.forEach(function(u){
+  const friends=myFriends();
+  if(!friends.length){
+    list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('friends_empty_title')+'</div><div class="empty-desc">'+_L('내 링크·QR을 보내거나, 검색에서 @만두ID로 찾아 대화를 시작하세요','Share your link or QR, or search an exact @ManduID to start a chat')+'</div></div>';
+  }
+  friends.forEach(function(u){
     const item=document.createElement('div');
     item.className='user-item';
     item.innerHTML='<div class="av">'+(u.photoURL?'<img src="'+u.photoURL+'" alt="">':'👤')+'</div><div class="user-info"><div class="user-name">'+(u.displayName||'익명')+'</div>'+(u.manduid?'<div class="user-status">@'+u.manduid+'</div>':'')+'</div><span class="ms check-icon">check_circle</span>';
@@ -3784,7 +3790,7 @@ function showAddMember(){
   _addMemberSelected=[];
   const list=document.getElementById('add-member-list');
   list.innerHTML='';
-  const candidates=allUsers.filter(function(u){return currentRoomMembers.indexOf(u.uid)===-1;});
+  const candidates=myFriends().filter(function(u){return currentRoomMembers.indexOf(u.uid)===-1;});
   if(candidates.length===0){
     list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('addmember_none')+'</div></div>';
   }else{
@@ -4562,9 +4568,12 @@ function runSearch(keyword){
     results.innerHTML='<div class="search-empty"><div class="search-empty-ico">🥟</div><div class="search-empty-txt">검색어를 입력해보세요</div></div>';
     return;
   }
+  // 지인은 이름·아이디 일부로 찾고, 모르는 사람은 @만두ID를 정확히 입력했을 때만 보여준다 (가입자 목록 노출 방지)
+  const qid=q.replace('@','');
   const matchedUsers=allUsers.filter(function(u){
-    return (u.displayName||'').toLowerCase().includes(q)||
-           (u.manduid||'').toLowerCase().includes(q.replace('@',''));
+    if(isBlocked(u.uid))return false;
+    if(myContactUids.has(u.uid))return (u.displayName||'').toLowerCase().includes(q)||(u.manduid||'').toLowerCase().includes(qid);
+    return !!u.manduid&&u.manduid.toLowerCase()===qid;
   });
   let html='';
   if(matchedUsers.length>0){
