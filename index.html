@@ -247,6 +247,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .act-btn{width:36px;height:36px;border:none;background:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--primary);}
 .act-btn .ms{font-size:20px;}
 .friend-acts{display:flex;align-items:center;gap:2px;}
+.friend-sec-lbl{padding:14px 20px 6px;font-size:12px;font-weight:700;color:var(--outline);}
 .friend-more{color:var(--outline);}
 .check-icon{color:var(--primary);opacity:0;}
 .user-item.selected .check-icon{opacity:1;}
@@ -3599,17 +3600,28 @@ function addFriend(uid){
 
 // 내 지인만 — 친구 탭·새 채팅방·멤버 추가에서 전체 가입자가 보이지 않게
 function isFriendHidden(uid){return !!(myFriendData.hidden&&myFriendData.hidden[uid]);}
-function myFriends(){return allUsers.filter(function(u){return myContactUids.has(u.uid)&&!isBlocked(u.uid)&&!isFriendHidden(u.uid);});}
+function isFriendFav(uid){return !!(myFriendData.fav&&myFriendData.fav[uid]);}
+// 정렬: 온라인 먼저 → 이름순(한글·영문·숫자 자연 정렬). 즐겨찾기는 목록 맨 위 별도 묶음
+function _friendSort(a,b){
+  const ao=a.online===true?0:1,bo=b.online===true?0:1;
+  if(ao!==bo)return ao-bo;
+  return (a.displayName||'').localeCompare(b.displayName||'',['ko','en'],{sensitivity:'base',numeric:true});
+}
+function myFriends(){return allUsers.filter(function(u){return myContactUids.has(u.uid)&&!isBlocked(u.uid)&&!isFriendHidden(u.uid);}).sort(_friendSort);}
 // 친구 옆 ⋮ 메뉴 — 차단 없이 목록에서만 치우는 '숨기기' 제공
 function openFriendMenu(u){
   if(!currentUser||currentUser.isAnonymous)return;
   const items=[];
+  items.push(isFriendFav(u.uid)
+    ?{icon:'star',label:_L('즐겨찾기 해제','Remove from favorites'),fn:function(){_setFriendFlag('fav',u.uid,false);}}
+    :{icon:'star_outline',label:_L('즐겨찾기에 추가','Add to favorites'),fn:function(){_setFriendFlag('fav',u.uid,true);showToast(_L('즐겨찾기에 추가했어요','Added to favorites'));}});
   items.push({icon:'visibility_off',label:_L('친구 숨기기','Hide friend'),fn:function(){hideFriend(u.uid);}});
   items.push({icon:'block',label:_L('차단하기','Block'),danger:true,fn:function(){blockUser(u.uid);}});
   _modSheet(u.displayName||_L('친구','Friend'),items);
 }
 function hideFriend(uid){
   _setFriendFlag('hidden',uid,true);
+  if(isFriendFav(uid))_setFriendFlag('fav',uid,false);
   showToast(_L('숨겼어요. 설정 > 숨긴 친구에서 되돌릴 수 있어요','Hidden. Undo in Settings > Hidden friends.'));
 }
 function unhideFriend(uid){_setFriendFlag('hidden',uid,false);showToast(_L('친구 목록에 다시 보여요','Friend restored'));}
@@ -3662,7 +3674,15 @@ function renderUserList(keyword){
     list.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><div class="empty-title">'+t('friends_no_results')+'</div></div>';
     return;
   }
-  filtered.forEach(function(u){list.appendChild(_friendItem(u));});
+  const favs=q?[]:filtered.filter(function(u){return isFriendFav(u.uid);});
+  const rest=q?filtered:filtered.filter(function(u){return !isFriendFav(u.uid);});
+  const secLbl=function(txt){const el=document.createElement('div');el.className='friend-sec-lbl';el.textContent=txt;list.appendChild(el);};
+  if(favs.length){
+    secLbl('⭐ '+_L('즐겨찾기','Favorites')+' '+favs.length);
+    favs.forEach(function(u){list.appendChild(_friendItem(u));});
+    if(rest.length)secLbl(_L('친구','Friends')+' '+rest.length);
+  }
+  rest.forEach(function(u){list.appendChild(_friendItem(u));});
 }
 
 function filterFriends(keyword){renderUserList(keyword);}
