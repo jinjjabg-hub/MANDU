@@ -237,6 +237,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .my-link-sub{font-size:12px;color:var(--outline);margin-top:2px;}
 .groups-scroll{padding:6px 20px 12px;display:flex;gap:12px;overflow-x:auto;}
 .groups-scroll::-webkit-scrollbar{display:none;}
+.group-card{min-width:100px;max-width:100px;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:16px;padding:12px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;}
+.group-card-av{width:40px;height:40px;border-radius:50%;background:var(--primary-fixed);color:var(--primary);display:flex;align-items:center;justify-content:center;}
+.group-card-name{font-size:12px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.group-card-cnt{font-size:11px;color:var(--outline);}
 .group-add-card{min-width:100px;border:2px dashed var(--outline-variant);border-radius:16px;padding:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--primary);flex-shrink:0;}
 .user-item{display:flex;align-items:center;gap:14px;padding:12px 20px;cursor:pointer;border-bottom:1px solid var(--outline-variant);}
 .user-item.selected{background:var(--surface-container-low);}
@@ -3469,6 +3473,7 @@ function loadRooms(){
       _lastRoomsSnap=snap;
       list.innerHTML='';
       if(snap.empty){
+        _renderGroupCards([]);
         sub.textContent=t('chats_empty_title');
         list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc')+'</div></div>';
         return;
@@ -3490,6 +3495,7 @@ function loadRooms(){
         }
       });
       _recomputeContacts();
+      _renderGroupCards(docs);
       const unread=docs.filter(function(d){
         const r=d.data();const rb=r.readBy||{};const mr=rb[currentUser.uid];
         return r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
@@ -3575,6 +3581,21 @@ function _recomputeContacts(){
   myContactUids=set;
   _watchProfiles(Array.from(set));
   _scheduleFriendRender();
+}
+// 친구 탭 '그룹' 줄: 내가 속한 단톡방(숨긴 방·매장 손님방 제외)을 최근 대화순으로
+function _renderGroupCards(docs){
+  const box=document.querySelector('#panel-friends .groups-scroll');if(!box)return;
+  box.querySelectorAll('.group-card').forEach(function(e){e.remove();});
+  const addCard=box.querySelector('.group-add-card');
+  docs.filter(function(d){const r=d.data();return r.type==='group'&&!r.storeUid;}).slice(0,30).forEach(function(d){
+    const r=d.data();const name=r.name||_L('그룹 대화','Group chat');
+    const c=document.createElement('div');c.className='group-card';
+    c.innerHTML='<div class="group-card-av"><span class="ms">groups</span></div><div class="group-card-name"></div><div class="group-card-cnt"></div>';
+    c.querySelector('.group-card-name').textContent=name;
+    c.querySelector('.group-card-cnt').textContent=(r.members||[]).length+_L('명',' members');
+    c.onclick=function(){openRoom(d.id,name,'',true);};
+    box.insertBefore(c,addCard);
+  });
 }
 function _esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function _avatarInto(el,url){el.textContent='';if(url){const img=document.createElement('img');img.src=url;img.alt='';el.appendChild(img);}else el.textContent='👤';}
