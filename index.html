@@ -3227,6 +3227,7 @@ async function translateImage(url,lang){
       if(!res.ok)throw new Error('http '+res.status);
       const d=await res.json();
       if(!d.original){showToast(_L('사진에서 글자를 찾지 못했어요','No text found in this photo'));return null;}
+      if(d.sameLang){showToast(_L('이미 내 언어로 된 사진이에요 (차감 없음)','This photo is already in your language (not counted)'));return null;}
       const out={original:d.original,translated:d.translated||d.original,truncated:!!d.truncated};
       try{localStorage.setItem(key,JSON.stringify(out));}catch(e){}
       return out;
