@@ -3564,9 +3564,9 @@ function loadRooms(){
         const item=document.createElement('div');
         item.className='room-item';
         item.innerHTML=
-          '<div class="av-wrap"><div class="av">'+(photo?'<img src="'+photo+'" alt="">':( isGroup?'👥':'👤'))+'</div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
-          '<div class="room-info"><div class="room-name-row"><span class="room-name">'+name+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
-          '<div class="room-last">'+(r.lastMessage||t('chat_start_hint'))+'</div></div>'+
+          '<div class="av-wrap"><div class="av">'+(photo?'<img src="'+_esc(photo)+'" alt="">':( isGroup?'👥':'👤'))+'</div>'+(isOnline?'<div class="online-dot"></div>':'')+'</div>'+
+          '<div class="room-info"><div class="room-name-row"><span class="room-name">'+_esc(name)+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
+          '<div class="room-last">'+(r.lastMessage?_esc(r.lastMessage):t('chat_start_hint'))+'</div></div>'+
           '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'<button class="room-del" title="'+_L('삭제','Delete')+'"><span class="ms">delete</span></button></div>';
         item.querySelector('.room-del').onclick=function(e){e.stopPropagation();deleteRoom(doc.id,name);};
         item.onclick=function(){openRoom(doc.id,name,photo,isGroup);};
