@@ -956,6 +956,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div class="toggle" id="cardbook-consent-toggle"></div>
         </div>
       </div>
+      <div class="settings-section-label" id="idsearch-section-label">친구</div>
+      <div class="settings-card">
+        <div class="settings-row" onclick="toggleIdSearch()">
+          <div class="settings-icon-wrap"><span class="ms">person_search</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="idsearch-label">@만두ID로 나를 찾을 수 있어요</div>
+            <div class="settings-row-sub" id="idsearch-sub">끄면 모르는 사람이 검색으로 나를 찾을 수 없어요. 내 링크·QR은 그대로 쓸 수 있어요</div>
+          </div>
+          <div class="toggle on" id="idsearch-toggle"></div>
+        </div>
+      </div>
       <div class="settings-section-label" id="guestttl-section-label">게스트 대화방</div>
       <div class="settings-card">
         <div class="settings-row" onclick="openGuestTtlPicker()">
@@ -2254,11 +2265,40 @@ async function toggleCardbookConsent(){
   }catch(e){showToast(t('cardbook_consent_fail'));}
 }
 
+// @만두ID 검색 허용 — manduid_index/{내 ID}.searchable (기본 허용). 끄면 검색 결과에만 안 나오고, 링크·QR 연결은 그대로 동작
+let _myIdSearchable=true;
+function renderIdSearch(){
+  const tog=document.getElementById('idsearch-toggle');if(tog)tog.className='toggle'+(_myIdSearchable?' on':'');
+}
+async function initIdSearch(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  const set=function(id,ko,en){const el=document.getElementById(id);if(el)el.textContent=_L(ko,en);};
+  set('idsearch-section-label','친구','Friends');
+  set('idsearch-label','@만두ID로 나를 찾을 수 있어요','Let people find me by @ManduID');
+  set('idsearch-sub','끄면 모르는 사람이 검색으로 나를 찾을 수 없어요. 내 링크·QR은 그대로 쓸 수 있어요','When off, strangers can\'t find you in search. Your link and QR still work.');
+  if(!currentManduid)return;
+  try{
+    const d=await db.collection('manduid_index').doc(currentManduid).get();
+    _myIdSearchable=!(d.exists&&d.data().searchable===false);
+  }catch(e){}
+  renderIdSearch();
+}
+async function toggleIdSearch(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  if(!currentManduid){showToast(_L('먼저 만두 ID를 만들어주세요','Create your Mandu ID first'));return;}
+  const next=!_myIdSearchable;
+  try{
+    await db.collection('manduid_index').doc(currentManduid).set({uid:currentUser.uid,searchable:next},{merge:true});
+    _myIdSearchable=next;renderIdSearch();
+    showToast(next?_L('이제 @만두ID 검색으로 나를 찾을 수 있어요','People can now find you by @ManduID'):_L('검색에서 숨겼어요. 링크·QR은 계속 쓸 수 있어요','Hidden from search. Link and QR still work.'));
+  }catch(e){console.warn('ID 검색 설정 실패:',e);showToast(_L('저장하지 못했어요','Could not save'));}
+}
+
 // 프로필 사진이 없는 계정(이메일 가입 등)용 기본 아바타 — 빈 src로 깨진 이미지 아이콘이 보이는 것 방지
 const DEFAULT_AVATAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#e9ddff"/><circle cx="32" cy="25" r="11" fill="#6b38d4"/><path d="M12 56c2-11 10-17 20-17s18 6 20 17z" fill="#6b38d4"/></svg>');
 function updateUIAfterLogin(){
   if(!currentUser||currentUser.isAnonymous)return;
-  initBlocks();initAiTranslate();initStoreLabels();
+  initBlocks();initAiTranslate();initStoreLabels();initIdSearch();
   document.getElementById('my-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('hero-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('settings-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
