@@ -1853,6 +1853,7 @@ async function createManduid(){
     // 저장
     await db.collection('manduid_index').doc(id).set({uid:currentUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
     await db.collection('users').doc(currentUser.uid).update({manduid:id});
+    setTimeout(syncPublicProfile,0);
 
     currentManduid=id;
     updateUIAfterLogin();
@@ -2185,9 +2186,8 @@ auth.onAuthStateChanged(async function(user){
       }catch(e){}
     }
     if(hostUID&&hostUID!==user.uid){
-      const hostDoc=await db.collection('users').doc(hostUID).get();
-      if(hostDoc.exists){
-        const hd=hostDoc.data();
+      const hd=await _getProfile(hostUID);
+      if(hd){
         if(!forceDM&&_storeStaff(hd,hostUID).length){await openStoreRoom(hd,hostUID);}else{await startDM(hd);}
         return;
       }
@@ -2233,16 +2233,35 @@ function _setGuestHost(d){
 async function _readPublicProfile(uid){
   try{const d=await db.collection('public_profiles').doc(uid).get();return d.exists?d.data():null;}catch(e){return null;}
 }
-function syncPublicProfile(){
-  if(!currentUser||currentUser.isAnonymous||!currentManduid)return;
-  const u=usersMap[currentUser.uid]||{};
-  db.collection('public_profiles').doc(currentUser.uid).set({
-    displayName:String(u.displayName||currentUser.displayName||'').slice(0,60),
-    photoURL:String(u.photoURL||currentUser.photoURL||'').slice(0,500),
-    manduid:currentManduid,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(function(e){console.warn('공개 명함 저장 실패:',e&&e.code);});
-  syncDiscoverProfile();
+// 다른 사람이 보는 내 정보는 public_profiles에만 둔다 (users 문서는 본인만 읽을 수 있음 — 이메일·알림 토큰 보호)
+function _publicStore(st){
+  st=st||{};
+  return {greetOn:!!st.greetOn,greeting:String(st.greeting||'').slice(0,300),awayOn:!!st.awayOn,awayMsg:String(st.awayMsg||'').slice(0,300),
+    quick:(Array.isArray(st.quick)?st.quick:[]).slice(0,20).map(function(q){return String(q).slice(0,200);}),
+    staff:(Array.isArray(st.staff)?st.staff:[]).slice(0,10).map(String)};
+}
+async function syncPublicProfile(){
+  if(!currentUser)return;
+  const me=currentUser.uid;
+  let u=usersMap[me]||{};
+  try{const d=await db.collection('users').doc(me).get();if(d.exists)u=d.data();}catch(e){}
+  try{
+    await db.collection('public_profiles').doc(me).set({
+      displayName:String(u.displayName||currentUser.displayName||localStorage.getItem('mandu_guest_name')||'').slice(0,60),
+      photoURL:String(u.photoURL||currentUser.photoURL||'').slice(0,500),
+      manduid:String(currentManduid||u.manduid||'').slice(0,20),
+      isGuest:!!(currentUser.isAnonymous||u.isGuest),
+      store:_publicStore(u.store),
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){console.warn('공개 명함 저장 실패:',e&&e.code);}
+  if(!currentUser.isAnonymous)syncDiscoverProfile();
+}
+// 다른 사람의 공개 정보 (이름·사진·만두ID·매장 설정). 예전 users 문서와 같은 모양으로 돌려준다.
+function _profileRef(uid){return db.collection('public_profiles').doc(uid);}
+async function _getProfile(uid){
+  if(!uid)return null;
+  try{const d=await _profileRef(uid).get();if(!d.exists)return null;const u=d.data();u.uid=uid;return u;}catch(e){return null;}
 }
 async function loadGuestHostInfo(){
   _setGuestHost(await _readPublicProfile(hostUID));
@@ -2277,9 +2296,8 @@ function detectBrowserLang(){
 async function openGuestRoom(){
   if(!currentUser||!hostUID)return;
   try{
-    const hostDoc=await db.collection('users').doc(hostUID).get();
-    if(!hostDoc.exists){showToast('잘못된 링크예요');show('login-screen');return;}
-    const host=hostDoc.data();
+    const host=await _getProfile(hostUID);
+    if(!host){showToast('잘못된 링크예요');show('login-screen');return;}
     const guestName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
     // 브라우저 언어 자동 감지 → UI 화면 언어 + 번역 대상 언어 둘 다 즉시 적용
     const detectedLang=detectBrowserLang();
@@ -2710,9 +2728,8 @@ async function pickContacts(){
 async function discoverStartDM(uid){
   if(!uid)return;
   try{
-    var snap=await db.collection('users').doc(uid).get();
-    if(!snap.exists)return;
-    var partner=snap.data();partner.uid=uid;
+    var partner=await _getProfile(uid);
+    if(!partner)return;
     await startDM(partner);
     switchTab('chats');
   }catch(e){showToast('채팅방 생성에 실패했어요');}
@@ -3040,7 +3057,7 @@ async function showBlockedList(){
   const items=[];
   for(const uid of ids){
     let name=uid.slice(0,6);
-    try{const s=await db.collection('users').doc(uid).get();if(s.exists){const d=s.data();name=(d.displayName||name)+(d.manduid?' @'+d.manduid:'');}}catch(e){}
+    const d=await _getProfile(uid);if(d){name=(d.displayName||name)+(d.manduid?' @'+d.manduid:'');}
     items.push({icon:'lock_open',label:_L('차단 해제: ','Unblock: ')+name,fn:function(){unblockUser(uid);}});
   }
   _modSheet(_L('차단한 사용자','Blocked users'),items);
@@ -3118,7 +3135,7 @@ async function _getStore(uid){
   const c=_storeCache[uid];
   if(c&&Date.now()-c.t<60000)return c.d;
   let d={};
-  try{const snap=await db.collection('users').doc(uid).get();d=(snap.exists&&snap.data().store)||{};}catch(e){}
+  const pf=await _getProfile(uid);d=(pf&&pf.store)||{};
   _storeCache[uid]={t:Date.now(),d:d};
   return d;
 }
@@ -3186,7 +3203,7 @@ async function openStoreRoom(host,hostUid){
   if(anon)data.isGuestRoom=true;
   if(staff.length){
     data.type='group';data.name=myName;data.members=[me,hostUid].concat(staff);
-    const docs=await Promise.all(staff.map(function(u){return db.collection('users').doc(u).get().catch(function(){return null;});}));
+    const docs=await Promise.all(staff.map(function(u){return _profileRef(u).get().catch(function(){return null;});}));
     docs.forEach(function(sd,i){const u=sd&&sd.exists?sd.data():{};data.memberNames[staff[i]]=u.displayName||'';data.memberPhotos[staff[i]]=u.photoURL||'';});
   }
   await db.collection('rooms').doc(roomId).set(data,{merge:true});
@@ -3301,6 +3318,7 @@ async function saveStoreSettings(){
   try{
     await db.collection('users').doc(currentUser.uid).update({store:_storeDraft});
     if(usersMap[currentUser.uid])usersMap[currentUser.uid].store=_storeDraft;
+    syncPublicProfile();
     showToast(_L('매장 설정을 저장했어요','Store settings saved'));
     closeStoreSettings();
   }catch(e){console.error('매장 설정 저장 실패:',e);showToast(_L('저장에 실패했어요. 다시 시도해주세요','Could not save. Please try again.'));}
@@ -3769,7 +3787,9 @@ function loadUsers(){
 function _watchProfiles(uids){
   (uids||[]).forEach(function(uid){
     if(!uid||_profileUnsubs[uid])return;
-    _profileUnsubs[uid]=db.collection('users').doc(uid).onSnapshot(function(d){
+    // 내 문서는 users(본인만 읽기 가능), 다른 사람은 공개 프로필
+    const ref=(currentUser&&uid===currentUser.uid)?db.collection('users').doc(uid):_profileRef(uid);
+    _profileUnsubs[uid]=ref.onSnapshot(function(d){
       if(d.exists){const u=d.data();u.uid=d.id;usersMap[d.id]=u;}else delete usersMap[d.id];
       _scheduleFriendRender();
     },function(e){console.warn('프로필 구독 실패:',uid,e&&e.code);});
@@ -3867,7 +3887,7 @@ async function showHiddenFriends(){
   const items=[];
   for(const uid of ids){
     let u=usersMap[uid];
-    if(!u){try{const sd=await db.collection('users').doc(uid).get();if(sd.exists)u=sd.data();}catch(e){}}
+    if(!u)u=await _getProfile(uid);
     const name=u?((u.displayName||'')+(u.manduid?' @'+u.manduid:'')):uid.slice(0,6);
     items.push({icon:'visibility',label:_L('다시 보이기: ','Unhide: ')+name,fn:function(){unhideFriend(uid);}});
   }
@@ -5311,9 +5331,8 @@ async function _searchById(qid,seq,results){
     if(seq!==_searchSeq||!idx.exists)return;
     const ix=idx.data()||{};
     if(ix.searchable===false||!ix.uid||ix.uid===currentUser.uid||isBlocked(ix.uid))return;
-    const us=await db.collection('users').doc(ix.uid).get();
-    if(seq!==_searchSeq||!us.exists)return;
-    const u=us.data();u.uid=us.id;
+    const u=await _getProfile(ix.uid);
+    if(seq!==_searchSeq||!u)return;
     if(u.isGuest)return;
     if(results.querySelector('.search-empty'))results.innerHTML='';
     if(!results.querySelector('.search-sec-lbl')){const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent='사용자';results.appendChild(lbl);}
