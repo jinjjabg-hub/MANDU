@@ -967,6 +967,40 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div class="toggle" id="cardbook-consent-toggle"></div>
         </div>
       </div>
+      <div class="settings-section-label" id="ref-section-label" style="display:none;">추천</div>
+      <div class="settings-card" id="ref-card" style="display:none;">
+        <div class="settings-row" onclick="copyReferralLink()">
+          <div class="settings-icon-wrap"><span class="ms">share</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="ref-link-label">내 추천 링크 복사</div>
+            <div class="settings-row-sub" id="ref-link-sub">이 링크로 가입하면 추천인으로 기록돼요</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">content_copy</span></div>
+        </div>
+        <div class="settings-row" id="ref-claim-row" onclick="askReferralCode('later')" style="display:none;border-top:1px solid var(--outline-variant);">
+          <div class="settings-icon-wrap"><span class="ms">person_add</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="ref-claim-label">추천인 입력하기</div>
+            <div class="settings-row-sub" id="ref-claim-sub"></div>
+          </div>
+          <div class="settings-chevron"><span class="ms">chevron_right</span></div>
+        </div>
+        <div class="settings-row" id="ref-info-row" style="display:none;border-top:1px solid var(--outline-variant);cursor:default;">
+          <div class="settings-icon-wrap"><span class="ms">redeem</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="ref-info-label"></div>
+            <div class="settings-row-sub" id="ref-info-sub"></div>
+          </div>
+        </div>
+        <div class="settings-row" id="ref-admin-row" onclick="openReferralAdmin()" style="display:none;border-top:1px solid var(--outline-variant);">
+          <div class="settings-icon-wrap"><span class="ms">account_tree</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="ref-admin-label">추천 현황 (관리자)</div>
+            <div class="settings-row-sub" id="ref-admin-sub">누가 누구를 통해 가입했는지 · 결제 · 감사장</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">chevron_right</span></div>
+        </div>
+      </div>
       <div class="settings-section-label" id="idsearch-section-label">친구</div>
       <div class="settings-card">
         <div class="settings-row" onclick="toggleIdSearch()">
@@ -1564,6 +1598,17 @@ let _pendingNewUser=null; // ← 최초 로그인 언어선택 대기용
 const urlParams=new URLSearchParams(window.location.search);
 hostUID=urlParams.get('host'); // 기존 호환
 let guestManduidParam=urlParams.get('u'); // 새 방식 (카카오 로그인에서 돌아올 때 복원하므로 let)
+// 추천인 기억: 추천 링크(?ref=ID)나 손님 링크·QR(?u=ID)로 처음 들어온 사람의 ID — 가입하면 자동으로 추천인 기록.
+// 가장 먼저 소개한 사람을 7일 동안 기억한다(먼저 들어온 링크 우선).
+(function(){
+  const r=(urlParams.get('ref')||urlParams.get('u')||'').toLowerCase().replace(/^@/,'');
+  if(!/^[a-z0-9_]{3,20}$/.test(r))return;
+  try{
+    const old=JSON.parse(localStorage.getItem('mandu_ref')||'null');
+    if(old&&old.id&&Date.now()-old.at<7*864e5)return;
+    localStorage.setItem('mandu_ref',JSON.stringify({id:r,at:Date.now()}));
+  }catch(e){}
+})();
 let forceDM=urlParams.get('dm')==='1'; // 비즈홈 링크: 직원 등록과 상관없이 1:1 개인톡방으로 연다
 const joinCode=(urlParams.get('join')||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,40)||null; // 그룹 초대 링크·QR
 isGuest=!!(hostUID||guestManduidParam||joinCode);
@@ -1812,6 +1857,7 @@ async function createManduid(){
     updateUIAfterLogin();
     showMain();
     showToast('환영해요 @'+id+' 🥟');
+    setTimeout(afterNewAccountReferral,1200);
   }catch(e){
     showToast('저장 실패. 다시 시도해요');
     btn.disabled=false;
@@ -2029,6 +2075,7 @@ async function selectInitialLang(lang){
     showMain();
     if(joinCode){joinByInvite();}
     showToast(t('welcome_toast').replace('{id}',autoId));
+    setTimeout(afterNewAccountReferral,1200);
   }catch(e){
     console.error('autoCreateManduid error:',e);
     show('id-screen');
@@ -2332,7 +2379,7 @@ async function toggleIdSearch(){
 const DEFAULT_AVATAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#e9ddff"/><circle cx="32" cy="25" r="11" fill="#6b38d4"/><path d="M12 56c2-11 10-17 20-17s18 6 20 17z" fill="#6b38d4"/></svg>');
 function updateUIAfterLogin(){
   if(!currentUser||currentUser.isAnonymous)return;
-  initBlocks();initAiTranslate();initStoreLabels();initIdSearch();
+  initBlocks();initAiTranslate();initStoreLabels();initIdSearch();initReferral();
   setTimeout(syncPublicProfile,1500); // 내 프로필 문서가 구독돼 usersMap에 들어온 뒤
   document.getElementById('my-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('hero-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
@@ -4237,8 +4284,17 @@ function detectLang(text){
 }
 
 // ── 플랜별 월 한도 ─────────────────────────────────────────
-// 요금제: 무료 5천자 / 소프트 3만자(2,900원) / 라이트 10만자(8,400원) / 비즈니스 50만자(29,000원, 초과분 1만자당 315원 자동 연장)
-const PLAN_LIMITS={free:5000,soft:30000,light:100000,business:500000,premium:500000};
+// 요금제: 무료 5천자 / 유료는 플랜 한도 + 무료 5천자 — 소프트 3만5천자(2,900원) / 라이트 10만5천자(8,400원) /
+// 비즈니스 50만5천자(29,000원, 초과분 1만자당 315원 자동 연장). 서버(main.py)의 PLAN_LIMITS와 반드시 같게.
+const PLAN_LIMITS={free:5000,soft:35000,light:105000,business:505000,premium:505000};
+// 추천 보너스(서버가 users/{uid}.bonusChars·bonusExpiresAt·bonusUsed.{월}에 기록) — 월 한도를 다 쓴 뒤 차감
+function _myBonusInfo(){
+  const u=(currentUser&&usersMap[currentUser.uid])||{};
+  const exp=u.bonusExpiresAt&&u.bonusExpiresAt.toDate?u.bonusExpiresAt.toDate():null;
+  const avail=(u.bonusChars>0&&exp&&exp>new Date())?u.bonusChars:0;
+  const usedMonth=((u.bonusUsed||{})[getYearMonth()])||0;
+  return {avail:avail,usedMonth:usedMonth,exp:exp};
+}
 const MAX_CHARS_PER_MSG=500; // 1회 최대 입력
 
 // ── 1단계: 번역 스킵 필터 ──────────────────────────────────
@@ -4297,6 +4353,170 @@ async function getMonthlyUsage(){
     const usage=(snap.data()&&snap.data().usage)||{};
     return usage[getYearMonth()]||0;
   }catch(e){return 0;}
+}
+
+// ── 추천인 제도 ─────────────────────────────────────────────
+// 서버가 기록·보너스 지급을 맡는다(회원이 직접 고칠 수 없게). 추천 관계는 운영자만 관리자 화면에서 본다.
+async function _serverGet(path){
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const res=await fetch('https://mandu-server.onrender.com'+path,{headers:{Authorization:'Bearer '+await currentUser.getIdToken()}});
+      if(res.ok)return {ok:true,data:await res.json()};
+      if(res.status<500)return {ok:false,status:res.status};
+    }catch(e){}
+    if(attempt<2)await new Promise(function(r){setTimeout(r,2500+attempt*2500);});
+  }
+  return {ok:false,status:0};
+}
+let _refMe=null;
+function _fmtDate(iso){const d=new Date(iso);return isNaN(d)?'':(d.getMonth()+1)+'/'+d.getDate();}
+async function initReferral(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  const set=function(id,v){const e=document.getElementById(id);if(e)e.textContent=v;};
+  const show=function(id,on){const e=document.getElementById(id);if(e)e.style.display=on?'':'none';};
+  set('ref-section-label',_L('추천','Referrals'));
+  set('ref-link-label',_L('내 추천 링크 복사','Copy my referral link'));
+  set('ref-link-sub',_L('이 링크로 가입하면 추천인으로 기록돼요','People who sign up with this link are recorded as referred by you'));
+  set('ref-claim-label',_L('추천인 입력하기','Enter who referred you'));
+  set('ref-admin-label',_L('추천 현황 (관리자)','Referrals (admin)'));
+  set('ref-admin-sub',_L('누가 누구를 통해 가입했는지 · 결제 · 감사장','Who referred whom · payments · thank-you notes'));
+  show('ref-section-label',true);show('ref-card',true);
+  const r=await _serverGet('/api/referral/me');
+  if(!r.ok)return;
+  _refMe=r.data;
+  show('ref-claim-row',!!_refMe.canClaim);
+  if(_refMe.canClaim)set('ref-claim-sub',_L('{d}까지 · 입력하면 보너스 5천 자','Until {d} · get a 5,000-character bonus').replace('{d}',_fmtDate(_refMe.claimUntil)));
+  const info=[];
+  if(_refMe.referred&&_refMe.referrerManduid)info.push(_L('추천인 @','Referred by @')+_refMe.referrerManduid);
+  if(_refMe.bonus>0)info.push(_L('보너스 {n}자 · {d}까지','Bonus {n} chars · until {d}').replace('{n}',_refMe.bonus.toLocaleString()).replace('{d}',_fmtDate(_refMe.bonusExpiresAt)));
+  show('ref-info-row',info.length>0);
+  if(info.length){set('ref-info-label',info[0]);set('ref-info-sub',info.slice(1).join(' · '));}
+  show('ref-admin-row',!!_refMe.isAdmin);
+}
+function copyReferralLink(){
+  if(!currentManduid)return;
+  _copyText('https://mandu.bizmy.net/?ref='+currentManduid,_L('추천 링크를 복사했어요. 카톡으로 보내 보세요','Referral link copied'));
+}
+async function claimReferral(code,method){
+  const r=await _serverPost('/api/referral/claim',{code:code,method:method},true);
+  if(r.ok&&r.data&&r.data.ok){
+    try{localStorage.removeItem('mandu_ref');}catch(e){}
+    showToast(_L('추천인이 기록됐어요 · 보너스 5천 자 (30일)','Referrer saved · 5,000-character bonus (30 days)'));
+    initReferral();renderUsageUI&&renderUsageUI();
+    return true;
+  }
+  if(r.ok&&r.data&&r.data.code==='NOT_NEW_ACCOUNT')return false;
+  const msg=r.data&&r.data.detail&&r.data.detail.message;
+  showToast(msg||_L('추천인을 저장하지 못했어요. 다시 시도해주세요','Could not save the referrer. Please try again.'));
+  return false;
+}
+// 가입 직후: 링크·QR로 들어왔으면 자동 기록, 아니면 "추천해 준 분이 있나요?" 물어보기
+async function afterNewAccountReferral(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  let saved=null;try{saved=JSON.parse(localStorage.getItem('mandu_ref')||'null');}catch(e){}
+  if(saved&&saved.id&&saved.id!==currentManduid&&Date.now()-saved.at<7*864e5){
+    if(await claimReferral(saved.id,'link'))return;
+  }
+  askReferralCode('signup');
+}
+function askReferralCode(method){
+  closeModSheet();
+  const bd=document.createElement('div');bd.id='mod-sheet-bd';bd.className='mod-sheet-bd';bd.onclick=closeModSheet;
+  const sh=document.createElement('div');sh.id='mod-sheet';sh.className='mod-sheet phone-sheet';
+  sh.innerHTML='<div class="mod-sheet-title"></div><div style="padding:0 8px 4px;">'+
+    '<div class="msg" id="ref-ask-desc" style="margin:0 2px 10px;"></div>'+
+    '<div class="row"><input id="ref-code-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>'+
+    '<button class="primary" id="ref-code-btn"></button>'+
+    '<button class="mod-sheet-btn cancel" id="ref-skip-btn" style="width:100%;margin-top:6px;"></button></div>';
+  document.body.appendChild(bd);document.body.appendChild(sh);
+  sh.querySelector('.mod-sheet-title').textContent=_L('추천해 준 분이 있나요?','Did someone refer you?');
+  document.getElementById('ref-ask-desc').textContent=_L('추천인의 만두 ID를 입력하면 이번 달 번역 5천 자를 더 드려요 (30일).','Enter their Mandu ID and get 5,000 extra characters (30 days).');
+  const inp=document.getElementById('ref-code-input');inp.placeholder='@'+_L('만두ID','ManduID');
+  const btn=document.getElementById('ref-code-btn');btn.textContent=_L('입력하기','Submit');
+  btn.onclick=async function(){
+    const v=inp.value.trim().replace(/^@/,'').toLowerCase();
+    if(!/^[a-z0-9_]{3,20}$/.test(v)){showToast(_L('만두 ID를 확인해주세요','Please check the Mandu ID'));return;}
+    btn.disabled=true;
+    if(await claimReferral(v,method))closeModSheet();
+    btn.disabled=false;
+  };
+  const skip=document.getElementById('ref-skip-btn');
+  skip.textContent=method==='signup'?_L('없어요 (나중에 설정에서 입력할 수 있어요)','No one (you can add it later in Settings)'):_L('취소','Cancel');
+  skip.onclick=closeModSheet;
+  setTimeout(function(){inp.focus();},60);
+}
+// 운영자 전용: 추천 현황 (A → B → C → D 줄기, 결제, 감사장 체크)
+let _refAdmin=null,_refAdminFilter='all';
+async function openReferralAdmin(){
+  closeReferralAdmin();
+  const ov=document.createElement('div');ov.id='ref-admin';
+  ov.style.cssText='position:fixed;inset:0;z-index:9000;background:var(--background);display:flex;flex-direction:column;';
+  ov.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--outline-variant);">'+
+    '<button class="back-btn" id="ref-admin-close"><span class="ms">arrow_back</span></button>'+
+    '<div style="font-size:17px;font-weight:800;flex:1;" id="ref-admin-title"></div></div>'+
+    '<div id="ref-admin-sum" style="padding:12px 16px 4px;"></div><div class="discover-chips" id="ref-admin-tabs"></div>'+
+    '<div id="ref-admin-list" style="flex:1;overflow:auto;padding:6px 16px 24px;"><div class="discover-spinner"></div></div>';
+  document.body.appendChild(ov);
+  document.getElementById('ref-admin-close').onclick=closeReferralAdmin;
+  document.getElementById('ref-admin-title').textContent=_L('추천 현황','Referrals');
+  const r=await _serverGet('/api/admin/referrals');
+  if(!r.ok){document.getElementById('ref-admin-list').textContent=_L('불러오지 못했어요 (관리자만 볼 수 있어요)','Could not load (admins only)');return;}
+  _refAdmin=r.data;_renderReferralAdmin();
+}
+function closeReferralAdmin(){const e=document.getElementById('ref-admin');if(e)e.remove();}
+function _renderReferralAdmin(){
+  const d=_refAdmin;if(!d)return;
+  const P=d.people||{},rows=d.rows||[],byUid={},kids={};
+  rows.forEach(function(x){byUid[x.uid]=x;(kids[x.referrerUid]=kids[x.referrerUid]||[]).push(x);});
+  const name=function(u){const p=P[u]||{};return (p.name||'?')+(p.manduid?' @'+p.manduid:'');};
+  const chain=function(u){const out=[];let cur=byUid[u],n=0;while(cur&&n<30){out.unshift(name(cur.referrerUid));cur=byUid[cur.referrerUid];n++;}return out;};
+  const paid=rows.filter(function(x){return x.firstPaidAt;}),todo=paid.filter(function(x){return !x.thankedAt;});
+  document.getElementById('ref-admin-sum').innerHTML='';
+  const sum=document.createElement('div');sum.style.cssText='font-size:13px;color:var(--on-surface-variant);';
+  sum.textContent=_L('추천 가입 {a}명 · 결제 {b}명 · 감사장 보낼 사람 {c}명','{a} referred · {b} paid · {c} thank-yous to send').replace('{a}',rows.length).replace('{b}',paid.length).replace('{c}',todo.length);
+  document.getElementById('ref-admin-sum').appendChild(sum);
+  const tabs=document.getElementById('ref-admin-tabs');tabs.innerHTML='';
+  [['all',_L('전체 줄기','All')],['todo',_L('감사장 보낼 사람','To thank')+' '+todo.length],['paid',_L('결제한 사람','Paid')]].forEach(function(t){
+    const b=document.createElement('button');b.className='discover-chip'+(_refAdminFilter===t[0]?' on':'');b.textContent=t[1];
+    b.onclick=function(){_refAdminFilter=t[0];_renderReferralAdmin();};tabs.appendChild(b);
+  });
+  const list=document.getElementById('ref-admin-list');list.innerHTML='';
+  if(!rows.length){list.textContent=_L('아직 추천으로 가입한 사람이 없어요','No referrals yet');return;}
+  const methodLbl={link:_L('링크·QR','link'),signup:_L('가입 시 입력','at signup'),later:_L('나중에 입력','later')};
+  const card=function(x,depth,showChain){
+    const c=document.createElement('div');
+    c.style.cssText='border:1.5px solid var(--outline-variant);border-radius:14px;padding:10px 12px;margin:6px 0 6px '+(depth*16)+'px;background:var(--surface);';
+    const top=document.createElement('div');top.style.cssText='display:flex;align-items:center;gap:8px;';
+    const nm=document.createElement('div');nm.style.cssText='flex:1;font-weight:800;font-size:14px;';nm.textContent=(depth?'└ ':'')+name(x.uid);top.appendChild(nm);
+    if(x.firstPaidAt){
+      const lab=document.createElement('label');lab.style.cssText='display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--primary);cursor:pointer;';
+      const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!x.thankedAt;
+      cb.onchange=async function(){cb.disabled=true;const r=await _serverPost('/api/admin/referrals/thank',{uid:x.uid,thanked:cb.checked},true);cb.disabled=false;
+        if(r.ok){x.thankedAt=cb.checked?new Date().toISOString():null;_renderReferralAdmin();}else{cb.checked=!cb.checked;showToast(_L('저장하지 못했어요','Could not save'));}};
+      lab.appendChild(cb);lab.appendChild(document.createTextNode(_L('감사장','Thanked')));top.appendChild(lab);
+    }
+    c.appendChild(top);
+    const sub=document.createElement('div');sub.style.cssText='font-size:12px;color:var(--on-surface-variant);margin-top:3px;line-height:1.5;';
+    const bits=[_L('가입 ','Joined ')+_fmtDate(x.createdAt)+' ('+(methodLbl[x.method]||'')+')'];
+    bits.push(x.firstPaidAt?('💳 '+_L('첫 결제 ','Paid ')+_fmtDate(x.firstPaidAt)+' · '+String(x.firstPaidPlan||'').toUpperCase()+(x.firstPaidAmount?' '+Number(x.firstPaidAmount).toLocaleString()+_L('원',' KRW'):'')):_L('미결제','Not paid'));
+    if(x.thankedAt)bits.push('✔ '+_L('감사장 ','Thanked ')+_fmtDate(x.thankedAt));
+    sub.textContent=bits.join(' · ');c.appendChild(sub);
+    if(showChain){const ch=document.createElement('div');ch.style.cssText='font-size:12px;color:var(--primary);margin-top:3px;';ch.textContent=_L('소개 줄기: ','Chain: ')+chain(x.uid).concat([name(x.uid)]).join(' → ');c.appendChild(ch);}
+    return c;
+  };
+  if(_refAdminFilter==='all'){
+    // 맨 위 추천인(본인은 추천받지 않은 사람)부터 아래로
+    const roots=Object.keys(kids).filter(function(u){return !byUid[u];});
+    const walk=function(u,depth){(kids[u]||[]).forEach(function(x){list.appendChild(card(x,depth,false));walk(x.uid,depth+1);});};
+    roots.forEach(function(u){
+      const h=document.createElement('div');h.style.cssText='font-size:13px;font-weight:800;margin:14px 0 2px;';h.textContent='👤 '+name(u);list.appendChild(h);
+      walk(u,1);
+    });
+  }else{
+    const arr=(_refAdminFilter==='todo'?todo:paid).slice().sort(function(a,b){return String(b.firstPaidAt).localeCompare(String(a.firstPaidAt));});
+    if(!arr.length){list.textContent=_L('해당하는 사람이 없어요','No one here');return;}
+    arr.forEach(function(x){list.appendChild(card(x,0,true));});
+  }
 }
 
 function getYearMonth(){
@@ -5329,7 +5549,8 @@ async function renderUsageUI(){
   if(!currentUser)return;
   const used=await getMonthlyUsage();
   const plan=await getUserPlan();
-  const limit=PLAN_LIMITS[plan]||PLAN_LIMITS.free;
+  const bi=_myBonusInfo();
+  const limit=(PLAN_LIMITS[plan]||PLAN_LIMITS.free)+bi.usedMonth+bi.avail;
   const pct=Math.min(100,Math.round(used/limit*100));
   const now=new Date();
 
@@ -5350,7 +5571,7 @@ async function renderUsageUI(){
   barEl.style.background=pct>=90?'#ef4444':pct>=60?'#f59e0b':'var(--primary)';
 
   usedEl.textContent=fmtChars(used);
-  limitEl.textContent='/ '+fmtChars(limit);
+  limitEl.textContent='/ '+fmtChars(limit)+((bi.avail||bi.usedMonth)?' · 🎁 '+_L('보너스 포함','incl. bonus'):'');
 
   btnEl.style.display=(plan==='business'||plan==='premium')?'none':'';
   if(pct>=90){
