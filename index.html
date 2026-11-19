@@ -4406,7 +4406,7 @@ async function translateEx(text,targetLang,opts){
         _usage80WarnShown=true;
         showToast(t('usage_80_warn_toast'));
       }
-      const out={text:data.translated||'',engine:data.engine||'google'};
+      const out={text:data.translated||'',engine:data.engine||'google',googleOnlyLang:!!data.googleOnlyLang};
       setCachedTranslation(text,targetLang,out);
       return out;
     }catch(e){
@@ -4420,7 +4420,8 @@ async function translateEx(text,targetLang,opts){
 // ── AI 번역 설정 (기기별 저장) ──────────────────────────────────
 // 서버에 AI 번역 키가 설정돼 있을 때만(/api/ping 의 ai 값) 설정 토글과 "AI로 다시 번역" 메뉴가 보인다
 function isAiAvailable(){return window._aiAvailable===true;}
-function isAiTranslateOn(){try{return isAiAvailable()&&localStorage.getItem('mandu_ai_tr')==='1';}catch(e){return false;}}
+// 기본 켜짐 (서버 기본 모델 Haiku — 원가가 구글 번역보다 낮다). 설정에서 끈 사람만 구글 번역.
+function isAiTranslateOn(){try{return isAiAvailable()&&localStorage.getItem('mandu_ai_tr')!=='0';}catch(e){return isAiAvailable();}}
 function initAiTranslate(){
   ['ai-tr-section-label','ai-tr-card'].forEach(function(id){const el=document.getElementById(id);if(el)el.style.display=isAiAvailable()?'':'none';});
   const set=function(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt;};
@@ -4460,6 +4461,7 @@ async function retranslateWithAi(w){
   const r=await translateEx(tr.orig,tr.target,{engine:'ai',context:tr.ctx,source:'ai_retry'});
   tr.busy=false;
   if(r.engine==='ai'&&r.text){_showTranslation(w,tr.bubble,tr.line,tr.orig,r,tr.target,tr.ctx);}
+  else if(r.googleOnlyLang){showToast(_L('이 언어는 구글 번역이 더 정확해서 구글 번역을 사용해요','Google translation is more accurate for this language, so it is used instead'));}
   else if(r.text||r.engine===''){showToast(_L('지금은 AI 번역을 쓸 수 없어요. 잠시 후 다시 시도해주세요','AI translation is unavailable right now. Please try again later.'));}
 }
 const TR_REPORT_REASONS=[['wrong_meaning','뜻이 틀려요','The meaning is wrong'],['awkward','문장이 어색해요','It sounds unnatural'],['tone','말투·존댓말이 안 맞아요','Wrong tone or politeness'],['missing','빠진 내용이 있어요','Something is missing'],['other','기타','Other']];
