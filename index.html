@@ -5086,14 +5086,18 @@ function toggleVoiceInput(){
   try{_voiceRecognition.start();}catch(e){showToast(t('voice_input_error'));}
 }
 
-function sendPushNotification(toUids,body){
-  if(!toUids||toUids.length===0)return;
-  const senderName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
-  fetch('https://mandu-server.onrender.com/api/notify',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({toUids:toUids,roomId:currentRoomId,senderName:senderName,body:body,senderUid:currentUser?currentUser.uid:''})
-  }).catch(function(e){console.warn('푸시 알림 전송 실패:',e);});
+// 보낸 사람·이름은 서버가 로그인 토큰과 방 정보로 확인한다 (사칭 알림 방지)
+async function sendPushNotification(toUids,body){
+  if(!toUids||toUids.length===0||!currentUser||!currentRoomId)return;
+  const roomId=currentRoomId;
+  try{
+    const idToken=await currentUser.getIdToken();
+    await fetch('https://mandu-server.onrender.com/api/notify',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
+      body:JSON.stringify({toUids:toUids,roomId:roomId,body:body})
+    });
+  }catch(e){console.warn('푸시 알림 전송 실패:',e);}
 }
 
 async function sendFile(input){
