@@ -144,7 +144,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .phone-sheet .primary:disabled{opacity:.5;}
 .phone-sheet .msg{font-size:12px;min-height:16px;margin:8px 2px;color:var(--on-surface-variant);}
 .phone-sheet .msg.err{color:#e53935;}
-.inapp #loginBtn,.inapp #apple-login-btn{display:none !important;}
+.inapp #apple-login-btn{display:none !important;}
 .inapp-only{display:none;}
 .inapp .inapp-only{display:block;}
 .google-btn{display:flex;align-items:center;gap:12px;background:#fff;color:#3c4043;border:1px solid var(--outline-variant);border-radius:100px;padding:14px 28px;font-size:15px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.08);transition:all .2s;}
@@ -648,7 +648,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   <div class="login-desc">언어가 달라도 <strong>대화는 하나로</strong></div>
   <button class="google-btn" id="loginBtn">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
-    Google로 시작하기
+    <span id="google-login-lbl">Google로 시작하기</span>
   </button>
   <div class="inapp-only" style="width:100%;max-width:280px;font-size:12px;color:var(--outline);text-align:center;line-height:1.6;">
     <span id="inapp-google-hint">Google 로그인은 이 앱 안에서 막혀 있어요.</span>
@@ -1932,7 +1932,8 @@ function updateReadReceipt(readBy){
   else{el.textContent='✓';el.className='read-receipt';}
 }
 
-document.getElementById('loginBtn').onclick=function(){auth.signInWithPopup(provider);};
+// 카카오톡·네이버 등 앱 안 브라우저는 구글이 로그인을 막는다(정책) → 버튼은 보여주고, 누르면 Chrome·Safari로 다시 연다
+document.getElementById('loginBtn').onclick=function(){if(window.MANDU_INAPP){openInBrowser();return;}auth.signInWithPopup(provider);};
 
 // ── 이메일 로그인/회원가입 ─────────────────────────────────
 function togglePwVisible(){
@@ -3374,7 +3375,8 @@ function initLoginOptions(cfg){
   const txt=function(id,v){const el=document.getElementById(id);if(el)el.textContent=v;};
   txt('kakao-login-lbl',_L('카카오로 시작하기','Continue with Kakao'));
   txt('guest-login-lnk',_L('로그인','Sign in'));
-  txt('inapp-google-hint',_L('Google 로그인은 이 앱 안에서 막혀 있어요. ','Google sign-in is blocked inside this app. '));
+  if(window.MANDU_INAPP)txt('google-login-lbl',_L('Google로 시작하기 (Chrome·Safari에서 열림)','Continue with Google (opens in Chrome/Safari)'));
+  txt('inapp-google-hint',_L('카카오톡·네이버 앱 안에서는 Google 로그인이 막혀 있어서, 버튼을 누르면 Chrome·Safari로 열려요. ','Google sign-in is blocked inside this app, so the button opens Chrome/Safari. '));
   txt('inapp-open-lnk',_L('Chrome·Safari로 열기','Open in Chrome/Safari'));
   txt('apple-login-lbl',_L('Apple로 시작하기','Continue with Apple'));
   txt('phone-login-lbl',_L('전화번호로 시작하기','Continue with phone number'));
