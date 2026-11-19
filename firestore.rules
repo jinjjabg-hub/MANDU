@@ -28,6 +28,11 @@ service cloud.firestore {
       match /mydict/{entryId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
+
+      // 번역 결과 백업 — 한 번 번역한 메시지를 다른 기기·앱 재설치 후에도 같은 번역으로 보여준다. 본인만 읽고 쓴다.
+      match /trcache/{key} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
     }
 
     // 채팅방 — 멤버만 읽고 쓸 수 있다. 생성 시 만든 사람이 멤버 목록에 포함돼야 한다.

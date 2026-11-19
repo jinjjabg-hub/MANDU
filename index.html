@@ -2011,6 +2011,14 @@ async function confirmDeleteAccount(){
     // 내 번역 사전 → 프로필 문서 순서로 삭제 (실패하면 탈퇴를 멈추고 알림 — 데이터가 남은 채 계정만 지워지지 않도록)
     const dictSnap=await db.collection('users').doc(user.uid).collection('mydict').get();
     await Promise.all(dictSnap.docs.map(function(d){return d.ref.delete();}));
+    // 번역 결과 백업도 함께 삭제 (규칙 미게시 등으로 읽기 실패해도 탈퇴는 계속)
+    try{
+      for(let i=0;i<50;i++){
+        const trSnap=await db.collection('users').doc(user.uid).collection('trcache').limit(400).get();
+        if(trSnap.empty)break;
+        await Promise.all(trSnap.docs.map(function(d){return d.ref.delete();}));
+      }
+    }catch(e){}
     await db.collection('friends').doc(user.uid).delete().catch(function(){});
     await db.collection('public_profiles').doc(user.uid).delete().catch(function(){});
     await db.collection('discover_profiles').doc(user.uid).delete().catch(function(){});
@@ -4547,20 +4555,57 @@ function getCachedTranslation(text,targetLang){
   const v=_trCache[targetLang+'|'+text];
   return v&&v.t?{text:v.t,engine:v.e||'google'}:null;
 }
-function setCachedTranslation(text,targetLang,r){
+function _saveTrCacheNow(){
+  clearTimeout(_trCacheSaveTimer);_trCacheSaveTimer=null;
+  try{localStorage.setItem(TR_CACHE_KEY,JSON.stringify(_trCache));}
+  catch(e){ // 저장공간 부족 → 오래된 절반 정리 후 재시도
+    const ks=Object.keys(_trCache);ks.slice(0,Math.floor(ks.length/2)).forEach(function(x){delete _trCache[x];});
+    try{localStorage.setItem(TR_CACHE_KEY,JSON.stringify(_trCache));}catch(e2){}
+  }
+}
+// 앱을 내리거나 닫을 때 아직 안 쓴 번역을 바로 저장 (휴대폰은 백그라운드에서 타이머가 멈춘 채 앱이 정리될 수 있다)
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&_trCacheSaveTimer)_saveTrCacheNow();});
+window.addEventListener('pagehide',function(){if(_trCacheSaveTimer)_saveTrCacheNow();});
+function setCachedTranslation(text,targetLang,r,skipCloud){
   if(!text||!targetLang||!r||!r.text||r.text===text)return;
   const k=targetLang+'|'+text;
   delete _trCache[k];_trCache[k]={t:r.text,e:r.engine||'google'}; // 맨 뒤로 → 오래 안 쓴 것부터 정리
   const keys=Object.keys(_trCache);
   if(keys.length>TR_CACHE_MAX)keys.slice(0,keys.length-TR_CACHE_MAX).forEach(function(x){delete _trCache[x];});
   clearTimeout(_trCacheSaveTimer);
-  _trCacheSaveTimer=setTimeout(function(){
-    try{localStorage.setItem(TR_CACHE_KEY,JSON.stringify(_trCache));}
-    catch(e){ // 저장공간 부족 → 오래된 절반 정리 후 재시도
-      const ks=Object.keys(_trCache);ks.slice(0,Math.floor(ks.length/2)).forEach(function(x){delete _trCache[x];});
-      try{localStorage.setItem(TR_CACHE_KEY,JSON.stringify(_trCache));}catch(e2){}
-    }
-  },500);
+  _trCacheSaveTimer=setTimeout(_saveTrCacheNow,300);
+  if(!skipCloud)_cloudTrSave(text,targetLang,r);
+}
+
+// ── 번역 결과 계정 백업 (Firestore users/{uid}/trcache) ──
+// 기기 저장이 사라져도(다른 폰·PC, 앱 재설치, 브라우저 데이터 삭제) 같은 번역문을 서버 호출 없이 다시 보여준다.
+// 문서 ID = '언어|원문'의 해시. 원문은 저장하지 않고 번역문만 둔다. 규칙 미게시 등으로 실패하면 조용히 서버 번역으로 넘어간다.
+function _trHash(str){
+  let h1=0xdeadbeef,h2=0x41c6ce57;
+  for(let i=0;i<str.length;i++){const ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+  h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return (h2>>>0).toString(16).padStart(8,'0')+(h1>>>0).toString(16).padStart(8,'0')+'_'+str.length;
+}
+function _trCloudRef(text,targetLang){
+  if(!currentUser||typeof db==='undefined')return null;
+  return db.collection('users').doc(currentUser.uid).collection('trcache').doc(_trHash(targetLang+'|'+text));
+}
+function _cloudTrSave(text,targetLang,r){
+  try{const ref=_trCloudRef(text,targetLang);if(ref)ref.set({t:r.text,e:r.engine||'google',l:targetLang}).catch(function(){});}catch(e){}
+}
+function _cloudTrGet(text,targetLang){
+  let ref=null;try{ref=_trCloudRef(text,targetLang);}catch(e){}
+  if(!ref)return Promise.resolve(null);
+  const timeout=new Promise(function(res){setTimeout(function(){res(null);},2500);});
+  const read=ref.get().then(function(snap){
+    const v=snap.exists?snap.data():null;
+    if(!v||!v.t||v.l!==targetLang)return null;
+    const out={text:v.t,engine:v.e||'google'};
+    setCachedTranslation(text,targetLang,out,true); // 이 기기에도 다시 저장
+    return out;
+  }).catch(function(){return null;});
+  return Promise.race([read,timeout]);
 }
 
 // ── 메인 번역 함수 (서버가 인증+사용량 검증까지 전담) ─────────────
@@ -4595,6 +4640,12 @@ async function translateEx(text,targetLang,opts){
   }
 
   if(!currentUser)return none;
+
+  // 2.8단계: 내 계정에 백업해 둔 번역 (다른 기기·앱 재설치 후에도 같은 번역, 글자 차감 없음)
+  if(opts.engine!=='ai'){
+    const cloud=await _cloudTrGet(text,targetLang);
+    if(cloud)return cloud;
+  }
 
   // source·src·room은 '이번 달 사용 내역'용 꼬리표 (원문은 서버 기록에 남지 않는다)
   const payload={text:text,target:targetLang,source:opts.source||'chat',src:srcLang||'',room:currentRoomId||''};
