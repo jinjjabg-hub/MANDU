@@ -4293,7 +4293,11 @@ function _myBonusInfo(){
   const exp=u.bonusExpiresAt&&u.bonusExpiresAt.toDate?u.bonusExpiresAt.toDate():null;
   const avail=(u.bonusChars>0&&exp&&exp>new Date())?u.bonusChars:0;
   const usedMonth=((u.bonusUsed||{})[getYearMonth()])||0;
-  return {avail:avail,usedMonth:usedMonth,exp:exp};
+  // 충전 글자(1회 결제 상품, 서버가 packChars·packExpiresAt·packUsed.{월}에 기록) — 보너스 다음에 차감
+  const pexp=u.packExpiresAt&&u.packExpiresAt.toDate?u.packExpiresAt.toDate():null;
+  const pack=(u.packChars>0&&pexp&&pexp>new Date())?u.packChars:0;
+  const packUsedMonth=((u.packUsed||{})[getYearMonth()])||0;
+  return {avail:avail+pack,usedMonth:usedMonth+packUsedMonth,exp:exp,bonus:avail,pack:pack,packExp:pexp};
 }
 const MAX_CHARS_PER_MSG=500; // 1회 최대 입력
 
@@ -5571,7 +5575,7 @@ async function renderUsageUI(){
   barEl.style.background=pct>=90?'#ef4444':pct>=60?'#f59e0b':'var(--primary)';
 
   usedEl.textContent=fmtChars(used);
-  limitEl.textContent='/ '+fmtChars(limit)+((bi.avail||bi.usedMonth)?' · 🎁 '+_L('보너스 포함','incl. bonus'):'');
+  limitEl.textContent='/ '+fmtChars(limit)+((bi.avail||bi.usedMonth)?' · 🎁 '+(bi.pack?_L('충전 포함','incl. top-up'):_L('보너스 포함','incl. bonus')):'');
 
   btnEl.style.display=(plan==='business'||plan==='premium')?'none':'';
   if(pct>=90){
@@ -5612,7 +5616,32 @@ const PLAN_DEFS=[
   {key:'business',price:'₩29,000'},
 ];
 
+// 1회 결제 상품(충전 글자) — 자동결제 없음. 금액·글자 수는 서버(main.py)의 ONETIME_PRODUCTS와 반드시 같게.
+const ONETIME_DEFS=[
+  {key:'pack50k',chars:50000,amount:5500,price:'₩5,500'},
+];
+function onetimeDef(key){return ONETIME_DEFS.find(function(p){return p.key===key;})||null;}
+
 let _selectedPlanKey=null;
+
+function renderOnetimeCards(container){
+  const hd=document.createElement('div');
+  hd.style.cssText='font-size:12.5px;font-weight:700;color:var(--on-surface-variant);margin:8px 2px 0;';
+  hd.textContent=_L('한 번만 충전 (자동결제 없음)','One-time top-up (no auto-renewal)');
+  container.appendChild(hd);
+  ONETIME_DEFS.forEach(function(p){
+    const div=document.createElement('div');
+    div.className='plan-card';
+    div.id='pc-'+p.key;
+    div.onclick=function(){selectPlanCard(p.key,div);};
+    div.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'+
+      '<span style="font-size:15px;font-weight:700;">'+_L('충전','TOP-UP')+' '+fmtChars(p.chars)+'</span>'+
+      '<span style="font-size:17px;font-weight:800;color:var(--primary);">'+p.price+'<span style="font-size:12px;font-weight:500;color:var(--outline);"> · '+_L('1회','once')+'</span></span>'+
+      '</div>'+
+      '<div style="font-size:13px;color:var(--outline);">'+_L('월 한도를 다 쓴 뒤 사용 · 구매일부터 1년 유효','Used after your monthly quota · valid 1 year')+'</div>';
+    container.appendChild(div);
+  });
+}
 
 function renderPlanCards(){
   const T=UI_T[_uiLang]||UI_T.ko;
@@ -5635,6 +5664,7 @@ function renderPlanCards(){
       '<div style="font-size:13px;color:var(--outline);">'+fmtChars(PLAN_LIMITS[p.key])+(_uiLang==='ko'?' / ':' ')+T.plan_per_month+' · '+tags[p.key]+'</div>';
     container.appendChild(div);
   });
+  renderOnetimeCards(container);
 }
 
 function showPlanSheet(){
@@ -5655,6 +5685,7 @@ function showPlanSheet(){
     });
   });
   _selectedPlanKey=null;
+  try{renderLegalLabels();}catch(e){}
   renderPlanCards();
   const btn=document.getElementById('plan-confirm-btn');
   const T=UI_T[_uiLang]||UI_T.ko;
@@ -5670,7 +5701,7 @@ function closePlanSheet(){
 }
 function selectPlanCard(key,el){
   _selectedPlanKey=key;
-  PLAN_DEFS.forEach(function(p){
+  PLAN_DEFS.concat(ONETIME_DEFS).forEach(function(p){
     const c=document.getElementById('pc-'+p.key);
     if(c)c.classList.remove('selected');
   });
@@ -5678,6 +5709,9 @@ function selectPlanCard(key,el){
   const T=UI_T[_uiLang]||UI_T.ko;
   const btn=document.getElementById('plan-confirm-btn');
   btn.disabled=false;btn.style.opacity='1';
+  try{renderLegalLabels();}catch(e){} // 정기결제/1회 결제에 맞는 안내 문구로
+  const od=onetimeDef(key);
+  if(od){btn.textContent=_L(fmtChars(od.chars)+' 충전 — '+od.price+' (1회 결제)','Top up '+fmtChars(od.chars)+' — '+od.price+' (one-time)');return;}
   const def=PLAN_DEFS.find(function(p){return p.key===key;});
   const price=def?def.price:'';
   btn.textContent=T.plan_upgrade_to.replace('{plan}',key.toUpperCase()).replace('${price}',price).replace('{price}',price);
@@ -5690,12 +5724,16 @@ function selectPlanCard(key,el){
 // 지금 채널은 "MANDU KCP 테스트"(테스트 모드) — 카드사 심사·계약이 끝나면 실연동 채널 키로 교체.
 // 서버 환경변수 PORTONE_API_SECRET 은 같은 상점의 V2 API Secret 이어야 함. 채널 키가 비어 있으면 결제창을 열지 않음.
 const PORTONE_STORE_ID='store-81501bc3-d46a-4bbf-8c19-c1d2265dfa2e';
-const PORTONE_CHANNEL_KEY='channel-key-e9829a19-f375-417e-aaaf-9850a36a1da4'; // KCP 테스트 채널
+const PORTONE_CHANNEL_KEY='channel-key-e9829a19-f375-417e-aaaf-9850a36a1da4'; // KCP 테스트 채널 (정기결제·빌링)
+// 1회 결제(일반결제) 채널 — KCP는 정기결제와 일반결제의 사이트코드가 달라서 포트원 콘솔에 채널을 따로 추가한 뒤 그 키로 교체.
+// 따로 만들기 전까지는 같은 테스트 채널을 쓴다.
+const PORTONE_PAY_CHANNEL_KEY='channel-key-e9829a19-f375-417e-aaaf-9850a36a1da4';
+const PAY_API='https://mandu-server.onrender.com/api/pay';
 const PORTONE_SDK_URL='https://cdn.portone.io/v2/browser-sdk.js';
 const BILLING_API='https://mandu-server.onrender.com/api/billing';
 const BILLING_MSG={
-  ko:{preparing:'결제 준비 중...',processing:'결제를 확인하고 있어요...',success:'{plan} 플랜 결제가 완료됐어요 🎉',fail:'결제에 실패했어요',canceled:'카드 등록을 취소했어요',guest:'게스트는 결제할 수 없어요. 가입 후 이용해 주세요.',net:'서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.',notReady:'결제 준비 중이에요. 잠시 후 다시 시도해 주세요.',popup:'팝업이 차단됐어요. 주소창 오른쪽에서 이 사이트의 팝업을 허용한 뒤 다시 시도해 주세요.'},
-  en:{preparing:'Preparing payment...',processing:'Confirming your payment...',success:'{plan} plan payment complete 🎉',fail:'Payment failed',canceled:'Card registration canceled',guest:'Guests can\'t pay. Please sign up first.',net:'Could not reach the server. Please try again shortly.',notReady:'Payments are not available yet. Please try again later.',popup:'Pop-up was blocked. Allow pop-ups for this site (address bar, right side) and try again.'}
+  ko:{packSuccess:'{chars} 충전이 완료됐어요 🎉',payCanceled:'결제를 취소했어요',preparing:'결제 준비 중...',processing:'결제를 확인하고 있어요...',success:'{plan} 플랜 결제가 완료됐어요 🎉',fail:'결제에 실패했어요',canceled:'카드 등록을 취소했어요',guest:'게스트는 결제할 수 없어요. 가입 후 이용해 주세요.',net:'서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.',notReady:'결제 준비 중이에요. 잠시 후 다시 시도해 주세요.',popup:'팝업이 차단됐어요. 주소창 오른쪽에서 이 사이트의 팝업을 허용한 뒤 다시 시도해 주세요.'},
+  en:{packSuccess:'{chars} top-up complete 🎉',payCanceled:'Payment canceled',preparing:'Preparing payment...',processing:'Confirming your payment...',success:'{plan} plan payment complete 🎉',fail:'Payment failed',canceled:'Card registration canceled',guest:'Guests can\'t pay. Please sign up first.',net:'Could not reach the server. Please try again shortly.',notReady:'Payments are not available yet. Please try again later.',popup:'Pop-up was blocked. Allow pop-ups for this site (address bar, right side) and try again.'}
 };
 function billingMsg(key){
   const m=BILLING_MSG[_uiLang]||(_uiLang==='ko'?BILLING_MSG.ko:BILLING_MSG.en);
@@ -5722,12 +5760,12 @@ function loadPortOneSdk(){
 
 // 서버 호출 (Render 무료 플랜은 잠들어 있으면 첫 요청이 실패할 수 있어 네트워크 오류만 재시도.
 // /confirm 재시도는 서버가 orderId로 중복 처리를 막아서 안전함)
-async function billingFetch(path,body,user){
+async function billingFetch(path,body,user,base){
   let lastErr=null;
   for(let attempt=0;attempt<3;attempt++){
     try{
       const idToken=await (user||currentUser).getIdToken();
-      const res=await fetch(BILLING_API+path,{
+      const res=await fetch((base||BILLING_API)+path,{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
         body:JSON.stringify(body)
@@ -5754,6 +5792,7 @@ async function confirmPlanUpgrade(){
   if(isAppMode())return; // 앱에서는 결제창 절대 금지
   if(!_selectedPlanKey||!currentUser||_billingBusy)return;
   if(currentUser.isAnonymous){showToast(billingMsg('guest'));return;}
+  if(onetimeDef(_selectedPlanKey))return confirmOnetimePurchase(_selectedPlanKey);
   if(!PORTONE_CHANNEL_KEY){showToast(billingMsg('notReady'));return;}
   const plan=_selectedPlanKey;
   const btn=document.getElementById('plan-confirm-btn');
@@ -5794,6 +5833,68 @@ async function confirmPlanUpgrade(){
   }
 }
 
+// ── 1회 결제(충전 글자) — 포트원 일반결제창 ───────────────────────────
+// 흐름: 서버 /api/pay/prepare(주문·금액 결정) → requestPayment(paymentId=주문번호) → redirectUrl 복귀
+//       → 서버 /api/pay/confirm(포트원에 직접 조회해 결제 완료·금액 일치 확인 후 충전) → 화면 갱신
+async function confirmOnetimePurchase(product){
+  if(isAppMode()||!currentUser||_billingBusy)return;
+  if(currentUser.isAnonymous){showToast(billingMsg('guest'));return;}
+  if(!PORTONE_PAY_CHANNEL_KEY){showToast(billingMsg('notReady'));return;}
+  const btn=document.getElementById('plan-confirm-btn');
+  const prevText=btn?btn.textContent:'';
+  _billingBusy=true;
+  if(btn){btn.disabled=true;btn.style.opacity='.6';btn.textContent=billingMsg('preparing');}
+  try{
+    const order=await billingFetch('/prepare',{product:product},null,PAY_API);
+    const PortOne=await loadPortOneSdk();
+    if(isAppMode())return;
+    const base=location.origin+location.pathname;
+    const customer={customerId:order.customerKey};
+    if(currentUser.email)customer.email=currentUser.email;
+    if(currentUser.displayName)customer.fullName=String(currentUser.displayName).slice(0,30);
+    const res=await PortOne.requestPayment({
+      storeId:PORTONE_STORE_ID,
+      channelKey:PORTONE_PAY_CHANNEL_KEY,
+      paymentId:order.orderId,
+      orderName:order.orderName,
+      totalAmount:order.amount,
+      currency:'KRW',
+      payMethod:'CARD',
+      customer:customer,
+      redirectUrl:base+'?pay=return&orderId='+encodeURIComponent(order.orderId),
+      forceRedirect:true
+    });
+    if(res&&res.code!==undefined){const err=new Error(res.message||'');err.code=res.code;throw err;}
+  }catch(e){
+    if(e&&(e.code==='USER_CANCEL'||e.code==='FAILURE_TYPE_PG'&&/취소/.test(e.message||'')))showToast(billingMsg('payCanceled'));
+    else showToast(billingMsg('fail')+(e&&e.message?': '+e.message:''));
+  }finally{
+    _billingBusy=false;
+    if(btn){btn.disabled=false;btn.style.opacity='1';btn.textContent=prevText;}
+  }
+}
+async function handlePayReturn(params,user){
+  try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}
+  if(isAppMode())return;
+  const code=params.get('code');
+  if(code){
+    const msg=params.get('message')||'';
+    if(params.get('pgCode')==='3017'){showToast(billingMsg('popup'));return;}
+    showToast(code==='USER_CANCEL'||/취소/.test(msg)?billingMsg('payCanceled'):billingMsg('fail')+(msg?': '+msg:''));
+    return;
+  }
+  const paymentId=params.get('paymentId')||params.get('orderId');
+  if(!paymentId){showToast(billingMsg('fail'));return;}
+  showToast(billingMsg('processing'));
+  try{
+    const r=await billingFetch('/confirm',{paymentId:paymentId},user,PAY_API);
+    if(r&&r.ok)showToast(billingMsg('packSuccess').replace('{chars}',fmtChars(r.chars||0)));
+  }catch(e){
+    showToast(billingMsg('fail')+(e&&e.message?': '+e.message:''));
+  }
+  renderUsageUI();
+}
+
 // 카드 등록창에서 돌아왔을 때(redirectUrl) 처리
 async function handleBillingReturn(params,user){
   // 주소창에서 billingKey 등을 바로 지운다 (새로고침·공유 시 재사용 방지)
@@ -5824,12 +5925,13 @@ async function handleBillingReturn(params,user){
 (function(){
   let params;
   try{params=new URLSearchParams(location.search);}catch(e){return;}
-  if(!params.get('billing'))return;
+  const isPay=params.get('pay')==='return';
+  if(!params.get('billing')&&!isPay)return;
   if(isAppMode()){try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}return;}
   const unsub=auth.onAuthStateChanged(function(user){
     if(!user||user.isAnonymous)return;
     unsub();
-    handleBillingReturn(params,user);
+    if(isPay)handlePayReturn(params,user);else handleBillingReturn(params,user);
   });
 })();
 
@@ -5852,25 +5954,25 @@ initLoginOptions();   // _uiLang 선언 뒤에 실행해야 함
 handleKakaoReturn();
 
 const LEGAL_MSG={
-  ko:{terms:'이용약관',terms_sub:'서비스 이용 조건',refund:'환불정책',refund_sub:'정기결제 해지·환불 기준',
+  ko:{pack_notice:'1회 결제 · 자동결제 없음 · 충전 글자는 월 한도를 다 쓴 뒤 사용되고 구매일부터 1년간 유효해요 · 결제하면 {terms}과 {refund}에 동의하는 것으로 봐요. 충전 글자를 쓰기 시작하면 청약 철회가 제한될 수 있어요.',terms:'이용약관',terms_sub:'서비스 이용 조건',refund:'환불정책',refund_sub:'정기결제 해지·환불 기준',
       plan_notice:'매월 같은 날 자동결제 · 언제든 해지 가능 · 결제하면 {terms}과 {refund}에 동의하는 것으로 봐요. 결제 후 유료 한도로 번역을 쓰면 청약 철회가 제한될 수 있어요.',
       next:'다음 결제일 {date}',cancel:'구독 해지',canceled:'해지됨 · {date}까지 이용',resume:'해지 취소',
       cancel_confirm:'정기결제를 해지할까요?\n\n{date}까지는 지금 플랜을 그대로 쓸 수 있고, 그 뒤로는 결제되지 않아요.',
       cancel_done:'해지됐어요. {date}까지 이용할 수 있어요.',resume_done:'해지를 취소했어요. 다음 결제일에 자동결제돼요.',
       login_agree:'가입 시 {terms} 및 {privacy}에 동의하는 것으로 간주됩니다.',privacy:'개인정보처리방침'},
-  en:{terms:'Terms of Service',terms_sub:'Conditions of use',refund:'Refund Policy',refund_sub:'Cancellation and refunds',
+  en:{pack_notice:'One-time payment · No auto-renewal · Top-up characters are used after your monthly quota and stay valid for 1 year · By paying you agree to the {terms} and {refund}. Withdrawal may be limited once you start using them.',terms:'Terms of Service',terms_sub:'Conditions of use',refund:'Refund Policy',refund_sub:'Cancellation and refunds',
       plan_notice:'Billed monthly on the same day · Cancel anytime · By paying you agree to the {terms} and {refund}. Withdrawal may be limited once you use the paid quota.',
       next:'Next payment {date}',cancel:'Cancel subscription',canceled:'Canceled · active until {date}',resume:'Undo cancel',
       cancel_confirm:'Cancel your subscription?\n\nYou keep your current plan until {date}, and you won\'t be charged after that.',
       cancel_done:'Canceled. You can use your plan until {date}.',resume_done:'Cancellation undone. You will be billed on the next payment date.',
       login_agree:'By signing up you agree to the {terms} and {privacy}.',privacy:'Privacy Policy'},
-  it:{terms:'Termini di servizio',terms_sub:'Condizioni di utilizzo',refund:'Politica di rimborso',refund_sub:'Disdetta e rimborsi',
+  it:{pack_notice:'Pagamento unico · Nessun rinnovo automatico · I caratteri ricaricati si usano dopo il limite mensile e valgono 1 anno · Pagando accetti i {terms} e la {refund}. Il diritto di recesso può essere limitato una volta iniziato a usarli.',terms:'Termini di servizio',terms_sub:'Condizioni di utilizzo',refund:'Politica di rimborso',refund_sub:'Disdetta e rimborsi',
       plan_notice:'Addebito mensile nello stesso giorno · Disdici quando vuoi · Pagando accetti i {terms} e la {refund}. Il diritto di recesso può essere limitato una volta usato il limite a pagamento.',
       next:'Prossimo pagamento {date}',cancel:'Annulla abbonamento',canceled:'Annullato · attivo fino al {date}',resume:'Annulla la disdetta',
       cancel_confirm:'Vuoi annullare l\'abbonamento?\n\nMantieni il piano attuale fino al {date}, poi non verrà più addebitato nulla.',
       cancel_done:'Annullato. Puoi usare il tuo piano fino al {date}.',resume_done:'Disdetta annullata. Il pagamento verrà addebitato alla prossima scadenza.',
       login_agree:'Registrandoti accetti i {terms} e l\'{privacy}.',privacy:'Informativa sulla privacy'},
-  da:{terms:'Servicevilkår',terms_sub:'Vilkår for brug',refund:'Refusionspolitik',refund_sub:'Opsigelse og refusion',
+  da:{pack_notice:'Engangsbetaling · Ingen automatisk fornyelse · Optankede tegn bruges efter din månedlige kvote og gælder i 1 år · Ved betaling accepterer du {terms} og {refund}. Fortrydelsesretten kan være begrænset, når du begynder at bruge dem.',terms:'Servicevilkår',terms_sub:'Vilkår for brug',refund:'Refusionspolitik',refund_sub:'Opsigelse og refusion',
       plan_notice:'Betales månedligt på samme dato · Opsig når som helst · Ved betaling accepterer du {terms} og {refund}. Fortrydelsesretten kan være begrænset, når den betalte kvote er taget i brug.',
       next:'Næste betaling {date}',cancel:'Opsig abonnement',canceled:'Opsagt · aktivt til {date}',resume:'Fortryd opsigelse',
       cancel_confirm:'Vil du opsige dit abonnement?\n\nDu beholder dit nuværende abonnement til {date}, og derefter trækkes der ikke flere betalinger.',
@@ -5888,7 +5990,7 @@ function fmtBillingDate(ts){
 function renderLegalLabels(){
   document.querySelectorAll('[data-legal]').forEach(function(el){el.textContent=legalMsg(el.getAttribute('data-legal'));});
   const n=document.getElementById('plan-legal-notice');
-  if(n)n.innerHTML=legalMsg('plan_notice').replace('{terms}',legalLink('terms',legalMsg('terms'))).replace('{refund}',legalLink('refund',legalMsg('refund')));
+  if(n)n.innerHTML=legalMsg(onetimeDef(_selectedPlanKey)?'pack_notice':'plan_notice').replace('{terms}',legalLink('terms',legalMsg('terms'))).replace('{refund}',legalLink('refund',legalMsg('refund')));
   const la=document.getElementById('login-legal-agree');
   if(la)la.innerHTML=legalMsg('login_agree').replace('{terms}',legalLink('terms',legalMsg('terms')))
     .replace('{privacy}','<span onclick="showPrivacyPolicy()" style="color:var(--primary);cursor:pointer;text-decoration:underline;">'+legalMsg('privacy')+'</span>');
