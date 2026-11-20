@@ -331,6 +331,33 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 :root[data-icons=color] .nav-tab.active:nth-child(3){color:#3b82f6;}
 :root[data-icons=color] .nav-tab.active:nth-child(4){color:#f97316;}
 :root[data-icons=color] .nav-tab.active::before{background:currentColor;}
+/* 페이퍼: 회청색 종이 타일 + 그림자 길게 진 흰 종이 아이콘 */
+:root[data-icons=paper] .settings-icon-wrap,.ist-paper .settings-icon-wrap{border-radius:12px;color:#fff;background:linear-gradient(150deg,#d4dee8,#a9bbcc);box-shadow:inset 0 1px 0 rgba(255,255,255,.7);}
+:root[data-icons=paper] .settings-icon-wrap .ms,.ist-paper .settings-icon-wrap .ms{font-variation-settings:'FILL' 1,'wght' 400;filter:drop-shadow(2px 3px 2px rgba(70,90,115,.45));}
+:root[data-icons=paper] .nav-tab.active .ms,:root[data-icons=paper] .empty-emoji .ms,:root[data-icons=paper] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;color:#b8c6d4;filter:drop-shadow(2px 3px 2px rgba(70,90,115,.40));}
+:root[data-theme=dark][data-icons=paper] .settings-icon-wrap,[data-theme=dark] .ist-paper .settings-icon-wrap{background:linear-gradient(150deg,#56657a,#3c4757);}
+/* 손그림: 검은 손선 테두리 + 살구색/흰색 번갈아 */
+:root[data-icons=doodle] .settings-icon-wrap,.ist-doodle .settings-icon-wrap{border-radius:52% 46% 50% 48% / 48% 52% 46% 54%;background:#fff;color:#1f1f1f;border:2px solid #1f1f1f;box-sizing:border-box;}
+:root[data-icons=doodle] .settings-icon-wrap[data-alt="1"],.ist-doodle .settings-icon-wrap[data-alt="1"]{background:#f6c995;}
+:root[data-icons=doodle] .settings-icon-wrap .ms,.ist-doodle .settings-icon-wrap .ms{font-variation-settings:'FILL' 0,'wght' 500;transform:rotate(-4deg);}
+:root[data-icons=doodle] .nav-tab.active,:root[data-icons=doodle] .empty-emoji .ms,:root[data-icons=doodle] .search-empty-ico .ms{color:var(--on-surface);}
+:root[data-icons=doodle] .nav-tab.active .ms{font-variation-settings:'FILL' 0,'wght' 600;transform:rotate(-4deg);}
+:root[data-icons=doodle] .nav-tab.active::before{background:var(--on-surface);}
+/* 크롬: 은빛 금속 타일 + 반짝이는 금속 아이콘 */
+:root[data-icons=chrome] .settings-icon-wrap,.ist-chrome .settings-icon-wrap{border-radius:12px;background:linear-gradient(160deg,#ffffff,#e4e7eb 55%,#c9ced4);box-shadow:0 2px 6px rgba(0,0,0,.18),inset 0 1px 0 #fff,inset 0 -1px 2px rgba(0,0,0,.12);}
+:root[data-icons=chrome] .settings-icon-wrap .ms,.ist-chrome .settings-icon-wrap .ms,:root[data-icons=chrome] .nav-tab.active .ms,:root[data-icons=chrome] .empty-emoji .ms,:root[data-icons=chrome] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 500;background:linear-gradient(180deg,#c9d0d7 0%,#5d6670 40%,#e9edf1 52%,#2f353c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+:root[data-theme=dark][data-icons=chrome] .settings-icon-wrap,[data-theme=dark] .ist-chrome .settings-icon-wrap{background:linear-gradient(160deg,#5b6370,#3a404a);}
+/* 3D 블록: 두꺼운 옆면이 있는 색 블록 + 크림색 아이콘 */
+:root[data-icons=block] .settings-icon-wrap,.ist-block .settings-icon-wrap{border-radius:11px;color:#fff8ec;background:var(--tile,#8b5cf6);box-shadow:0 4px 0 color-mix(in srgb,var(--tile,#8b5cf6) 70%,#000),0 7px 10px rgba(0,0,0,.18);transform:translateY(-2px);}
+:root[data-icons=block] .settings-icon-wrap .ms,.ist-block .settings-icon-wrap .ms{font-variation-settings:'FILL' 1,'wght' 500;}
+:root[data-icons=block] .nav-tab.active .ms{font-variation-settings:'FILL' 1,'wght' 500;}
+:root[data-icons=block] .nav-tab.active:nth-child(1){color:#f97316;}
+:root[data-icons=block] .nav-tab.active:nth-child(2){color:#8b5cf6;}
+:root[data-icons=block] .nav-tab.active:nth-child(3){color:#3b82f6;}
+:root[data-icons=block] .nav-tab.active:nth-child(4){color:#ef4444;}
+:root[data-icons=block] .nav-tab.active::before{background:currentColor;}
+:root[data-icons=block] .empty-emoji .ms,:root[data-icons=block] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 500;color:#f97316;}
+.mod-sheet.ist-sheet{max-height:85dvh;overflow-y:auto;}
 :root[data-icons=color] .empty-emoji .ms,:root[data-icons=color] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;color:#8b5cf6;}
 
 .settings-row-info{flex:1;min-width:0;}
@@ -1717,16 +1744,18 @@ initTheme();
 
 // ── 아이콘 스타일 ─────────────────────────────────────────
 // 기기별 저장(다크 모드와 같은 방식). 기본 = 선(line)
-const ICON_STYLES=['line','duotone','glass','clay','color'];
-const ICON_STYLE_NAMES={ko:{line:'선',duotone:'듀오톤',glass:'글래스',clay:'클레이 3D',color:'컬러'},
-  en:{line:'Line',duotone:'Duotone',glass:'Glass',clay:'Clay 3D',color:'Color'}};
+const ICON_STYLES=['line','duotone','glass','clay','color','paper','doodle','chrome','block'];
+const ICON_STYLE_NAMES={ko:{line:'선',duotone:'듀오톤',glass:'글래스',clay:'클레이 3D',color:'컬러',paper:'페이퍼',doodle:'손그림',chrome:'크롬',block:'3D 블록'},
+  en:{line:'Line',duotone:'Duotone',glass:'Glass',clay:'Clay 3D',color:'Color',paper:'Paper',doodle:'Doodle',chrome:'Chrome',block:'3D Block'}};
 const ICON_STYLE_TITLE={ko:'아이콘 스타일',en:'Icon style',ja:'アイコンスタイル',zh:'图标样式',es:'Estilo de iconos',fr:'Style des icônes',de:'Symbolstil',vi:'Kiểu biểu tượng',th:'รูปแบบไอคอน',mn:'Дүрс тэмдгийн загвар',hi:'आइकन शैली',pt:'Estilo dos ícones',ar:'نمط الأيقونات',id:'Gaya ikon',it:'Stile icone',da:'Ikonstil'};
 const ICON_TILE_COLORS=['#8b5cf6','#ec4899','#3b82f6','#22c55e','#f97316','#14b8a6','#eab308','#6366f1'];
+const ICON_BLOCK_COLORS=['#f08a4b','#8e6bd8','#ef6b6b','#f2c14e','#4fb8c4','#6cbf73','#e86f9c','#4f93d2'];
 function _iconStyle(){let v='line';try{v=localStorage.getItem('mandu_icon_style')||'line';}catch(e){}return ICON_STYLES.indexOf(v)>=0?v:'line';}
 function _iconStyleName(k){const L=(typeof _uiLang!=='undefined'&&_uiLang==='ko')?'ko':'en';return ICON_STYLE_NAMES[L][k];}
 function _paintIconTiles(){
   // 컬러 스타일용: 설정 아이콘마다 순서대로 다른 색 지정
-  document.querySelectorAll('#main-screen .settings-icon-wrap').forEach(function(el,i){el.style.setProperty('--tile',ICON_TILE_COLORS[i%ICON_TILE_COLORS.length]);});
+  const pal=_iconStyle()==='block'?ICON_BLOCK_COLORS:ICON_TILE_COLORS;
+  document.querySelectorAll('#main-screen .settings-icon-wrap').forEach(function(el,i){el.style.setProperty('--tile',pal[i%pal.length]);el.setAttribute('data-alt',i%2);});
 }
 function _updateIconStyleRow(){
   const lang=(typeof _uiLang!=='undefined')?_uiLang:'ko';
@@ -1735,9 +1764,9 @@ function _updateIconStyleRow(){
 }
 function applyIconStyle(k){
   if(ICON_STYLES.indexOf(k)<0)k='line';
+  try{localStorage.setItem('mandu_icon_style',k);}catch(e){}
   if(k==='line')document.documentElement.removeAttribute('data-icons');
   else document.documentElement.setAttribute('data-icons',k);
-  try{localStorage.setItem('mandu_icon_style',k);}catch(e){}
   _paintIconTiles();_updateIconStyleRow();
 }
 function openIconStylePicker(){
@@ -1745,11 +1774,12 @@ function openIconStylePicker(){
   const cur=_iconStyle();
   const lang=(typeof _uiLang!=='undefined')?_uiLang:'ko';
   const bd=document.createElement('div');bd.id='mod-sheet-bd';bd.className='mod-sheet-bd';bd.onclick=closeModSheet;
-  const sh=document.createElement('div');sh.id='mod-sheet';sh.className='mod-sheet';
+  const sh=document.createElement('div');sh.id='mod-sheet';sh.className='mod-sheet ist-sheet';
   const h=document.createElement('div');h.className='mod-sheet-title';h.textContent=ICON_STYLE_TITLE[lang]||ICON_STYLE_TITLE.en;sh.appendChild(h);
   ICON_STYLES.forEach(function(k){
     const b=document.createElement('button');b.className='ist-pick ist-'+k;
-    let tiles='';['forum','group','settings'].forEach(function(ic,i){tiles+='<div class="settings-icon-wrap" style="--tile:'+ICON_TILE_COLORS[i]+'"><span class="ms">'+ic+'</span></div>';});
+    const pal=k==='block'?ICON_BLOCK_COLORS:ICON_TILE_COLORS;
+    let tiles='';['forum','group','settings'].forEach(function(ic,i){tiles+='<div class="settings-icon-wrap" data-alt="'+(i%2)+'" style="--tile:'+pal[i]+'"><span class="ms">'+ic+'</span></div>';});
     b.innerHTML='<div class="ist-tiles">'+tiles+'</div><span class="ist-name"></span><span class="ms ist-check">'+(k===cur?'check_circle':'')+'</span>';
     b.querySelector('.ist-name').textContent=_iconStyleName(k);
     b.onclick=function(){closeModSheet();applyIconStyle(k);};
