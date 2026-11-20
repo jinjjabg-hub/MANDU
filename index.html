@@ -303,6 +303,36 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .settings-row:last-child{border-bottom:none;}
 .settings-icon-wrap{width:40px;height:40px;border-radius:50%;background:var(--primary-fixed);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .settings-icon-wrap .ms{font-size:20px;}
+/* ── 아이콘 스타일 (설정 → 화면 → 아이콘 스타일). :root[data-icons=X] 또는 미리보기 .ist-X 에 적용 ── */
+.ist-pick{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:none;border-bottom:1px solid var(--outline-variant);cursor:pointer;font-family:inherit;color:var(--on-surface);text-align:left;}
+.ist-pick .ist-tiles{display:flex;gap:8px;}
+.ist-pick .ist-name{flex:1;font-size:14px;font-weight:600;}
+.ist-pick .ist-check{color:var(--primary);}
+/* 듀오톤: 연한 보라 사각 타일 + 보라 선 */
+:root[data-icons=duotone] .settings-icon-wrap,.ist-duotone .settings-icon-wrap{border-radius:12px;background:var(--primary-fixed);background:color-mix(in srgb,var(--primary) 14%,transparent);color:var(--primary);}
+:root[data-icons=duotone] .settings-icon-wrap .ms,.ist-duotone .settings-icon-wrap .ms{font-variation-settings:'FILL' 0,'wght' 500;}
+:root[data-icons=duotone] .empty-emoji .ms,:root[data-icons=duotone] .search-empty-ico .ms{color:var(--primary);font-variation-settings:'FILL' 0,'wght' 400;}
+:root[data-icons=duotone] .nav-tab.active .ms{background:color-mix(in srgb,var(--primary) 14%,transparent);border-radius:10px;padding:2px 12px;}
+/* 글래스: 보라·핑크·하늘 그라데이션 유리 타일 + 흰 채운 아이콘 */
+:root[data-icons=glass] .settings-icon-wrap,.ist-glass .settings-icon-wrap{border-radius:12px;color:#fff;background:linear-gradient(135deg,#a78bfa 0%,#e9a8f5 55%,#93c5fd 100%);border:1px solid rgba(255,255,255,.55);box-shadow:0 4px 12px rgba(139,92,246,.30),inset 0 1px 0 rgba(255,255,255,.7),inset 0 -3px 8px rgba(255,255,255,.25);}
+:root[data-icons=glass] .settings-icon-wrap .ms,.ist-glass .settings-icon-wrap .ms{font-variation-settings:'FILL' 1,'wght' 400;text-shadow:0 1px 2px rgba(90,50,170,.30);}
+:root[data-icons=glass] .nav-tab.active .ms,:root[data-icons=glass] .empty-emoji .ms,:root[data-icons=glass] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;background:linear-gradient(135deg,#8b5cf6,#e879f9 55%,#60a5fa);-webkit-background-clip:text;background-clip:text;color:transparent;}
+/* 클레이 3D: 하늘색 말랑 타일 + 그림자 진 흰 아이콘 */
+:root[data-icons=clay] .settings-icon-wrap,.ist-clay .settings-icon-wrap{border-radius:14px;color:#fff;background:linear-gradient(145deg,#c6daf6,#93b5e3);box-shadow:3px 4px 10px rgba(70,105,160,.32),-2px -2px 6px rgba(255,255,255,.85),inset 1px 1px 2px rgba(255,255,255,.9),inset -2px -2px 4px rgba(70,105,160,.15);}
+:root[data-icons=clay] .settings-icon-wrap .ms,.ist-clay .settings-icon-wrap .ms{font-variation-settings:'FILL' 1,'wght' 400;filter:drop-shadow(1px 2px 1.5px rgba(40,70,130,.55));}
+:root[data-icons=clay] .nav-tab.active .ms,:root[data-icons=clay] .empty-emoji .ms,:root[data-icons=clay] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;color:#7ea3d8;filter:drop-shadow(1px 2px 1.5px rgba(60,95,150,.35));}
+:root[data-theme=dark][data-icons=clay] .settings-icon-wrap,[data-theme=dark] .ist-clay .settings-icon-wrap{background:linear-gradient(145deg,#4a5a7c,#34405c);box-shadow:3px 4px 10px rgba(0,0,0,.45),inset 1px 1px 2px rgba(255,255,255,.18),inset -2px -2px 4px rgba(0,0,0,.25);}
+/* 컬러: 칸마다 다른 색의 단색 타일 + 흰 채운 아이콘 */
+:root[data-icons=color] .settings-icon-wrap,.ist-color .settings-icon-wrap{border-radius:12px;color:#fff;background:var(--tile,#8b5cf6);box-shadow:inset 0 -3px 0 rgba(0,0,0,.10);}
+:root[data-icons=color] .settings-icon-wrap .ms,.ist-color .settings-icon-wrap .ms{font-variation-settings:'FILL' 1,'wght' 400;}
+:root[data-icons=color] .nav-tab.active .ms{font-variation-settings:'FILL' 1,'wght' 400;}
+:root[data-icons=color] .nav-tab.active:nth-child(1){color:#8b5cf6;}
+:root[data-icons=color] .nav-tab.active:nth-child(2){color:#ec4899;}
+:root[data-icons=color] .nav-tab.active:nth-child(3){color:#3b82f6;}
+:root[data-icons=color] .nav-tab.active:nth-child(4){color:#f97316;}
+:root[data-icons=color] .nav-tab.active::before{background:currentColor;}
+:root[data-icons=color] .empty-emoji .ms,:root[data-icons=color] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;color:#8b5cf6;}
+
 .settings-row-info{flex:1;min-width:0;}
 .settings-row-label{font-size:15px;font-weight:600;}
 .settings-row-sub{font-size:12px;color:var(--outline);margin-top:1px;}
@@ -938,6 +968,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div class="settings-icon-wrap"><span class="ms">dark_mode</span></div>
           <div class="settings-row-info"><div class="settings-row-label" data-i18n="settings_row_darkmode">다크 모드</div></div>
           <div class="toggle" id="dark-toggle"></div>
+        </div>
+        <div class="settings-row" onclick="openIconStylePicker()">
+          <div class="settings-icon-wrap"><span class="ms">palette</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="icon-style-label">아이콘 스타일</div>
+            <div class="settings-row-sub" id="icon-style-sub">선</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">chevron_right</span></div>
         </div>
       </div>
       <div class="settings-section-label">알림</div>
@@ -1676,6 +1714,51 @@ function toggleTheme(){
   });
 }
 initTheme();
+
+// ── 아이콘 스타일 ─────────────────────────────────────────
+// 기기별 저장(다크 모드와 같은 방식). 기본 = 선(line)
+const ICON_STYLES=['line','duotone','glass','clay','color'];
+const ICON_STYLE_NAMES={ko:{line:'선',duotone:'듀오톤',glass:'글래스',clay:'클레이 3D',color:'컬러'},
+  en:{line:'Line',duotone:'Duotone',glass:'Glass',clay:'Clay 3D',color:'Color'}};
+const ICON_STYLE_TITLE={ko:'아이콘 스타일',en:'Icon style',ja:'アイコンスタイル',zh:'图标样式',es:'Estilo de iconos',fr:'Style des icônes',de:'Symbolstil',vi:'Kiểu biểu tượng',th:'รูปแบบไอคอน',mn:'Дүрс тэмдгийн загвар',hi:'आइकन शैली',pt:'Estilo dos ícones',ar:'نمط الأيقونات',id:'Gaya ikon',it:'Stile icone',da:'Ikonstil'};
+const ICON_TILE_COLORS=['#8b5cf6','#ec4899','#3b82f6','#22c55e','#f97316','#14b8a6','#eab308','#6366f1'];
+function _iconStyle(){let v='line';try{v=localStorage.getItem('mandu_icon_style')||'line';}catch(e){}return ICON_STYLES.indexOf(v)>=0?v:'line';}
+function _iconStyleName(k){const L=(typeof _uiLang!=='undefined'&&_uiLang==='ko')?'ko':'en';return ICON_STYLE_NAMES[L][k];}
+function _paintIconTiles(){
+  // 컬러 스타일용: 설정 아이콘마다 순서대로 다른 색 지정
+  document.querySelectorAll('#main-screen .settings-icon-wrap').forEach(function(el,i){el.style.setProperty('--tile',ICON_TILE_COLORS[i%ICON_TILE_COLORS.length]);});
+}
+function _updateIconStyleRow(){
+  const lang=(typeof _uiLang!=='undefined')?_uiLang:'ko';
+  const lb=document.getElementById('icon-style-label');if(lb)lb.textContent=ICON_STYLE_TITLE[lang]||ICON_STYLE_TITLE.en;
+  const sb=document.getElementById('icon-style-sub');if(sb)sb.textContent=_iconStyleName(_iconStyle());
+}
+function applyIconStyle(k){
+  if(ICON_STYLES.indexOf(k)<0)k='line';
+  if(k==='line')document.documentElement.removeAttribute('data-icons');
+  else document.documentElement.setAttribute('data-icons',k);
+  try{localStorage.setItem('mandu_icon_style',k);}catch(e){}
+  _paintIconTiles();_updateIconStyleRow();
+}
+function openIconStylePicker(){
+  closeModSheet();
+  const cur=_iconStyle();
+  const lang=(typeof _uiLang!=='undefined')?_uiLang:'ko';
+  const bd=document.createElement('div');bd.id='mod-sheet-bd';bd.className='mod-sheet-bd';bd.onclick=closeModSheet;
+  const sh=document.createElement('div');sh.id='mod-sheet';sh.className='mod-sheet';
+  const h=document.createElement('div');h.className='mod-sheet-title';h.textContent=ICON_STYLE_TITLE[lang]||ICON_STYLE_TITLE.en;sh.appendChild(h);
+  ICON_STYLES.forEach(function(k){
+    const b=document.createElement('button');b.className='ist-pick ist-'+k;
+    let tiles='';['forum','group','settings'].forEach(function(ic,i){tiles+='<div class="settings-icon-wrap" style="--tile:'+ICON_TILE_COLORS[i]+'"><span class="ms">'+ic+'</span></div>';});
+    b.innerHTML='<div class="ist-tiles">'+tiles+'</div><span class="ist-name"></span><span class="ms ist-check">'+(k===cur?'check_circle':'')+'</span>';
+    b.querySelector('.ist-name').textContent=_iconStyleName(k);
+    b.onclick=function(){closeModSheet();applyIconStyle(k);};
+    sh.appendChild(b);
+  });
+  const c=document.createElement('button');c.className='mod-sheet-btn cancel';c.textContent=_L('취소','Cancel');c.onclick=closeModSheet;sh.appendChild(c);
+  document.body.appendChild(bd);document.body.appendChild(sh);
+}
+try{applyIconStyle(_iconStyle());}catch(e){}
 
 function showToast(msg){
   const el=document.getElementById('toast');
@@ -5552,6 +5635,7 @@ function t(key){const T=UI_T[_uiLang]||UI_T.ko;return T[key]||UI_T.ko[key]||key;
 
 function applyUILanguage(lang){
   _uiLang=lang||'ko';
+  try{_updateIconStyleRow();}catch(e){}
   document.documentElement.dir=(lang==='ar')?'rtl':'ltr';
   const T=UI_T[_uiLang]||UI_T.ko;
   try{renderLegalLabels();}catch(e){}
