@@ -131,7 +131,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .search-empty-ico{font-size:44px;margin-bottom:12px;}
 .search-empty-txt{font-size:14px;color:var(--outline);}
 
-#login-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:40px;background:var(--background);}
+#login-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:flex-start;gap:20px;padding:40px 40px calc(40px + var(--pwa-pad,0px));background:var(--background);min-height:0;overflow-y:auto;}
+/* 화면보다 내용이 길면 위·아래가 잘리지 않고 스크롤되게 (가운데 정렬은 auto 여백으로) */
+#login-screen>*{flex-shrink:0;}
+#login-screen>.login-logo{margin-top:auto;}
+#login-screen>#biz-footer{margin-bottom:auto;}
+/* 설치 배너가 떠 있을 때 목록 맨 아래(빈 화면 버튼 등)가 배너·탭바에 가리지 않게 */
+#main-screen .scroll-area{padding-bottom:var(--pwa-pad,0px);}
 .login-logo{width:140px;height:140px;animation:float 3s ease-in-out infinite;}
 @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
 .login-brand{font-size:32px;font-weight:800;letter-spacing:10px;color:var(--primary);}
@@ -397,6 +403,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .create-input:focus{border-color:var(--primary);}
 .create-input::placeholder{color:var(--outline);}
 .section-lbl{font-size:10px;font-weight:700;color:var(--outline);letter-spacing:1.5px;text-transform:uppercase;padding:8px 20px 4px;}
+.create-done-btn:disabled{opacity:.4;cursor:default;}
+.empty-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
+.empty-actions .empty-btn{margin-top:0;display:inline-flex;align-items:center;gap:6px;}
+.empty-btn.sub{background:var(--surface);color:var(--primary);border:1.5px solid var(--primary);}
 .create-done-btn{margin:12px 20px 24px;padding:15px;width:calc(100% - 40px);background:var(--primary);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
 #chat-screen{flex:1;display:none;flex-direction:column;min-height:0;position:relative;}
 .chat-hd{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
@@ -675,22 +685,20 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <circle cx="114" cy="94" r="5.5" fill="#6b38d4"/>
     <path d="M80,112 Q100,128 120,112" stroke="#6b38d4" stroke-width="4" fill="none" stroke-linecap="round"/>
   </svg>
-  <div class="id-title">나만의 MANDU ID</div>
-  <div class="id-sub">친구들이 나를 찾을 수 있는<br>나만의 고유 주소예요</div>
+  <div class="id-title" data-i18n="id_title">나만의 MANDU ID</div>
+  <div class="id-sub" data-i18n-html="id_sub_html">친구들이 나를 찾을 수 있는<br>나만의 고유 주소예요</div>
   <div class="id-input-wrap">
-    <div class="id-input-row">
+    <div class="id-input-row" dir="ltr">
       <span class="id-prefix">@</span>
-      <input id="mandu-id-input" type="text" placeholder="영문+숫자+_ (3~20자)" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      <input id="mandu-id-input" type="text" placeholder="영문+숫자+_ (3~20자)" data-i18n-placeholder="id_ph" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
     </div>
     <div id="id-check-msg" class="id-check-msg"></div>
-    <div class="id-hint">영문 소문자, 숫자, _ 만 사용 가능해요<br>한번 만들면 변경이 어려워요!</div>
+    <div class="id-hint" data-i18n-html="id_hint_html">영문 소문자, 숫자, _ 만 사용 가능해요<br>한번 만들면 변경이 어려워요!</div>
   </div>
-  <button class="id-confirm-btn" id="id-confirm-btn" onclick="createManduid()" disabled>시작하기</button>
+  <button class="id-confirm-btn" id="id-confirm-btn" onclick="createManduid()" disabled data-i18n="id_start_btn">시작하기</button>
   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:4px;">
-    <div style="font-size:12px;color:var(--outline);">이미 만두 ID가 있으신가요?</div>
-    <button onclick="retryFindManduid()" style="background:none;border:1.5px solid var(--primary);color:var(--primary);border-radius:100px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
-      내 계정 다시 불러오기
-    </button>
+    <div style="font-size:12px;color:var(--outline);" data-i18n="id_have">이미 만두 ID가 있으신가요?</div>
+    <button onclick="retryFindManduid()" style="background:none;border:1.5px solid var(--primary);color:var(--primary);border-radius:100px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;" data-i18n="id_reload_btn">내 계정 다시 불러오기</button>
   </div>
 </div>
 
@@ -711,10 +719,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </div>
   <div class="login-brand">MANDU</div>
   <div class="login-sub">Translation Messenger</div>
-  <div class="login-desc">언어가 달라도 <strong>대화는 하나로</strong></div>
+  <div class="login-desc" data-i18n-html="login_desc_html">언어가 달라도 <strong>대화는 하나로</strong></div>
   <button class="google-btn" id="loginBtn">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
-    <span id="google-login-lbl">Google로 시작하기</span>
+    <span id="google-login-lbl" data-i18n="login_google">Google로 시작하기</span>
   </button>
   <div class="inapp-only" style="width:100%;max-width:280px;font-size:12px;color:var(--outline);text-align:center;line-height:1.6;">
     <span id="inapp-google-hint">Google 로그인은 이 앱 안에서 막혀 있어요.</span>
@@ -737,17 +745,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 
   <div style="display:flex;align-items:center;gap:12px;width:100%;max-width:280px;">
     <div style="flex:1;height:1px;background:var(--outline-variant);"></div>
-    <div style="font-size:12px;color:var(--outline);font-weight:600;">또는</div>
+    <div style="font-size:12px;color:var(--outline);font-weight:600;" data-i18n="login_or">또는</div>
     <div style="flex:1;height:1px;background:var(--outline-variant);"></div>
   </div>
 
   <!-- 이메일 로그인 폼 -->
   <div id="email-login-form" style="width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px;">
-    <input id="email-input" type="email" placeholder="이메일" autocomplete="email"
+    <input id="email-input" type="email" placeholder="이메일" data-i18n-placeholder="login_email_ph" autocomplete="email"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'">
     <div style="position:relative;">
-      <input id="pw-input" type="password" placeholder="비밀번호" autocomplete="current-password"
+      <input id="pw-input" type="password" placeholder="비밀번호" data-i18n-placeholder="login_pw_ph" autocomplete="current-password"
         style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 44px 12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
         onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'"
         onkeydown="if(event.key==='Enter')emailLogin()">
@@ -758,34 +766,30 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     </div>
     <div id="email-login-msg" style="font-size:12px;font-weight:600;min-height:16px;padding:0 4px;"></div>
     <button onclick="emailLogin()"
-      style="width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
-      이메일로 시작하기
-    </button>
+      style="width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;" data-i18n="login_email_btn">이메일로 시작하기</button>
     <div style="display:flex;justify-content:space-between;padding:0 4px;">
-      <span onclick="showEmailSignup()" style="font-size:12px;color:var(--primary);font-weight:600;cursor:pointer;">회원가입</span>
-      <span onclick="sendPasswordReset()" style="font-size:12px;color:var(--outline);cursor:pointer;">비밀번호 찾기</span>
+      <span onclick="showEmailSignup()" style="font-size:12px;color:var(--primary);font-weight:600;cursor:pointer;" data-i18n="login_signup_link">회원가입</span>
+      <span onclick="sendPasswordReset()" style="font-size:12px;color:var(--outline);cursor:pointer;" data-i18n="login_forgot">비밀번호 찾기</span>
     </div>
   </div>
 
   <!-- 회원가입 폼 -->
   <div id="email-signup-form" style="width:100%;max-width:280px;display:none;flex-direction:column;gap:10px;">
-    <input id="signup-name-input" type="text" placeholder="이름 (닉네임)" autocomplete="nickname"
+    <input id="signup-name-input" type="text" placeholder="이름 (닉네임)" data-i18n-placeholder="signup_name_ph" autocomplete="nickname"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'">
-    <input id="signup-email-input" type="email" placeholder="이메일" autocomplete="email"
+    <input id="signup-email-input" type="email" placeholder="이메일" data-i18n-placeholder="login_email_ph" autocomplete="email"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'">
-    <input id="signup-pw-input" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="new-password"
+    <input id="signup-pw-input" type="password" placeholder="비밀번호 (6자 이상)" data-i18n-placeholder="signup_pw_ph" autocomplete="new-password"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'"
       onkeydown="if(event.key==='Enter')emailSignup()">
     <div id="email-signup-msg" style="font-size:12px;font-weight:600;min-height:16px;padding:0 4px;"></div>
     <button onclick="emailSignup()"
-      style="width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
-      가입하기
-    </button>
+      style="width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;" data-i18n="signup_btn">가입하기</button>
     <div style="text-align:center;">
-      <span onclick="showEmailLogin()" style="font-size:12px;color:var(--outline);cursor:pointer;">이미 계정이 있어요 → 로그인</span>
+      <span onclick="showEmailLogin()" style="font-size:12px;color:var(--outline);cursor:pointer;" data-i18n="signup_have_account">이미 계정이 있어요 → 로그인</span>
     </div>
   </div>
 
@@ -805,14 +809,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   <div class="guest-host-card">
     <div class="guest-host-avatar"><img id="guest-host-photo" src="" alt=""></div>
     <div class="guest-host-name" id="guest-host-name">—</div>
-    <div class="guest-host-sub"><svg class="mlogo" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg> MANDU로 대화 요청</div>
+    <div class="guest-host-sub"><svg class="mlogo" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg> <span data-i18n="guest_request">MANDU로 대화 요청</span></div>
   </div>
   <div class="guest-input-wrap">
-    <label class="guest-input-label">이름을 알려주세요</label>
-    <input class="guest-input" id="guest-name-input" type="text" placeholder="홍길동">
+    <label class="guest-input-label" for="guest-name-input" data-i18n="guest_name_label">이름을 알려주세요</label>
+    <input class="guest-input" id="guest-name-input" type="text" maxlength="30" autocomplete="nickname" placeholder="홍길동" data-i18n-placeholder="guest_name_ph">
   </div>
-  <button class="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기</button>
-  <div class="guest-login-hint">이미 계정이 있으신가요? <span onclick="showLoginFromGuest()" id="guest-login-lnk">로그인</span></div>
+  <button class="guest-start-btn" onclick="startGuestChat()" data-i18n="guest_start_btn">바로 대화 시작하기</button>
+  <div class="guest-login-hint"><b style="font-weight:inherit;" data-i18n="guest_have_account">이미 계정이 있으신가요?</b> <span onclick="showLoginFromGuest()" id="guest-login-lnk" data-i18n="guest_login">로그인</span></div>
 </div>
 
 <div id="main-screen">
@@ -927,7 +931,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
             <div class="spc-manduid" id="settings-manduid">@—</div>
             <div class="spc-email" id="settings-email">—</div>
           </div>
-          <button class="spc-edit" onclick="showProfile()"><span class="ms" style="font-size:16px;">edit</span> EDIT</button>
+          <button class="spc-edit" onclick="showProfile()"><span class="ms" style="font-size:16px;">edit</span> <span data-i18n="edit_btn">편집</span></button>
         </div>
       </div>
       <div class="settings-section-label" data-i18n="settings_section_connect">내 연결 수단</div>
@@ -1881,12 +1885,12 @@ document.addEventListener('DOMContentLoaded',function(){
         return;
       }
       if(cleaned.length<3){
-        setIdMsg('3자 이상 입력해주세요','var(--outline)');return;
+        setIdMsg(t('id_min3'),'var(--outline)');return;
       }
       if(cleaned.length>20){
-        setIdMsg('20자 이하로 입력해주세요','var(--error)');return;
+        setIdMsg(t('id_max20'),'var(--error)');return;
       }
-      setIdMsg('확인 중...','var(--outline)');
+      setIdMsg(t('id_checking'),'var(--outline)');
       idCheckTimeout=setTimeout(()=>checkManduidAvailable(cleaned),600);
     });
   }
@@ -1897,25 +1901,32 @@ function setIdMsg(msg,color){
   if(el){el.textContent=msg;el.style.color=color;}
 }
 
+// 운영자·공식 계정으로 오해할 수 있는 아이디는 만들 수 없다 (firestore.rules 의 manduidAllowed 와 같은 조건)
+function _manduidReserved(id){
+  return /^(root|system|staff|team|help|helpdesk|cs|manager|operator|notice|security|service)$/.test(id)
+    ||/^mandu_?(team|cs|help|staff|app|kr|notice|bot|manager)?$/.test(id)
+    ||/(admin|official|support)/.test(id);
+}
 async function checkManduidAvailable(id){
+  if(_manduidReserved(id)){setIdMsg(t('id_reserved'),'var(--error)');idAvailable=false;return;}
   try{
     const doc=await db.collection('manduid_index').doc(id).get();
     if(doc.exists){
-      setIdMsg('이미 사용 중인 ID예요','var(--error)');
+      setIdMsg(t('id_taken'),'var(--error)');
       idAvailable=false;
     }else{
-      setIdMsg('✓ 사용 가능한 ID예요!','var(--success)');
+      setIdMsg(t('id_available'),'var(--success)');
       idAvailable=true;
       document.getElementById('id-confirm-btn').disabled=false;
     }
   }catch(e){
-    setIdMsg('확인 실패. 다시 시도해주세요','var(--error)');
+    setIdMsg(t('id_check_fail'),'var(--error)');
   }
 }
 
 async function retryFindManduid(){
   if(!currentUser)return;
-  showToast('계정 정보를 다시 확인하는 중...');
+  showToast(t('id_reloading'));
   try{
     // 1단계: users 문서에서 manduid 직접 확인 (서버에서 강제 읽기)
     const userDoc=await db.collection('users').doc(currentUser.uid).get({source:'server'});
@@ -1924,7 +1935,7 @@ async function retryFindManduid(){
       currentManduid=userData.manduid;
       updateUIAfterLogin();
       showMain();
-      showToast('반가워요 @'+userData.manduid+'');
+      showToast(t('id_welcome_back').replace('{id}',userData.manduid));
       return;
     }
     // 2단계: manduid_index에서 역방향 조회
@@ -1935,9 +1946,9 @@ async function retryFindManduid(){
       currentManduid=foundId;
       updateUIAfterLogin();
       showMain();
-      showToast('반가워요 @'+foundId+'');
+      showToast(t('id_welcome_back').replace('{id}',foundId));
     }else{
-      showToast('새 만두 ID를 만들어주세요!');
+      showToast(t('id_make_new'));
     }
   }catch(e){
     console.error('retryFindManduid error:',e);
@@ -1949,27 +1960,28 @@ async function retryFindManduid(){
         currentManduid=ud2.manduid;
         updateUIAfterLogin();
         showMain();
-        showToast('반가워요 @'+ud2.manduid+'');
+        showToast(t('id_welcome_back').replace('{id}',ud2.manduid));
       }else{
-        showToast('오류가 발생했어요. 다시 시도해요');
+        showToast(t('id_error'));
       }
-    }catch(e2){showToast('오류가 발생했어요. 다시 시도해요');}
+    }catch(e2){showToast(t('id_error'));}
   }
 }
 
 async function createManduid(){
   if(!currentUser||!idAvailable)return;
   const id=document.getElementById('mandu-id-input').value.toLowerCase().replace(/[^a-z0-9_]/g,'');
-  if(id.length<3||id.length>20){showToast('3~20자로 입력해주세요');return;}
+  if(id.length<3||id.length>20){showToast(t('id_len'));return;}
+  if(_manduidReserved(id)){showToast(t('id_reserved'));return;}
 
   const btn=document.getElementById('id-confirm-btn');
   btn.disabled=true;
-  btn.textContent='저장 중...';
+  btn.textContent=t('id_saving');
 
   try{
     // 중복 최종 확인
     const existing=await db.collection('manduid_index').doc(id).get();
-    if(existing.exists){showToast('이미 사용 중인 ID예요');btn.disabled=false;btn.textContent='시작하기';return;}
+    if(existing.exists){showToast(t('id_taken'));btn.disabled=false;btn.textContent=t('id_start_btn');return;}
 
     // 저장
     await db.collection('manduid_index').doc(id).set({uid:currentUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
@@ -1979,12 +1991,12 @@ async function createManduid(){
     currentManduid=id;
     updateUIAfterLogin();
     showMain();
-    showToast('환영해요 @'+id+'');
+    showToast(t('welcome_toast').replace('{id}',id));
     setTimeout(afterNewAccountReferral,1200);
   }catch(e){
-    showToast('저장 실패. 다시 시도해요');
+    showToast(t('id_save_fail'));
     btn.disabled=false;
-    btn.textContent='시작하기';
+    btn.textContent=t('id_start_btn');
   }
 }
 
@@ -2027,9 +2039,7 @@ async function initFCM(){
         if(!doc.exists)return;
         const r=doc.data();
         const isGroup=r.type==='group';
-        const entries=r.memberNames?Object.entries(r.memberNames):[];
-        const otherEntry=entries.find(function(en){return en[0]!==currentUser.uid;});
-        const name=isGroup?((r.customerUid===currentUser.uid&&r.memberNames&&r.memberNames[r.storeUid])||r.name):(otherEntry?otherEntry[1]:t('chat_default_room_name'));
+        const name=_roomTitle(r);
         openRoom(roomId,name,r.photoURL||'',isGroup);
       }).catch(function(){});
     });
@@ -2038,11 +2048,34 @@ async function initFCM(){
   }
 }
 
-function markRead(roomId){
+// 안 읽은 수: 방의 msgSeq(메시지마다 +1) − readSeq[나](마지막으로 읽은 번호) + 예전 방식 unreadCount[나].
+// 규칙상 남의 칸(readSeq·unreadCount·optIn)은 쓸 수 없고, msgSeq 는 1씩만 늘릴 수 있다. 서버 배지도 같은 식.
+const _roomSeq={};
+function _seqOf(r){const n=r&&r.msgSeq;return typeof n==='number'?n:0;}
+function _unreadN(r,uid){
+  if(!r)return 0;
+  const rs=(r.readSeq&&typeof r.readSeq[uid]==='number')?r.readSeq[uid]:0;
+  const legacy=(r.unreadCount&&typeof r.unreadCount[uid]==='number')?r.unreadCount[uid]:0;
+  return Math.max(0,_seqOf(r)-rs)+Math.max(0,legacy);
+}
+// 메시지를 보낼 때 방 문서에 함께 쓰는 값: 메시지 번호 +1, 나는 읽은 것으로, 이 방 알림 받기(optIn) 표시.
+function _addSendCounters(incUpdate){
+  const me=currentUser.uid;
+  const known=Math.max(_roomSeq[currentRoomId]||0,_seqOf(_currentRoomData));
+  incUpdate.msgSeq=firebase.firestore.FieldValue.increment(1);
+  incUpdate.readSeq={[me]:known+1};
+  incUpdate.optIn={[me]:true};
+  _roomSeq[currentRoomId]=known+1;
+  return incUpdate;
+}
+function markRead(roomId,seq){
   if(!currentUser||!roomId)return;
-  const update={readBy:{[currentUser.uid]:firebase.firestore.FieldValue.serverTimestamp()}};
-  update.unreadCount={[currentUser.uid]:0}; // 중첩 객체로 (set(merge)에서 'unreadCount.uid' 키는 점 들어간 별도 칸이 됨)
-  db.collection('rooms').doc(roomId).set(update,{merge:true});
+  const me=currentUser.uid;
+  const update={readBy:{[me]:firebase.firestore.FieldValue.serverTimestamp()}};
+  update.unreadCount={[me]:0}; // 중첩 객체로 (set(merge)에서 'unreadCount.uid' 키는 점 들어간 별도 칸이 됨)
+  const known=Math.max(typeof seq==='number'?seq:0,_roomSeq[roomId]||0,roomId===currentRoomId?_seqOf(_currentRoomData):0);
+  if(known>0)update.readSeq={[me]:known};
+  db.collection('rooms').doc(roomId).set(update,{merge:true}).catch(function(e){console.warn('읽음 표시 실패:',e&&e.code);});
 }
 
 function updateReadReceipt(readBy){
@@ -2072,42 +2105,42 @@ function setEmailMsg(id,msg,isError){
 async function emailLogin(){
   const email=document.getElementById('email-input').value.trim();
   const pw=document.getElementById('pw-input').value;
-  if(!email||!pw){setEmailMsg('email-login-msg','이메일과 비밀번호를 입력해주세요',true);return;}
-  setEmailMsg('email-login-msg','로그인 중...',false);
+  if(!email||!pw){setEmailMsg('email-login-msg',t('msg_enter_email_pw'),true);return;}
+  setEmailMsg('email-login-msg',t('msg_logging_in'),false);
   try{
     await auth.signInWithEmailAndPassword(email,pw);
   }catch(e){
-    const msgs={'auth/user-not-found':'등록되지 않은 이메일이에요','auth/wrong-password':'비밀번호가 틀렸어요',
-      'auth/invalid-email':'이메일 형식이 올바르지 않아요','auth/too-many-requests':'잠시 후 다시 시도해주세요',
-      'auth/invalid-credential':'이메일 또는 비밀번호가 틀렸어요'};
-    setEmailMsg('email-login-msg',msgs[e.code]||'로그인 실패: '+e.message,true);
+    const msgs={'auth/user-not-found':t('msg_user_not_found'),'auth/wrong-password':t('msg_wrong_pw'),
+      'auth/invalid-email':t('msg_invalid_email'),'auth/too-many-requests':t('msg_too_many'),
+      'auth/invalid-credential':t('msg_invalid_cred')};
+    setEmailMsg('email-login-msg',msgs[e.code]||t('msg_login_fail')+e.message,true);
   }
 }
 async function emailSignup(){
   const name=document.getElementById('signup-name-input').value.trim();
   const email=document.getElementById('signup-email-input').value.trim();
   const pw=document.getElementById('signup-pw-input').value;
-  if(!name){setEmailMsg('email-signup-msg','이름을 입력해주세요',true);return;}
-  if(!email){setEmailMsg('email-signup-msg','이메일을 입력해주세요',true);return;}
-  if(pw.length<6){setEmailMsg('email-signup-msg','비밀번호는 6자 이상이에요',true);return;}
-  setEmailMsg('email-signup-msg','가입 중...',false);
+  if(!name){setEmailMsg('email-signup-msg',t('guest_name_required'),true);return;}
+  if(!email){setEmailMsg('email-signup-msg',t('msg_enter_email'),true);return;}
+  if(pw.length<6){setEmailMsg('email-signup-msg',t('msg_pw_short'),true);return;}
+  setEmailMsg('email-signup-msg',t('msg_signing_up'),false);
   try{
     window._pendingDisplayName=name; // 가입 직후 로그인 처리가 먼저 돌아도 이름을 다시 묻지 않도록
     const cred=await auth.createUserWithEmailAndPassword(email,pw);
     await cred.user.updateProfile({displayName:name,photoURL:''});
   }catch(e){
-    const msgs={'auth/email-already-in-use':'이미 사용 중인 이메일이에요',
-      'auth/invalid-email':'이메일 형식이 올바르지 않아요','auth/weak-password':'비밀번호가 너무 짧아요'};
-    setEmailMsg('email-signup-msg',msgs[e.code]||'가입 실패: '+e.message,true);
+    const msgs={'auth/email-already-in-use':t('msg_email_in_use'),
+      'auth/invalid-email':t('msg_invalid_email'),'auth/weak-password':t('msg_weak_pw')};
+    setEmailMsg('email-signup-msg',msgs[e.code]||t('msg_signup_fail')+e.message,true);
   }
 }
 async function sendPasswordReset(){
   const email=document.getElementById('email-input').value.trim();
-  if(!email){setEmailMsg('email-login-msg','이메일을 먼저 입력해주세요',true);return;}
+  if(!email){setEmailMsg('email-login-msg',t('msg_email_first'),true);return;}
   try{
     await auth.sendPasswordResetEmail(email);
-    setEmailMsg('email-login-msg','재설정 메일을 보냈어요 ✓',false);
-  }catch(e){setEmailMsg('email-login-msg','전송 실패. 이메일을 확인해주세요',true);}
+    setEmailMsg('email-login-msg',t('msg_reset_sent'),false);
+  }catch(e){setEmailMsg('email-login-msg',t('msg_reset_fail'),true);}
 }
 function showEmailSignup(){
   document.getElementById('email-login-form').style.display='none';
@@ -2145,6 +2178,7 @@ async function confirmDeleteAccount(){
     await db.collection('friends').doc(user.uid).delete().catch(function(){});
     await db.collection('public_profiles').doc(user.uid).delete().catch(function(){});
     await db.collection('discover_profiles').doc(user.uid).delete().catch(function(){});
+    if(user.email)await db.collection('cardbook_index').doc(user.email.toLowerCase()).delete().catch(function(){});
     await db.collection('users').doc(user.uid).delete();
     await user.delete();
     showToast('탈퇴가 완료됐어요.');
@@ -2190,9 +2224,12 @@ function buildManduidBase(email){
   let b=(email||'').split('@')[0].toLowerCase()
     .replace(/[.\-+]/g,'_').replace(/[^a-z0-9_]/g,'')
     .replace(/^[_0-9]+/,'').replace(/_+/g,'_').replace(/^_|_$/g,'');
+  b=b.replace(/admin|official|support/g,'').replace(/_+/g,'_').replace(/^_|_$/g,'');
   if(!b)b='user';
   if(b.length<3)b=b+'_mandu';
-  return b.substring(0,18);
+  b=b.substring(0,18);
+  if(_manduidReserved(b))b=(b+'_1').substring(0,20);
+  return b;
 }
 async function selectInitialLang(lang){
   if(!_pendingNewUser)return;
@@ -2253,6 +2290,8 @@ auth.onAuthStateChanged(async function(user){
       await openGuestRoom();
       return;
     }
+    // 링크 없이 다시 연 손님(익명 로그인이 남아 있음): 이름을 다시 묻지 않고 하던 대화방으로 보낸다
+    if(user.isAnonymous){await resumeGuest();return;}
     isGuest=false;
 
     // 전화번호·애플·카카오 계정은 이름이 비어 있을 수 있어 먼저 받는다
@@ -2285,7 +2324,7 @@ auth.onAuthStateChanged(async function(user){
           currentManduid=foundId;
           updateUIAfterLogin();
           showMain();
-          showToast('반가워요 @'+foundId+'');
+          showToast(t('id_welcome_back').replace('{id}',foundId));
           return;
         }
       }catch(e){}
@@ -2320,6 +2359,8 @@ auth.onAuthStateChanged(async function(user){
   }else{
     if(heartbeatInterval){clearInterval(heartbeatInterval);heartbeatInterval=null;}
     currentUser=null;currentManduid=null;
+    // 로그인 전 화면(손님·온보딩·로그인)도 화면 언어를 맞춘다: 손님은 브라우저 언어, 그 외엔 이 기기에서 마지막으로 쓴 언어 → 브라우저 언어
+    applyUILanguage(isGuest?detectBrowserLang():(_lastUILang()||detectBrowserLang()));
     if(isGuest&&joinCode){
       await loadInviteInfo();
       show('guest-screen');
@@ -2375,7 +2416,8 @@ async function syncPublicProfile(){
       photoURL:String(u.photoURL||currentUser.photoURL||'').slice(0,500),
       manduid:String(currentManduid||u.manduid||'').slice(0,20),
       isGuest:!!(currentUser.isAnonymous||u.isGuest),
-      store:_publicStore(u.store),
+      // 매장 설정을 한 번이라도 저장한 회원만 store 를 싣는다(active: 익명 손님방을 받는 매장 표시 — 주인 번역 한도 사용).
+      ...(u.store&&!currentUser.isAnonymous?{store:Object.assign({active:true},_publicStore(u.store))}:{}),
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
   }catch(e){console.warn('공개 명함 저장 실패:',e&&e.code);}
@@ -2393,7 +2435,7 @@ async function loadGuestHostInfo(){
 
 async function startGuestChat(){
   const name=document.getElementById('guest-name-input').value.trim();
-  if(!name){showToast('이름을 입력해주세요');return;}
+  if(!name){showToast(t('guest_name_required'));document.getElementById('guest-name-input').focus();return;}
   try{
     // 로그인 직후 바로 대화방이 만들어지므로, 이름을 먼저 저장해 둬야 방에 손님 이름이 들어간다
     localStorage.setItem('mandu_guest_name',name);
@@ -2403,7 +2445,7 @@ async function startGuestChat(){
       isGuest:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
     localStorage.setItem('mandu_guest_name',name);
-  }catch(e){showToast('오류가 발생했어요.');}
+  }catch(e){showToast(t('guest_error'));}
 }
 
 // ── 브라우저 언어 자동 감지 (게스트 입장 시 UX/번역 언어를 자동으로 맞추기 위함) ──
@@ -2418,7 +2460,37 @@ function detectBrowserLang(fallback){
   return fallback===undefined?'en':fallback;
 }
 
-async function openGuestRoom(){
+async function resumeGuest(){
+  isGuest=true;
+  applyUILanguage(localStorage.getItem('mandu_ui_lang_'+currentUser.uid)||detectBrowserLang());
+  let docs=[];
+  try{docs=(await db.collection('rooms').where('members','array-contains',currentUser.uid).get()).docs;}catch(e){console.warn('손님 대화방 조회 실패:',e&&e.code);}
+  const ms=function(d){const lt=d.data().lastMessageTime;return lt&&lt.toMillis?lt.toMillis():0;};
+  docs.sort(function(a,b){return ms(b)-ms(a);});
+  const last=docs[0];
+  if(!last){
+    // 대화방이 없는 익명 계정이면 평소 첫 화면으로
+    isGuest=false;
+    if(!localStorage.getItem('mandu_onboarding_done'))showOnboarding();else show('login-screen');
+    return;
+  }
+  const r=last.data();
+  if(r.storeUid&&r.storeUid!==currentUser.uid){
+    hostUID=r.storeUid;
+    loadGuestHostInfo(); // 뒤로 가기 했을 때 보이는 손님 화면용
+    // 찾은 방 그대로 연다 — 그 사이 매장 설정이 바뀌어도 방 ID(guest_/store_)를 다시 계산해 빈 새 방으로 가지 않게
+    await openGuestRoom(last.id);
+    return;
+  }
+  // 그룹 초대로 들어간 방
+  const nm=r.name||_L('그룹 대화','Group chat');
+  _setGuestHost({displayName:nm});
+  const sub=document.querySelector('#guest-screen .guest-host-sub');
+  if(sub){const st=sub.querySelector('span');if(st){st.removeAttribute('data-i18n');st.textContent=_L('그룹 대화','Group chat');}}
+  openRoom(last.id,nm,'',r.type==='group');
+}
+
+async function openGuestRoom(resumeRoomId){
   if(!currentUser||!hostUID)return;
   try{
     const host=await _getProfile(hostUID);
@@ -2431,7 +2503,7 @@ async function openGuestRoom(){
     applyUILanguage(detectedLang);
     const myLangEl=document.getElementById('my-lang');
     if(myLangEl)myLangEl.value=detectedLang;
-    await openStoreRoom(host,hostUID);
+    await openStoreRoom(host,hostUID,resumeRoomId);
   }catch(e){showToast('오류가 발생했어요');}
 }
 
@@ -2458,7 +2530,7 @@ function upgradeToGoogle(){
 function showLoginFromGuest(){
   show('login-screen');
   const b=document.getElementById('login-back-guest');
-  if(b){b.style.display='block';b.textContent='← '+_L('로그인 없이 바로 대화하기','Chat without signing in');}
+  if(b){b.style.display='block';b.textContent='← '+t('login_back_guest');}
 }
 function backToGuest(){
   const b=document.getElementById('login-back-guest');if(b)b.style.display='none';
@@ -2484,15 +2556,26 @@ async function loadCardbookConsent(){
     const d=await db.collection('users').doc(currentUser.uid).get();
     _cardbookConsent=!!(d.exists&&d.data().cardbookConsent===true);
     renderCardbookConsent();
+    // 예전 방식(users 목록 조회) 동의자 → cardbook_index 로 옮기고, 만두ID가 바뀌었으면 맞춘다
+    const email=(currentUser.email||'').toLowerCase();
+    if(_cardbookConsent&&email&&currentUser.emailVerified){
+      db.collection('cardbook_index').doc(email).set({uid:currentUser.uid,manduid:String(currentManduid||''),updatedAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(function(){});
+      if(d.data().emailLower)db.collection('users').doc(currentUser.uid).set({emailLower:firebase.firestore.FieldValue.delete()},{merge:true}).catch(function(){});
+    }
   }catch(e){}
 }
 async function toggleCardbookConsent(){
   if(!currentUser||currentUser.isAnonymous)return;
   const next=!_cardbookConsent;
   try{
-    const data={cardbookConsent:next};
-    if(next)data.emailLower=(currentUser.email||'').toLowerCase();
-    await db.collection('users').doc(currentUser.uid).set(data,{merge:true});
+    // 카드북은 cardbook_index/{이메일} 한 장(uid·만두ID만)으로 찾는다 — users 문서는 본인만 읽을 수 있다.
+    const email=(currentUser.email||'').toLowerCase();
+    const ref=email?db.collection('cardbook_index').doc(email):null;
+    if(next){
+      if(!ref||!currentUser.emailVerified)throw new Error('no verified email');
+      await ref.set({uid:currentUser.uid,manduid:String(currentManduid||''),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    }else if(ref){await ref.delete().catch(function(){});}
+    await db.collection('users').doc(currentUser.uid).set({cardbookConsent:next,emailLower:firebase.firestore.FieldValue.delete()},{merge:true});
     _cardbookConsent=next;
     renderCardbookConsent();
     showToast(t(next?'cardbook_consent_on':'cardbook_consent_off'));
@@ -3288,7 +3371,7 @@ async function _isFirstOpen(roomId){
 }
 async function _postAutoMsg(roomId,asUid,name,text,kind){
   await db.collection('rooms').doc(roomId).collection('messages').add({
-    text:String(text).slice(0,500),asUid:asUid,auto:kind,displayName:name||'',
+    text:String(text).slice(0,500),asUid:asUid,auto:kind,
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
 }
@@ -3320,31 +3403,54 @@ async function _autoAway(){
   _awayBusy=false;
 }
 // 매장 링크·QR로 들어온 손님의 대화방. 직원이 있으면 주인+직원이 함께 들어가는 방으로 만든다.
-async function openStoreRoom(host,hostUid){
+async function openStoreRoom(host,hostUid,resumeRoomId){
   const me=currentUser.uid;
   const myName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
   const staff=forceDM?[]:_storeStaff(host,hostUid);
   const anon=!!currentUser.isAnonymous;
-  const roomId=(anon?'guest_':'store_')+me+'_'+hostUid;
+  // 익명 손님방(guest_)은 주인의 번역 한도를 쓴다 — 주인이 매장 설정을 켠 경우에만(규칙·서버도 같은 조건).
+  // 매장이 아닌 회원의 링크로 들어온 익명 손님은 store_ 방(손님 본인 한도)으로 연다.
+  const paidByHost=anon&&_storeActive(host&&host.store);
+  const roomId=resumeRoomId||((paidByHost?'guest_':'store_')+me+'_'+hostUid);
+  const ref=db.collection('rooms').doc(roomId);
   const firstOpen=await _isFirstOpen(roomId);
-  const data={
-    type:'direct',members:[me,hostUid],
-    memberNames:{[me]:myName,[hostUid]:host.displayName||''},
-    memberPhotos:{[me]:currentUser.photoURL||'',[hostUid]:host.photoURL||''},
-    lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),
-    storeUid:hostUid,customerUid:me,staff:staff
-  };
-  if(firstOpen)data.lastMessage='';
-  if(anon)data.isGuestRoom=true;
-  if(staff.length){
-    data.type='group';data.name=myName;data.members=[me,hostUid].concat(staff);
-    const docs=await Promise.all(staff.map(function(u){return _profileRef(u).get().catch(function(){return null;});}));
-    docs.forEach(function(sd,i){const u=sd&&sd.exists?sd.data():{};data.memberNames[staff[i]]=u.displayName||'';data.memberPhotos[staff[i]]=u.photoURL||'';});
-  }
-  await db.collection('rooms').doc(roomId).set(data,{merge:true});
-  // 예전에 직원이 함께 있던 방이면, 남아 있는 직원 이름·사진·그룹 이름을 지워 1:1 방으로 완전히 되돌린다
-  if(forceDM&&!firstOpen){
-    try{await db.collection('rooms').doc(roomId).update({memberNames:data.memberNames,memberPhotos:data.memberPhotos,name:firebase.firestore.FieldValue.delete()});}catch(e){console.warn('1:1 방 정리 실패:',e);}
+  const members=[me,hostUid].concat(staff);
+  const isGroup=staff.length>0;
+  const staffDocs=isGroup?await Promise.all(staff.map(function(u){return _profileRef(u).get().catch(function(){return null;});})):[];
+  const staffInfo={};
+  staffDocs.forEach(function(sd,i){const u=sd&&sd.exists?sd.data():{};staffInfo[staff[i]]={n:u.displayName||'',p:u.photoURL||''};});
+  let prev=null;
+  try{const snap=await ref.get();prev=snap.exists?snap.data():null;}catch(e){prev=null;}
+  if(!prev){
+    const data={
+      type:isGroup?'group':'direct',members:members,
+      memberNames:{[me]:myName,[hostUid]:host.displayName||''},
+      memberPhotos:{[me]:currentUser.photoURL||'',[hostUid]:host.photoURL||''},
+      lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessage:'',
+      storeUid:hostUid,customerUid:me,staff:staff,optIn:{[me]:true}
+    };
+    if(paidByHost)data.isGuestRoom=true;
+    if(isGroup){
+      data.name=myName.slice(0,100);
+      staff.forEach(function(u){data.memberNames[u]=staffInfo[u].n;data.memberPhotos[u]=staffInfo[u].p;});
+    }
+    await ref.set(data);
+  }else{
+    // 이미 있는 방: 내 칸·직원 구성만 맞춘다. 남(주인·남아 있는 직원)의 이름·사진 칸은 규칙상 바꿀 수 없다.
+    const FV=firebase.firestore.FieldValue;
+    const old=prev.members||[];
+    const upd={members:members,staff:staff,type:isGroup?'group':'direct',
+      ['memberNames.'+me]:myName,['memberPhotos.'+me]:currentUser.photoURL||'',['optIn.'+me]:true};
+    members.forEach(function(u){
+      if(old.indexOf(u)>=0)return;
+      const info=u===hostUid?{n:host.displayName||'',p:host.photoURL||''}:(staffInfo[u]||{n:'',p:''});
+      upd['memberNames.'+u]=info.n;upd['memberPhotos.'+u]=info.p;
+    });
+    // 빠진 직원의 이름·사진 칸은 지워 1:1 방으로 완전히 되돌린다
+    old.forEach(function(u){if(members.indexOf(u)<0){upd['memberNames.'+u]=FV.delete();upd['memberPhotos.'+u]=FV.delete();}});
+    if(isGroup){if(!prev.name)upd.name=myName.slice(0,100);}
+    else if('name' in prev)upd.name=FV.delete();
+    try{await ref.update(upd);}catch(e){console.warn('매장 방 갱신 실패:',e&&e.code);}
   }
   openRoom(roomId,host.displayName,host.photoURL,false);
   if(firstOpen)_autoGreet(roomId,hostUid,host);
@@ -3544,13 +3650,13 @@ function initLoginOptions(cfg){
   set('kakao-login-btn',on('kakao'));set('apple-login-btn',on('apple'));set('phone-login-btn',on('phone'));
   set('extra-logins',on('kakao')||on('apple')||on('phone'));
   const txt=function(id,v){const el=document.getElementById(id);if(el)el.textContent=v;};
-  txt('kakao-login-lbl',_L('카카오로 시작하기','Continue with Kakao'));
-  txt('guest-login-lnk',_L('로그인','Sign in'));
-  if(window.MANDU_INAPP)txt('google-login-lbl',_L('Google로 시작하기 (Chrome·Safari에서 열림)','Continue with Google (opens in Chrome/Safari)'));
-  txt('inapp-google-hint',_L('카카오톡·네이버 앱 안에서는 Google 로그인이 막혀 있어서, 버튼을 누르면 Chrome·Safari로 열려요. ','Google sign-in is blocked inside this app, so the button opens Chrome/Safari. '));
-  txt('inapp-open-lnk',_L('Chrome·Safari로 열기','Open in Chrome/Safari'));
-  txt('apple-login-lbl',_L('Apple로 시작하기','Continue with Apple'));
-  txt('phone-login-lbl',_L('전화번호로 시작하기','Continue with phone number'));
+  txt('kakao-login-lbl',t('login_kakao'));
+  txt('guest-login-lnk',t('guest_login'));
+  if(window.MANDU_INAPP)txt('google-login-lbl',t('login_google_inapp'));
+  txt('inapp-google-hint',t('login_inapp_hint'));
+  txt('inapp-open-lnk',t('login_inapp_open'));
+  txt('apple-login-lbl',t('login_apple'));
+  txt('phone-login-lbl',t('login_phone'));
 }
 function _loginErr(e){
   console.error('로그인 실패:',e);
@@ -3697,12 +3803,12 @@ function askDisplayName(){
     const sh=document.createElement('div');sh.className='mod-sheet phone-sheet';sh.id='name-sheet';
     sh.innerHTML='<div class="mod-sheet-title"></div><div style="padding:0 8px 4px;"><div class="row"><input id="name-ask-input" type="text" maxlength="30" autocomplete="nickname"></div><button class="primary" id="name-ask-btn"></button><div class="msg" id="name-ask-msg"></div></div>';
     document.body.appendChild(bd);document.body.appendChild(sh);
-    sh.querySelector('.mod-sheet-title').textContent=_L('대화에 표시할 이름을 알려주세요','What name should others see?');
-    const input=document.getElementById('name-ask-input');input.placeholder=_L('이름 (닉네임)','Name');
-    const btn=document.getElementById('name-ask-btn');btn.textContent=_L('시작하기','Continue');
+    sh.querySelector('.mod-sheet-title').textContent=t('name_ask_title');
+    const input=document.getElementById('name-ask-input');input.placeholder=t('name_ask_ph');
+    const btn=document.getElementById('name-ask-btn');btn.textContent=t('name_ask_btn');
     const done=function(){
       const v=input.value.trim();
-      if(!v){const m=document.getElementById('name-ask-msg');m.textContent=_L('이름을 입력해주세요','Please enter a name');m.className='msg err';return;}
+      if(!v){const m=document.getElementById('name-ask-msg');m.textContent=t('guest_name_required');m.className='msg err';return;}
       bd.remove();sh.remove();resolve(v.slice(0,30));
     };
     btn.onclick=done;input.onkeydown=function(e){if(e.key==='Enter')done();};
@@ -3770,7 +3876,8 @@ async function showRoomInvite(reset){
 async function loadInviteInfo(){
   const nameEl=document.getElementById('guest-host-name'),photo=document.getElementById('guest-host-photo');
   const sub=document.querySelector('#guest-screen .guest-host-sub');
-  if(sub)sub.textContent=_L('그룹 대화에 초대받았어요','You are invited to a group chat');
+  const subTxt=sub&&sub.querySelector('span');
+  if(subTxt){subTxt.removeAttribute('data-i18n');subTxt.textContent=_L('그룹 대화에 초대받았어요','You are invited to a group chat');} // 화면 언어가 바뀌어도 초대 문구를 덮어쓰지 않도록
   if(photo)photo.src=DEFAULT_AVATAR;
   const r=await _serverPost('/api/rooms/invite-info',{code:joinCode},false);
   if(r.ok){
@@ -3805,7 +3912,7 @@ async function joinByInvite(){
       const msg=t('addmember_system_msg').replace('{names}',myName||_L('새 멤버','A new member'));
       const roomRef=db.collection('rooms').doc(r.data.roomId);
       try{
-        await roomRef.collection('messages').add({type:'system',text:msg,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        await roomRef.collection('messages').add({type:'system',kind:'join',uids:[currentUser.uid],createdAt:firebase.firestore.FieldValue.serverTimestamp()});
         await roomRef.set({lastMessage:msg,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
       }catch(e){console.warn('입장 메시지 실패:',e);}
     }
@@ -3843,7 +3950,7 @@ function loadRooms(){
       if(snap.empty){
         _renderGroupCards([]);
         sub.textContent=t('chats_empty_title');
-        list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc')+'</div></div>';
+        list.innerHTML=_chatsEmptyHTML();
         return;
       }
       const docs=snap.docs.filter(function(d){return _roomVisible(d);}).sort(function(a,b){
@@ -3874,8 +3981,8 @@ function loadRooms(){
         if(isRoomMuted(d.id))return sum;
         const r=d.data();const rb=r.readBy||{};const mr=rb[currentUser.uid];
         const isU=r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
-        const n=(r.unreadCount&&r.unreadCount[currentUser.uid])||0;
-        return sum+(n>0?n:(isU?1:0));
+        const n=_unreadN(r,currentUser.uid);
+        return sum+(isU?Math.max(n,1):0);
       },0);
       if('setAppBadge' in navigator){
         if(badgeCount>0)navigator.setAppBadge(badgeCount).catch(function(){});
@@ -3884,13 +3991,13 @@ function loadRooms(){
       sub.textContent=unread>0?t('chats_unread_count').replace('{n}',unread):t('chats_room_count').replace('{n}',docs.length);
       if(!docs.length){
         sub.textContent=t('chats_empty_title');
-        list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc')+'</div></div>';
+        list.innerHTML=_chatsEmptyHTML();
         return;
       }
       docs.forEach(function(doc){
         const r=doc.data();
         const isGroup=r.type==='group';
-        const name=isGroup?((r.customerUid===currentUser.uid&&r.memberNames&&r.memberNames[r.storeUid])||r.name):(r.memberNames&&Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})?Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})[1]:t('chat_default_room_name'));
+        const name=_roomTitle(r);
         const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).filter(function(e){return e[0]!==currentUser.uid;})[0]?.[1]:'';
         const partnerUid=!isGroup?Object.keys(r.memberNames||{}).find(function(k){return k!==currentUser.uid;}):null;
         const rb=r.readBy||{};const mr=rb[currentUser.uid];
@@ -3902,7 +4009,7 @@ function loadRooms(){
           '<div class="av-wrap"><div class="av">'+(_safeUrl(photo)?'<img src="'+_esc(_safeUrl(photo))+'" alt="">':( isGroup?'<span class="ms">group</span>':'<span class="ms">person</span>'))+'</div></div>'+
           '<div class="room-info"><div class="room-name-row"><span class="room-name">'+_esc(name)+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
           '<div class="room-last">'+(r.lastMessage?_esc(r.lastMessage):t('chat_start_hint'))+'</div></div>'+
-          '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'<button class="room-del" title="'+_L('삭제','Delete')+'"><span class="ms">delete</span></button></div>';
+          '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+Math.min(Math.max(_unreadN(r,currentUser.uid),1),999)+'</span>':'')+'<button class="room-del" title="'+_L('삭제','Delete')+'"><span class="ms">delete</span></button></div>';
         item.querySelector('.room-del').onclick=function(e){e.stopPropagation();deleteRoom(doc.id,name);};
         item.onclick=function(){openRoom(doc.id,name,photo,isGroup);};
         list.appendChild(item);
@@ -3974,6 +4081,53 @@ function _renderGroupCards(docs){
     c.onclick=function(){openRoom(d.id,name,'',true);};
     box.insertBefore(c,addCard);
   });
+}
+// 방 멤버 이름: 공개 명함(usersMap) → 방의 memberNames 순. 메시지에 적힌 이름은 쓰지 않는다.
+function _memberName(uid){
+  if(!uid)return '';
+  if(currentUser&&uid===currentUser.uid)return currentUser.displayName||localStorage.getItem('mandu_guest_name')||'';
+  const u=usersMap[uid];
+  if(u&&u.displayName)return u.displayName;
+  if(_nameCache[uid]&&_nameCache[uid].n)return _nameCache[uid].n;
+  const names=(_currentRoomData&&_currentRoomData.memberNames)||{};
+  if(!_nameCache[uid]){ // 아직 모르는 사람이면 공개 명함을 한 번 받아 두고 다음 화면부터 쓴다
+    _nameCache[uid]={n:''};
+    _getProfile(uid).then(function(p){if(p&&p.displayName)_nameCache[uid].n=String(p.displayName);});
+  }
+  return names[uid]||'';
+}
+const _nameCache={};
+// 방 목록·알림에서 보이는 방 이름. 1:1 방은 상대의 공개 명함 이름을 먼저 쓴다(방 문서의 이름은 예전 값이 남아 있을 수 있음).
+function _roomOtherUid(r){
+  const me=currentUser&&currentUser.uid;
+  return (r.members||[]).find(function(u){return u!==me;})||Object.keys(r.memberNames||{}).find(function(k){return k!==me;})||null;
+}
+function _roomTitle(r){
+  const me=currentUser&&currentUser.uid;
+  if(r.type==='group'){
+    if(r.customerUid===me&&r.storeUid)return (usersMap[r.storeUid]&&usersMap[r.storeUid].displayName)||(r.memberNames&&r.memberNames[r.storeUid])||r.name||'';
+    return r.name||_L('그룹 대화','Group chat');
+  }
+  const p=_roomOtherUid(r);
+  return (p&&usersMap[p]&&usersMap[p].displayName)||(p&&r.memberNames&&r.memberNames[p])||t('chat_default_room_name');
+}
+// 손님(익명) 방을 받는 매장인지 — firestore.rules 의 storeActive 와 같은 조건
+function _storeActive(st){
+  return !!(st&&(st.active===true||st.greetOn===true||st.awayOn===true||(st.quick||[]).length>0||(st.staff||[]).length>0));
+}
+// 방 문서가 이미 있는지 (없으면 규칙상 읽기 거부 → 없음으로 본다)
+async function _roomExists(ref){
+  try{return (await ref.get()).exists;}catch(e){return false;}
+}
+// 방이 이미 있으면 내 이름·사진 칸만 맞춘다(남의 칸은 규칙상 바꿀 수 없음)
+async function _touchMyRoomFields(ref){
+  const me=currentUser.uid;
+  const myName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'';
+  await ref.set({memberNames:{[me]:myName},memberPhotos:{[me]:currentUser.photoURL||''}},{merge:true});
+}
+function _systemMsgText(d){
+  const names=(Array.isArray(d.uids)?d.uids:[]).slice(0,10).map(function(u){return _memberName(u)||_L('새 멤버','A new member');}).join(', ');
+  return t('addmember_system_msg').replace('{names}',names);
 }
 function _esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 // 외부에서 온 주소는 http(s)만 허용 — javascript: 같은 위험한 주소 차단 (XSS 방지)
@@ -4090,24 +4244,43 @@ async function startDM(partner){
   const ids=[currentUser.uid,partner.uid].sort();
   const roomId=ids.join('_');
   const firstOpen=await _isFirstOpen(roomId);
-  await db.collection('rooms').doc(roomId).set({
-    type:'direct',members:ids,
-    memberNames:{[currentUser.uid]:currentUser.displayName,[partner.uid]:partner.displayName},
-    memberPhotos:{[currentUser.uid]:currentUser.photoURL||'',[partner.uid]:partner.photoURL||''},
-    lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
+  const ref=db.collection('rooms').doc(roomId);
+  let created=false;
+  if(!(await _roomExists(ref))){
+    try{
+      await ref.set({
+        type:'direct',members:ids,
+        memberNames:{[currentUser.uid]:currentUser.displayName||'',[partner.uid]:partner.displayName||''},
+        memberPhotos:{[currentUser.uid]:currentUser.photoURL||'',[partner.uid]:partner.photoURL||''},
+        optIn:{[currentUser.uid]:true},
+        lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      created=true;
+    }catch(e){console.warn('1:1 방 만들기 실패(이미 있을 수 있음):',e&&e.code);}
+  }
+  if(!created){try{await _touchMyRoomFields(ref);}catch(e){console.warn('1:1 방 갱신 실패:',e&&e.code);}}
   openRoom(roomId,partner.displayName,partner.photoURL,false);
   if(firstOpen)_autoGreet(roomId,partner.uid,partner);
 }
 
+// 빈 화면의 주 행동: 내 QR 보기 / 링크 복사 (친구·손님이 생겨야 대화가 시작되므로)
+function _shareActionsHTML(){
+  return '<div class="empty-actions"><button class="empty-btn" onclick="showQR()"><span class="ms" style="font-size:18px;">qr_code_2</span>'+_esc(t('chats_empty_qr_btn'))+'</button>'+
+    '<button class="empty-btn sub" onclick="copyMyLink()"><span class="ms" style="font-size:18px;">link</span>'+_esc(t('copy_link_btn'))+'</button></div>';
+}
+function _chatsEmptyHTML(){
+  return '<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc_owner')+'</div>'+_shareActionsHTML()+'</div>';
+}
 function showCreate(){
   selectedUsers=[];
   show('create-screen');
   const list=document.getElementById('select-user-list');
   list.innerHTML='';
   const friends=myFriends();
+  const doneBtn=document.querySelector('#create-screen .create-done-btn');
+  if(doneBtn)doneBtn.disabled=!friends.length; // 고를 친구가 없으면 만들 수 없음
   if(!friends.length){
-    list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('friends_empty_title')+'</div><div class="empty-desc">'+_L('내 링크·QR을 보내거나, 검색에서 @만두ID로 찾아 대화를 시작하세요','Share your link or QR, or search an exact @ManduID to start a chat')+'</div></div>';
+    list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('friends_empty_title')+'</div><div class="empty-desc">'+_L('내 링크·QR을 보내거나, 검색에서 @만두ID로 찾아 대화를 시작하세요','Share your link or QR, or search an exact @ManduID to start a chat')+'</div>'+_shareActionsHTML()+'</div>';
   }
   friends.forEach(function(u){
     const item=document.createElement('div');
@@ -4128,11 +4301,12 @@ async function createRoom(){
   if(selectedUsers.length===1){await startDM(selectedUsers[0]);return;}
   const name=document.getElementById('group-name').value.trim()||'그룹 채팅';
   const members=[currentUser.uid].concat(selectedUsers.map(function(u){return u.uid;}));
-  const memberNames={[currentUser.uid]:currentUser.displayName};
+  const memberNames={[currentUser.uid]:currentUser.displayName||''};
   const memberPhotos={[currentUser.uid]:currentUser.photoURL||''};
-  selectedUsers.forEach(function(u){memberNames[u.uid]=u.displayName;memberPhotos[u.uid]=u.photoURL||'';});
+  selectedUsers.forEach(function(u){memberNames[u.uid]=u.displayName||'';memberPhotos[u.uid]=u.photoURL||'';});
   const ref=await db.collection('rooms').add({
-    type:'group',name:name,members:members,memberNames:memberNames,memberPhotos:memberPhotos,
+    type:'group',name:name.slice(0,100),members:members,memberNames:memberNames,memberPhotos:memberPhotos,
+    optIn:{[currentUser.uid]:true},
     lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
   });
   openRoom(ref.id,name,'',true);
@@ -4170,6 +4344,10 @@ function openRoom(roomId,name,photo,isGroup){
   unsubRoom=db.collection('rooms').doc(roomId).onSnapshot(function(snap){
     const data=snap.data();if(!data)return;
     currentRoomMembers=data.members||[];_currentRoomData=data;
+    _roomSeq[roomId]=Math.max(_roomSeq[roomId]||0,_seqOf(data));
+    // 방을 보고 있는 동안 새 메시지가 오면 읽은 번호를 따라 올린다 (뒤처졌을 때만 써서 반복 쓰기 없음)
+    const myRs=(data.readSeq&&data.readSeq[currentUser.uid])||0;
+    if(currentRoomId===roomId&&!document.hidden&&_seqOf(data)>myRs)markRead(roomId,_seqOf(data));
     updateReadReceipt(data.readBy||{});
   },function(err){console.error('room listener 실패:',err);});
 }
@@ -4422,19 +4600,19 @@ async function confirmAddMember(){
   const newUids=_addMemberSelected.map(function(u){return u.uid;});
   const update={type:'group',members:firebase.firestore.FieldValue.arrayUnion.apply(null,newUids)};
   _addMemberSelected.forEach(function(u){
-    update['memberNames.'+u.uid]=u.displayName;
+    update['memberNames.'+u.uid]=u.displayName||'';
     update['memberPhotos.'+u.uid]=u.photoURL||'';
   });
   if(wasDirect){
     const allNames=Object.assign({},data.memberNames||{});
     _addMemberSelected.forEach(function(u){allNames[u.uid]=u.displayName;});
     const nameList=Object.values(allNames);
-    update.name=nameList.slice(0,4).join(', ')+(nameList.length>4?' 외':'');
+    update.name=(nameList.slice(0,4).join(', ')+(nameList.length>4?' 외':'')).slice(0,100);
   }
   await roomRef.update(update);
   const names=_addMemberSelected.map(function(u){return u.displayName;}).join(', ');
   await roomRef.collection('messages').add({
-    type:'system',text:t('addmember_system_msg').replace('{names}',names),
+    type:'system',kind:'added',uids:newUids,
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
   await roomRef.set({lastMessage:t('addmember_system_msg').replace('{names}',names),lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
@@ -4949,6 +5127,13 @@ function renderMsg(d,skipTranslate){
   if(d.type==='system'){
     const sysEl=document.createElement('div');
     sysEl.style.cssText='text-align:center;font-size:12px;color:var(--outline);margin:12px auto;padding:5px 14px;background:var(--surface-container);border-radius:100px;width:fit-content;';
+    // 새 형식: {kind:'join'|'added', uids:[...]} — 문구는 앱이 내 화면 언어로 만든다(자유 문구 저장 금지: 가짜 공지 방지).
+    if(d.kind){
+      sysEl.textContent=_systemMsgText(d);
+      container.appendChild(sysEl);
+      return;
+    }
+    // 예전 형식(text) — 규칙상 더 이상 새로 쓸 수 없다
     sysEl.textContent=d.text;
     container.appendChild(sysEl);
     const myLang0=document.getElementById('my-lang').value;
@@ -4967,7 +5152,8 @@ function renderMsg(d,skipTranslate){
   if(d.text&&!d.imageUrl&&!d.fileUrl){_recentCtx.push(String(d.text).slice(0,300));if(_recentCtx.length>20)_recentCtx.shift();}
   const w=document.createElement('div');
   w.className='msg-wrap '+(mine?'mine':'theirs');
-  if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}
+  // 보낸 사람 이름은 메시지에 적힌 값(displayName)이 아니라 방 멤버 정보·공개 명함에서 가져온다(사칭 방지)
+  if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=_memberName(d.asUid||d.uid)||'익명';w.appendChild(s);}
   const row=document.createElement('div');row.className='msg-row';
   const b=document.createElement('div');b.className='msg-bubble';
   const stickerSrc=stickerUrl(d.sticker);
@@ -5130,13 +5316,12 @@ async function sendImage(input){
     if(!data.secure_url)throw new Error('upload failed');
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',imageUrl:data.secure_url,uid:currentUser.uid,
-      displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     // 상대방 안 읽은 수 + 푸시 알림 (sendFile과 동일하게)
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:'[사진]',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
+    _addSendCounters(incUpdate);
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('이미지 전송 완료!');
     sendPushNotification(others,'[사진]');
@@ -5157,12 +5342,11 @@ async function sendMessage(){
   input.value='';input.style.height='auto';
   await db.collection('rooms').doc(currentRoomId).collection('messages').add({
     text:text,uid:currentUser.uid,
-    displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
   const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
   const incUpdate={lastMessage:text,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-  incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
+  _addSendCounters(incUpdate);
   await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
   markRead(currentRoomId);
   sendPushNotification(others,text);
@@ -5193,13 +5377,12 @@ async function sendSticker(id){
   try{
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',sticker:id,uid:currentUser.uid,
-      displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     const label='['+_stickerLabel()+']';
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:label,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
+    _addSendCounters(incUpdate);
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);
     sendPushNotification(others,label);
@@ -5287,12 +5470,12 @@ async function sendFile(input){
     const fileSize=file.size<1024*1024?(Math.round(file.size/1024)+'KB'):(Math.round(file.size/1024/1024*10)/10+'MB');
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',fileUrl:data.secure_url,fileName:file.name,fileSize:fileSize,
-      uid:currentUser.uid,displayName:currentUser.displayName||'게스트',
+      uid:currentUser.uid,
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:'[파일] '+file.name,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
+    _addSendCounters(incUpdate);
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('파일 전송 완료!');
     sendPushNotification(others,'[파일] '+file.name);
@@ -5652,12 +5835,83 @@ const UI_T={
   da:{usage_web_upgrade_note:"Du kan opgradere på vores hjemmeside.",plan_title:"Vælg abonnement",plan_status:"Nuværende {plan} · {used} brugt denne måned",plan_recommended:"Anbefalet",plan_upgrade_btn:"Opgrader",plan_cancel:"Annuller",plan_free:"Gratis",plan_upgrade_to:"Opgrader til {plan} — ${price}/md.",plan_upgrade_cta:"Opgrader abonnement",lang_label:"Mit sprog",msg_placeholder:"Skriv en besked...",profile_title:"Min profil",profile_save:"Gem",profile_lang_label:"Standardsprog",qr_title:"Min QR-kode",dict_title:"Min ordbog",search_title:"Søg",plan_per_month:"/md.",plan_soft_tag:"Enkel global chat",plan_light_tag:"Aktiv global kommunikation",plan_biz_tag:"Ubegrænset til erhverv",tab_chats:"Chats",tab_friends:"Venner",tab_discover:"Opdag",tab_settings:"Indstillinger",chats_loading:"Indlæser...",chats_empty_title:"Ingen chats endnu",chats_empty_desc:"Tryk på + for at starte en!",chats_unread_count:"{n} ulæste",chats_room_count:"{n} chats",chat_start_hint:"Start samtalen",chat_default_room_name:"Chat",guest_badge:"Gæst",welcome_toast:"Velkommen @{id}",ui_lang_changed_toast:"Visningssproget er ændret!",profile_ui_lang_section:"Visningssprog",profile_ui_lang_row:"Appens visningssprog",onb_title_1:"Tal med udlændinge,<br>uden sprogbarrierer",onb_desc_1:"Chat med udenlandske kunder og indkøbere,<br>hver på jeres eget sprog —<br>og forstå hinanden med det samme.",onb_title_2:"Dit sprog,<br>deres sprog",onb_desc_2:"Skriv på dit sprog — de ser det på deres.<br>Koreansk · engelsk · japansk · kinesisk · spansk ·<br>fransk · tysk · vietnamesisk · thai · mongolsk ·<br>hindi · portugisisk · arabisk · indonesisk · italiensk · dansk.<br>Dækker ca. 77 % af verdens befolkning!",onb_title_3:"Ét link,<br>forbindelse med det samme",onb_desc_3:"Send dit link eller din QR-kode — de skriver bare<br>et navn og begynder at chatte, uden tilmelding.<br>Tip: sæt din QR-kode ved kassen.",onb_skip:"Spring over",onb_next:"Næste",onb_start:"Kom i gang",pwa_install_desc:"<strong>Installer MANDU</strong><br>Åbn den direkte fra din startskærm",pwa_install_btn:"Installer",ios_install_title:"Føj MANDU til startskærmen",android_install_desc:"1. Tryk på <strong>⋮-menuen</strong> øverst til højre i Chrome<br>2. Vælg <strong>“Installer app”</strong> eller <strong>“Føj til startskærm”</strong><br>3. Tryk på <strong>“Installer”</strong>",ios_install_desc:"1. Tryk på <strong>Del-knappen</strong> <span class=ms-i>ios_share</span> nederst (eller øverst)<br>2. Vælg <strong>'Føj til hjemmeskærm'</strong> i menuen<br>3. Tryk på <strong>'Tilføj'</strong> øverst til højre",ios_install_ok:"Forstået",friends_search_placeholder:"Søg på navn eller @ManduID...",discover_tab_business:"Erhverv",discover_tab_global:"Global",discover_tab_contacts:"Find kontakter",settings_section_connect:"Mine kontaktoplysninger",settings_row_mylink:"Mit MANDU-link",settings_mylink_default:"Oprettes efter login",settings_row_qr:"Vis QR-kode",settings_row_qr_sub:"Scan for at starte en chat med det samme",settings_section_usage:"Oversættelsesforbrug",settings_section_screen:"Skærm",settings_row_darkmode:"Mørk tilstand",settings_section_dict:"Min ordbog",settings_row_dict:"Tilføj ofte brugte udtryk",settings_row_dict_sub_default:"Hurtig oversættelse uden API",settings_section_invite:"Inviter",settings_row_invite:"Invitationslink",settings_row_invite_sub:"Kopiér link til appen",settings_section_account:"Konto",settings_signout:"Log ud",settings_privacy:"Privatlivspolitik",settings_delete_account:"Slet konto",settings_delete_account_sub:"Slet kontoen og alle data",usage_used_default:"0 tegn",usage_limit_default:"/ 5.000 tegn",usage_msg_default:"Du har ikke brugt oversættelse denne måned endnu.",create_title:"Ny chat",create_group_name_placeholder:"Chatnavn (til gruppechats)",create_select_user_label:"Vælg deltagere",create_done_btn:"Opret chat",chat_autotranslate_on:"Automatisk oversættelse TIL",upgrade_banner_title:"Kan du lide MANDU?",upgrade_banner_sub:"Tilmeld dig og få alle funktioner gratis!",upgrade_banner_btn:"Tilmeld",emoji_search_placeholder:"Søg emoji...",usage_month_format:"{m}/{y}",usage_msg_90:"{pct}% af grænsen er brugt! {remain} tilbage",usage_msg_60:"Over halvdelen er brugt. {remain} tilbage",usage_msg_used:"{used} oversat denne måned. {remain} tilbage.",dict_count_label:"{n} udtryk gemt",profile_name_placeholder:"Indtast dit navn",biz_section_title:"Virksomhedsprofil",biz_intro_banner:"MANDU er en messenger med fokus på erhverv. Tilføj dine virksomhedsoplysninger, og få kontakt med partnere i hele verden.",biz_country_label:"Land",biz_no_selection:"Ikke valgt",biz_company_label:"Virksomhed",biz_company_placeholder:"Virksomheds- eller brandnavn",biz_jobtitle_label:"Stilling",biz_jobtitle_placeholder:"Direktør, teamleder, freelancer osv.",biz_industry_label:"Branche",biz_bio_label:"Kort præsentation",biz_bio_placeholder:"Præsenter dig selv i én sætning (maks. 100 tegn)",biz_discover_label:"Vis i Opdag",biz_discover_sub:"Gør min virksomhedsprofil offentlig",biz_save_btn:"Gem virksomhedsprofil",ind_food:"Fødevarer",ind_finance:"Finans / Forsikring",ind_it:"IT / Software",ind_legal:"Jura",ind_realestate:"Ejendomme",ind_manufacturing:"Produktion",ind_distribution:"Distribution / Logistik",ind_education:"Uddannelse",ind_healthcare:"Sundhed",ind_marketing:"Marketing / Reklame",ind_consulting:"Rådgivning",ind_construction:"Byggeri",ind_beauty:"Skønhed / Mode",ind_media:"Medier / Indhold",ind_other:"Andet",copy_link_btn:"Kopiér link",friends_copylink_sub:"Til visitkort",friends_qr_label:"QR-kode",friends_qr_sub:"Scan for at forbinde",friends_groups_title:"Grupper",friends_groups_create_link:"+ Opret",friends_groups_create_btn:"OPRET",friends_section_title:"Venner",status_online:"Online",status_offline:"Offline",friends_empty_title:"Ingen venner endnu",friends_empty_desc:"Del dit link for at invitere venner!",friends_empty_btn:"Kopiér mit link",friends_no_results:"Ingen resultater",settings_privacy_sub:"Sådan indsamler og bruger vi data",qr_download_btn:"Gem",toast_mylink_copied:"Link kopieret! Sæt det på dit visitkort",toast_invite_copied:"Invitationslink kopieret!",toast_qr_open_first:"Åbn QR-koden først",toast_qr_saved:"QR-kode gemt!",toast_login_required:"Log ind for at bruge dette",plan_beta_banner:"Betaperiode — alle abonnementer er gratis!",plan_upgrade_to_beta:"Start {plan} gratis",addmember_sheet_title:"Tilføj medlem",addmember_none:"Ingen venner at tilføje",addmember_confirm_btn:"Tilføj",addmember_system_msg:"{names} er kommet med i chatten",addmember_toast:"{names} tilføjet",usage_limit_exceeded_toast:"Månedens oversættelsesgrænse er nået. Opgrader for at fortsætte!",usage_80_warn_toast:"Du har brugt 80% af din oversættelsesgrænse!",translating_loading:"Oversætter...",translate_older_btn:"Oversæt {n} ældre beskeder",voice_input_unsupported:"Denne browser understøtter ikke stemmeinput",voice_input_error:"Stemmegenkendelsen mislykkedes, prøv igen",attach_menu_image:"Foto",attach_menu_file:"Fil",attach_menu_emoji:"Emoji",settings_section_cardbook:"Cardbook-forbindelse",settings_row_cardbook:"Lad Cardbook finde mig",settings_row_cardbook_sub:"Tillad Cardbook at finde mig via min e-mail og vise knappen 'Kontakt på MANDU'",cardbook_consent_on:"Cardbook kan nu finde dig",cardbook_consent_off:"Cardbook-forbindelsen er slået fra",cardbook_consent_fail:"Kunne ikke gemme. Prøv igen"}
 };
 
+// 손님 첫 화면·빈 화면 안내 등 추가 문구 (16개 언어) — 위 UI_T에 합친다
+const UI_T_KEYS2=["guest_request", "guest_name_label", "guest_name_ph", "guest_start_btn", "guest_have_account", "guest_login", "guest_name_required", "guest_error", "chats_empty_desc_owner", "chats_empty_qr_btn", "edit_btn", "name_ask_title", "name_ask_ph", "name_ask_btn"];
+const UI_T2={
+  ko:["MANDU로 대화 요청", "이름을 알려주세요", "홍길동", "바로 대화 시작하기", "이미 계정이 있으신가요?", "로그인", "이름을 입력해주세요", "오류가 발생했어요. 다시 시도해주세요", "내 QR이나 링크를 손님·친구에게 보내면 여기에 대화가 생겨요", "내 QR 보기", "편집", "대화에 표시할 이름을 알려주세요", "이름 (닉네임)", "시작하기"],
+  en:["Chat request via MANDU", "What's your name?", "Your name", "Start chatting", "Already have an account?", "Log in", "Please enter your name", "Something went wrong. Please try again.", "Share your QR code or link with customers and friends — your chats will show up here.", "Show my QR", "Edit", "What name should others see?", "Name", "Continue"],
+  ja:["MANDUでチャットのリクエスト", "お名前を教えてください", "お名前", "チャットを始める", "すでにアカウントをお持ちですか？", "ログイン", "お名前を入力してください", "エラーが発生しました。もう一度お試しください", "QRコードやリンクをお客様や友だちに送ると、ここにチャットが表示されます", "マイQRを表示", "編集", "チャットで表示する名前を教えてください", "名前（ニックネーム）", "はじめる"],
+  zh:["通过 MANDU 发起聊天", "请告诉我们您的名字", "您的名字", "立即开始聊天", "已有账号？", "登录", "请输入您的名字", "出错了，请重试", "把你的二维码或链接发给顾客和朋友，聊天就会出现在这里", "查看我的二维码", "编辑", "请设置聊天中显示的名字", "名字（昵称）", "开始"],
+  es:["Solicitud de chat por MANDU", "¿Cómo te llamas?", "Tu nombre", "Empezar a chatear", "¿Ya tienes una cuenta?", "Iniciar sesión", "Escribe tu nombre", "Algo salió mal. Inténtalo de nuevo", "Comparte tu código QR o tu enlace con clientes y amigos: tus chats aparecerán aquí", "Ver mi QR", "Editar", "¿Qué nombre verán los demás?", "Nombre (apodo)", "Continuar"],
+  fr:["Demande de discussion via MANDU", "Comment vous appelez-vous ?", "Votre nom", "Commencer à discuter", "Vous avez déjà un compte ?", "Se connecter", "Veuillez saisir votre nom", "Une erreur est survenue. Veuillez réessayer", "Partagez votre QR code ou votre lien avec vos clients et amis : vos discussions apparaîtront ici", "Voir mon QR", "Modifier", "Quel nom les autres verront-ils ?", "Nom (pseudo)", "Continuer"],
+  de:["Chat-Anfrage über MANDU", "Wie heißt du?", "Dein Name", "Jetzt chatten", "Du hast schon ein Konto?", "Anmelden", "Bitte gib deinen Namen ein", "Etwas ist schiefgelaufen. Bitte versuche es erneut", "Teile deinen QR-Code oder Link mit Kunden und Freunden – deine Chats erscheinen dann hier", "Meinen QR zeigen", "Bearbeiten", "Welchen Namen sollen andere sehen?", "Name (Spitzname)", "Weiter"],
+  vi:["Yêu cầu trò chuyện qua MANDU", "Cho chúng tôi biết tên bạn", "Tên của bạn", "Bắt đầu trò chuyện", "Bạn đã có tài khoản?", "Đăng nhập", "Vui lòng nhập tên", "Đã xảy ra lỗi. Vui lòng thử lại", "Gửi mã QR hoặc liên kết của bạn cho khách hàng và bạn bè — cuộc trò chuyện sẽ hiện ở đây", "Xem mã QR của tôi", "Sửa", "Tên hiển thị của bạn là gì?", "Tên (biệt danh)", "Tiếp tục"],
+  th:["คำขอแชทผ่าน MANDU", "บอกชื่อของคุณหน่อย", "ชื่อของคุณ", "เริ่มแชทเลย", "มีบัญชีอยู่แล้ว?", "เข้าสู่ระบบ", "กรุณากรอกชื่อ", "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง", "ส่ง QR โค้ดหรือลิงก์ของคุณให้ลูกค้าและเพื่อน แล้วแชทจะแสดงที่นี่", "ดู QR ของฉัน", "แก้ไข", "ชื่อที่จะแสดงในแชท", "ชื่อ (ชื่อเล่น)", "ดำเนินการต่อ"],
+  mn:["MANDU-р чат хүсэлт", "Нэрээ хэлнэ үү", "Таны нэр", "Чатлаж эхлэх", "Бүртгэлтэй юу?", "Нэвтрэх", "Нэрээ оруулна уу", "Алдаа гарлаа. Дахин оролдоно уу", "QR код эсвэл линкээ үйлчлүүлэгч, найзууддаа илгээвэл чат энд гарч ирнэ", "Миний QR харах", "Засах", "Чатад харагдах нэрээ оруулна уу", "Нэр (хоч)", "Үргэлжлүүлэх"],
+  hi:["MANDU से चैट अनुरोध", "अपना नाम बताइए", "आपका नाम", "चैट शुरू करें", "पहले से खाता है?", "लॉग इन", "कृपया अपना नाम दर्ज करें", "कुछ गलत हो गया। कृपया फिर से कोशिश करें", "अपना QR कोड या लिंक ग्राहकों और दोस्तों को भेजें — आपकी चैट यहाँ दिखेंगी", "मेरा QR देखें", "संपादित करें", "दूसरों को कौन-सा नाम दिखे?", "नाम (उपनाम)", "जारी रखें"],
+  pt:["Pedido de conversa pelo MANDU", "Qual é o seu nome?", "Seu nome", "Começar a conversar", "Já tem uma conta?", "Entrar", "Digite seu nome", "Algo deu errado. Tente novamente", "Envie seu QR code ou link para clientes e amigos — suas conversas aparecerão aqui", "Ver meu QR", "Editar", "Que nome os outros vão ver?", "Nome (apelido)", "Continuar"],
+  ar:["طلب محادثة عبر MANDU", "ما اسمك؟", "اسمك", "ابدأ المحادثة", "لديك حساب بالفعل؟", "تسجيل الدخول", "يرجى إدخال اسمك", "حدث خطأ. يرجى المحاولة مرة أخرى", "شارك رمز QR أو رابطك مع العملاء والأصدقاء، وستظهر محادثاتك هنا", "عرض رمز QR الخاص بي", "تعديل", "ما الاسم الذي سيراه الآخرون؟", "الاسم (اسم مستعار)", "متابعة"],
+  id:["Permintaan obrolan lewat MANDU", "Siapa nama Anda?", "Nama Anda", "Mulai mengobrol", "Sudah punya akun?", "Masuk", "Silakan masukkan nama Anda", "Terjadi kesalahan. Silakan coba lagi", "Bagikan kode QR atau tautan Anda ke pelanggan dan teman — obrolan akan muncul di sini", "Lihat QR saya", "Ubah", "Nama apa yang dilihat orang lain?", "Nama (panggilan)", "Lanjut"],
+  it:["Richiesta di chat tramite MANDU", "Come ti chiami?", "Il tuo nome", "Inizia a chattare", "Hai già un account?", "Accedi", "Inserisci il tuo nome", "Qualcosa è andato storto. Riprova", "Condividi il tuo codice QR o il tuo link con clienti e amici: le chat appariranno qui", "Mostra il mio QR", "Modifica", "Quale nome vedranno gli altri?", "Nome (soprannome)", "Continua"],
+  da:["Chatanmodning via MANDU", "Hvad hedder du?", "Dit navn", "Start chatten", "Har du allerede en konto?", "Log ind", "Skriv dit navn", "Noget gik galt. Prøv igen", "Del din QR-kode eller dit link med kunder og venner – dine chats vises så her", "Vis min QR", "Rediger", "Hvilket navn skal andre se?", "Navn (kaldenavn)", "Fortsæt"]
+};
+Object.keys(UI_T2).forEach(function(l){if(!UI_T[l])UI_T[l]={};UI_T_KEYS2.forEach(function(k,i){UI_T[l][k]=UI_T2[l][i];});});
+
+// 온보딩 뒤 로그인 화면 문구·로그인 안내 메시지 (16개 언어)
+const UI_T_KEYS3=["login_back_guest", "login_desc_html", "login_google", "login_google_inapp", "login_inapp_hint", "login_inapp_open", "login_kakao", "login_apple", "login_phone", "login_or", "login_email_ph", "login_pw_ph", "login_email_btn", "login_signup_link", "login_forgot", "signup_name_ph", "signup_pw_ph", "signup_btn", "signup_have_account", "msg_enter_email_pw", "msg_logging_in", "msg_user_not_found", "msg_wrong_pw", "msg_invalid_email", "msg_too_many", "msg_invalid_cred", "msg_login_fail", "msg_enter_email", "msg_pw_short", "msg_signing_up", "msg_email_in_use", "msg_weak_pw", "msg_signup_fail", "msg_email_first", "msg_reset_sent", "msg_reset_fail", "legal_login_agree", "legal_terms", "legal_privacy"];
+const UI_T3={
+  ko:["로그인 없이 바로 대화하기", "언어가 달라도 <strong>대화는 하나로</strong>", "Google로 시작하기", "Google로 시작하기 (Chrome·Safari에서 열림)", "카카오톡·네이버 앱 안에서는 Google 로그인이 막혀 있어서, 버튼을 누르면 Chrome·Safari로 열려요. ", "Chrome·Safari로 열기", "카카오로 시작하기", "Apple로 시작하기", "전화번호로 시작하기", "또는", "이메일", "비밀번호", "이메일로 시작하기", "회원가입", "비밀번호 찾기", "이름 (닉네임)", "비밀번호 (6자 이상)", "가입하기", "이미 계정이 있어요 → 로그인", "이메일과 비밀번호를 입력해주세요", "로그인 중...", "등록되지 않은 이메일이에요", "비밀번호가 틀렸어요", "이메일 형식이 올바르지 않아요", "잠시 후 다시 시도해주세요", "이메일 또는 비밀번호가 틀렸어요", "로그인 실패: ", "이메일을 입력해주세요", "비밀번호는 6자 이상이에요", "가입 중...", "이미 사용 중인 이메일이에요", "비밀번호가 너무 짧아요", "가입 실패: ", "이메일을 먼저 입력해주세요", "재설정 메일을 보냈어요 ✓", "전송 실패. 이메일을 확인해주세요", "가입 시 {terms} 및 {privacy}에 동의하는 것으로 간주됩니다.", "이용약관", "개인정보처리방침"],
+  en:["Chat without signing in", "Different languages, <strong>one conversation</strong>", "Continue with Google", "Continue with Google (opens in Chrome/Safari)", "Google sign-in is blocked inside this app, so the button opens Chrome/Safari. ", "Open in Chrome/Safari", "Continue with Kakao", "Continue with Apple", "Continue with phone number", "or", "Email", "Password", "Continue with email", "Sign up", "Forgot password?", "Name (nickname)", "Password (6+ characters)", "Sign up", "Already have an account? → Log in", "Please enter your email and password", "Signing in...", "No account found for this email", "Wrong password", "Invalid email address", "Too many attempts. Please try again later", "Wrong email or password", "Sign-in failed: ", "Please enter your email", "Password must be at least 6 characters", "Signing up...", "This email is already in use", "Password is too short", "Sign-up failed: ", "Enter your email first", "Reset email sent ✓", "Could not send. Please check your email", "By signing up you agree to the {terms} and {privacy}.", "Terms of Service", "Privacy Policy"],
+  ja:["ログインせずにチャットする", "言葉が違っても、<strong>会話はひとつに</strong>", "Googleで始める", "Googleで始める（Chrome・Safariで開きます）", "このアプリ内ではGoogleログインがブロックされているため、ボタンを押すとChrome・Safariで開きます。", "Chrome・Safariで開く", "カカオで始める", "Appleで始める", "電話番号で始める", "または", "メールアドレス", "パスワード", "メールで始める", "新規登録", "パスワードをお忘れですか？", "名前（ニックネーム）", "パスワード（6文字以上）", "登録する", "アカウントをお持ちの方 → ログイン", "メールアドレスとパスワードを入力してください", "ログイン中...", "登録されていないメールアドレスです", "パスワードが違います", "メールアドレスの形式が正しくありません", "しばらくしてからもう一度お試しください", "メールアドレスまたはパスワードが違います", "ログイン失敗：", "メールアドレスを入力してください", "パスワードは6文字以上です", "登録中...", "このメールアドレスはすでに使われています", "パスワードが短すぎます", "登録失敗：", "先にメールアドレスを入力してください", "再設定メールを送信しました ✓", "送信できませんでした。メールアドレスをご確認ください", "登録すると{terms}と{privacy}に同意したものとみなされます。", "利用規約", "プライバシーポリシー"],
+  zh:["无需登录直接聊天", "语言不同，<strong>对话如一</strong>", "使用 Google 继续", "使用 Google 继续（在 Chrome/Safari 中打开）", "此应用内无法使用 Google 登录，点击按钮将在 Chrome/Safari 中打开。", "在 Chrome/Safari 中打开", "使用 Kakao 继续", "使用 Apple 继续", "使用手机号继续", "或", "邮箱", "密码", "使用邮箱继续", "注册", "忘记密码？", "名字（昵称）", "密码（至少 6 位）", "注册", "已有账号 → 登录", "请输入邮箱和密码", "正在登录...", "该邮箱尚未注册", "密码错误", "邮箱格式不正确", "尝试次数过多，请稍后再试", "邮箱或密码错误", "登录失败：", "请输入邮箱", "密码至少需要 6 位", "正在注册...", "该邮箱已被使用", "密码太短", "注册失败：", "请先输入邮箱", "重置邮件已发送 ✓", "发送失败，请检查邮箱", "注册即表示您同意{terms}和{privacy}。", "服务条款", "隐私政策"],
+  es:["Chatear sin iniciar sesión", "Idiomas distintos, <strong>una sola conversación</strong>", "Continuar con Google", "Continuar con Google (se abre en Chrome/Safari)", "El inicio de sesión con Google está bloqueado en esta app, así que el botón abre Chrome/Safari. ", "Abrir en Chrome/Safari", "Continuar con Kakao", "Continuar con Apple", "Continuar con número de teléfono", "o", "Correo electrónico", "Contraseña", "Continuar con correo", "Registrarse", "¿Olvidaste tu contraseña?", "Nombre (apodo)", "Contraseña (6+ caracteres)", "Registrarse", "¿Ya tienes cuenta? → Iniciar sesión", "Escribe tu correo y contraseña", "Iniciando sesión...", "No hay ninguna cuenta con este correo", "Contraseña incorrecta", "Correo no válido", "Demasiados intentos. Inténtalo más tarde", "Correo o contraseña incorrectos", "Error al iniciar sesión: ", "Escribe tu correo", "La contraseña debe tener al menos 6 caracteres", "Registrando...", "Este correo ya está en uso", "La contraseña es demasiado corta", "Error al registrarse: ", "Primero escribe tu correo", "Correo de restablecimiento enviado ✓", "No se pudo enviar. Revisa tu correo", "Al registrarte aceptas los {terms} y la {privacy}.", "Términos del servicio", "Política de privacidad"],
+  fr:["Discuter sans se connecter", "Des langues différentes, <strong>une seule conversation</strong>", "Continuer avec Google", "Continuer avec Google (s'ouvre dans Chrome/Safari)", "La connexion Google est bloquée dans cette app : le bouton ouvre Chrome/Safari. ", "Ouvrir dans Chrome/Safari", "Continuer avec Kakao", "Continuer avec Apple", "Continuer avec un numéro de téléphone", "ou", "E-mail", "Mot de passe", "Continuer avec l'e-mail", "S'inscrire", "Mot de passe oublié ?", "Nom (pseudo)", "Mot de passe (6 caractères min.)", "S'inscrire", "Déjà un compte ? → Se connecter", "Saisissez votre e-mail et votre mot de passe", "Connexion...", "Aucun compte pour cet e-mail", "Mot de passe incorrect", "Adresse e-mail invalide", "Trop de tentatives. Réessayez plus tard", "E-mail ou mot de passe incorrect", "Échec de la connexion : ", "Saisissez votre e-mail", "Le mot de passe doit contenir au moins 6 caractères", "Inscription...", "Cet e-mail est déjà utilisé", "Mot de passe trop court", "Échec de l'inscription : ", "Saisissez d'abord votre e-mail", "E-mail de réinitialisation envoyé ✓", "Envoi impossible. Vérifiez votre e-mail", "En vous inscrivant, vous acceptez les {terms} et la {privacy}.", "Conditions d'utilisation", "Politique de confidentialité"],
+  de:["Ohne Anmeldung chatten", "Verschiedene Sprachen, <strong>ein Gespräch</strong>", "Weiter mit Google", "Weiter mit Google (öffnet Chrome/Safari)", "Die Google-Anmeldung ist in dieser App gesperrt, daher öffnet der Button Chrome/Safari. ", "In Chrome/Safari öffnen", "Weiter mit Kakao", "Weiter mit Apple", "Weiter mit Telefonnummer", "oder", "E-Mail", "Passwort", "Weiter mit E-Mail", "Registrieren", "Passwort vergessen?", "Name (Spitzname)", "Passwort (mind. 6 Zeichen)", "Registrieren", "Schon ein Konto? → Anmelden", "Bitte E-Mail und Passwort eingeben", "Anmeldung läuft...", "Für diese E-Mail gibt es kein Konto", "Falsches Passwort", "Ungültige E-Mail-Adresse", "Zu viele Versuche. Bitte später erneut versuchen", "E-Mail oder Passwort falsch", "Anmeldung fehlgeschlagen: ", "Bitte E-Mail eingeben", "Das Passwort muss mindestens 6 Zeichen haben", "Registrierung läuft...", "Diese E-Mail wird bereits verwendet", "Passwort ist zu kurz", "Registrierung fehlgeschlagen: ", "Bitte zuerst die E-Mail eingeben", "E-Mail zum Zurücksetzen gesendet ✓", "Senden fehlgeschlagen. Bitte E-Mail prüfen", "Mit der Registrierung akzeptierst du die {terms} und die {privacy}.", "Nutzungsbedingungen", "Datenschutzerklärung"],
+  vi:["Trò chuyện không cần đăng nhập", "Khác ngôn ngữ, <strong>chung một cuộc trò chuyện</strong>", "Tiếp tục với Google", "Tiếp tục với Google (mở trong Chrome/Safari)", "Đăng nhập Google bị chặn trong ứng dụng này nên nút sẽ mở Chrome/Safari. ", "Mở trong Chrome/Safari", "Tiếp tục với Kakao", "Tiếp tục với Apple", "Tiếp tục với số điện thoại", "hoặc", "Email", "Mật khẩu", "Tiếp tục với email", "Đăng ký", "Quên mật khẩu?", "Tên (biệt danh)", "Mật khẩu (từ 6 ký tự)", "Đăng ký", "Đã có tài khoản? → Đăng nhập", "Vui lòng nhập email và mật khẩu", "Đang đăng nhập...", "Email này chưa được đăng ký", "Sai mật khẩu", "Email không hợp lệ", "Thử quá nhiều lần. Vui lòng thử lại sau", "Sai email hoặc mật khẩu", "Đăng nhập thất bại: ", "Vui lòng nhập email", "Mật khẩu phải có ít nhất 6 ký tự", "Đang đăng ký...", "Email này đã được sử dụng", "Mật khẩu quá ngắn", "Đăng ký thất bại: ", "Hãy nhập email trước", "Đã gửi email đặt lại ✓", "Không gửi được. Vui lòng kiểm tra email", "Khi đăng ký, bạn đồng ý với {terms} và {privacy}.", "Điều khoản dịch vụ", "Chính sách quyền riêng tư"],
+  th:["แชทโดยไม่ต้องเข้าสู่ระบบ", "ต่างภาษา <strong>แต่คุยกันได้</strong>", "ดำเนินการต่อด้วย Google", "ดำเนินการต่อด้วย Google (เปิดใน Chrome/Safari)", "แอปนี้บล็อกการเข้าสู่ระบบด้วย Google ปุ่มนี้จึงจะเปิด Chrome/Safari ", "เปิดใน Chrome/Safari", "ดำเนินการต่อด้วย Kakao", "ดำเนินการต่อด้วย Apple", "ดำเนินการต่อด้วยเบอร์โทรศัพท์", "หรือ", "อีเมล", "รหัสผ่าน", "ดำเนินการต่อด้วยอีเมล", "สมัครสมาชิก", "ลืมรหัสผ่าน?", "ชื่อ (ชื่อเล่น)", "รหัสผ่าน (6 ตัวขึ้นไป)", "สมัครสมาชิก", "มีบัญชีแล้ว → เข้าสู่ระบบ", "กรุณากรอกอีเมลและรหัสผ่าน", "กำลังเข้าสู่ระบบ...", "ไม่พบบัญชีของอีเมลนี้", "รหัสผ่านไม่ถูกต้อง", "รูปแบบอีเมลไม่ถูกต้อง", "ลองหลายครั้งเกินไป กรุณาลองใหม่ภายหลัง", "อีเมลหรือรหัสผ่านไม่ถูกต้อง", "เข้าสู่ระบบไม่สำเร็จ: ", "กรุณากรอกอีเมล", "รหัสผ่านต้องมีอย่างน้อย 6 ตัว", "กำลังสมัคร...", "อีเมลนี้ถูกใช้แล้ว", "รหัสผ่านสั้นเกินไป", "สมัครไม่สำเร็จ: ", "กรุณากรอกอีเมลก่อน", "ส่งอีเมลรีเซ็ตแล้ว ✓", "ส่งไม่สำเร็จ กรุณาตรวจสอบอีเมล", "เมื่อสมัคร ถือว่าคุณยอมรับ{terms}และ{privacy}", "ข้อกำหนดการให้บริการ", "นโยบายความเป็นส่วนตัว"],
+  mn:["Нэвтрэхгүйгээр чатлах", "Хэл өөр ч <strong>яриа нэг</strong>", "Google-ээр үргэлжлүүлэх", "Google-ээр үргэлжлүүлэх (Chrome/Safari-д нээгдэнэ)", "Энэ апп дотор Google нэвтрэлт хаалттай тул товч Chrome/Safari-г нээнэ. ", "Chrome/Safari-д нээх", "Kakao-гоор үргэлжлүүлэх", "Apple-ээр үргэлжлүүлэх", "Утасны дугаараар үргэлжлүүлэх", "эсвэл", "Имэйл", "Нууц үг", "Имэйлээр үргэлжлүүлэх", "Бүртгүүлэх", "Нууц үгээ мартсан уу?", "Нэр (хоч)", "Нууц үг (6+ тэмдэгт)", "Бүртгүүлэх", "Бүртгэлтэй юу? → Нэвтрэх", "Имэйл болон нууц үгээ оруулна уу", "Нэвтэрч байна...", "Энэ имэйлээр бүртгэл олдсонгүй", "Нууц үг буруу байна", "Имэйлийн хэлбэр буруу байна", "Хэт олон оролдлого. Дараа дахин оролдоно уу", "Имэйл эсвэл нууц үг буруу байна", "Нэвтрэх амжилтгүй: ", "Имэйлээ оруулна уу", "Нууц үг дор хаяж 6 тэмдэгт байна", "Бүртгэж байна...", "Энэ имэйл аль хэдийн ашиглагдаж байна", "Нууц үг хэт богино байна", "Бүртгэл амжилтгүй: ", "Эхлээд имэйлээ оруулна уу", "Сэргээх имэйл илгээлээ ✓", "Илгээж чадсангүй. Имэйлээ шалгана уу", "Бүртгүүлснээр та {terms} болон {privacy}-г зөвшөөрсөнд тооцогдоно.", "Үйлчилгээний нөхцөл", "Нууцлалын бодлого"],
+  hi:["बिना लॉग इन किए चैट करें", "भाषा अलग, <strong>बातचीत एक</strong>", "Google से जारी रखें", "Google से जारी रखें (Chrome/Safari में खुलेगा)", "इस ऐप में Google साइन-इन ब्लॉक है, इसलिए बटन Chrome/Safari खोलता है। ", "Chrome/Safari में खोलें", "Kakao से जारी रखें", "Apple से जारी रखें", "फ़ोन नंबर से जारी रखें", "या", "ईमेल", "पासवर्ड", "ईमेल से जारी रखें", "साइन अप", "पासवर्ड भूल गए?", "नाम (उपनाम)", "पासवर्ड (कम से कम 6 अक्षर)", "साइन अप करें", "पहले से खाता है? → लॉग इन", "कृपया ईमेल और पासवर्ड दर्ज करें", "लॉग इन हो रहा है...", "इस ईमेल से कोई खाता नहीं मिला", "गलत पासवर्ड", "अमान्य ईमेल पता", "बहुत अधिक प्रयास। कृपया बाद में फिर कोशिश करें", "गलत ईमेल या पासवर्ड", "लॉग इन विफल: ", "कृपया ईमेल दर्ज करें", "पासवर्ड कम से कम 6 अक्षर का होना चाहिए", "साइन अप हो रहा है...", "यह ईमेल पहले से उपयोग में है", "पासवर्ड बहुत छोटा है", "साइन अप विफल: ", "पहले ईमेल दर्ज करें", "रीसेट ईमेल भेजा गया ✓", "भेजा नहीं जा सका। कृपया ईमेल जाँचें", "साइन अप करके आप {terms} और {privacy} से सहमत होते हैं।", "सेवा की शर्तें", "गोपनीयता नीति"],
+  pt:["Conversar sem entrar", "Idiomas diferentes, <strong>uma só conversa</strong>", "Continuar com Google", "Continuar com Google (abre no Chrome/Safari)", "O login com Google é bloqueado neste app, então o botão abre o Chrome/Safari. ", "Abrir no Chrome/Safari", "Continuar com Kakao", "Continuar com Apple", "Continuar com número de telefone", "ou", "E-mail", "Senha", "Continuar com e-mail", "Cadastrar", "Esqueceu a senha?", "Nome (apelido)", "Senha (6+ caracteres)", "Cadastrar", "Já tem conta? → Entrar", "Digite seu e-mail e senha", "Entrando...", "Nenhuma conta com este e-mail", "Senha incorreta", "E-mail inválido", "Muitas tentativas. Tente novamente mais tarde", "E-mail ou senha incorretos", "Falha ao entrar: ", "Digite seu e-mail", "A senha precisa ter pelo menos 6 caracteres", "Cadastrando...", "Este e-mail já está em uso", "Senha muito curta", "Falha no cadastro: ", "Digite seu e-mail primeiro", "E-mail de redefinição enviado ✓", "Não foi possível enviar. Verifique seu e-mail", "Ao se cadastrar, você concorda com os {terms} e a {privacy}.", "Termos de serviço", "Política de privacidade"],
+  ar:["الدردشة دون تسجيل الدخول", "لغات مختلفة، <strong>محادثة واحدة</strong>", "المتابعة باستخدام Google", "المتابعة باستخدام Google (يُفتح في Chrome/Safari)", "تسجيل الدخول عبر Google محظور داخل هذا التطبيق، لذا يفتح الزر Chrome/Safari. ", "الفتح في Chrome/Safari", "المتابعة باستخدام Kakao", "المتابعة باستخدام Apple", "المتابعة برقم الهاتف", "أو", "البريد الإلكتروني", "كلمة المرور", "المتابعة بالبريد الإلكتروني", "إنشاء حساب", "نسيت كلمة المرور؟", "الاسم (اسم مستعار)", "كلمة المرور (6 أحرف على الأقل)", "إنشاء حساب", "لديك حساب؟ ← تسجيل الدخول", "يرجى إدخال البريد الإلكتروني وكلمة المرور", "جارٍ تسجيل الدخول...", "لا يوجد حساب بهذا البريد", "كلمة المرور غير صحيحة", "بريد إلكتروني غير صالح", "محاولات كثيرة. حاول لاحقًا", "البريد الإلكتروني أو كلمة المرور غير صحيحة", "فشل تسجيل الدخول: ", "يرجى إدخال البريد الإلكتروني", "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل", "جارٍ إنشاء الحساب...", "هذا البريد مستخدم بالفعل", "كلمة المرور قصيرة جدًا", "فشل إنشاء الحساب: ", "أدخل بريدك الإلكتروني أولًا", "تم إرسال رسالة إعادة التعيين ✓", "تعذر الإرسال. تحقق من بريدك", "بإنشاء حساب فإنك توافق على {terms} و{privacy}.", "شروط الخدمة", "سياسة الخصوصية"],
+  id:["Mengobrol tanpa masuk", "Beda bahasa, <strong>satu percakapan</strong>", "Lanjutkan dengan Google", "Lanjutkan dengan Google (dibuka di Chrome/Safari)", "Login Google diblokir di aplikasi ini, jadi tombol akan membuka Chrome/Safari. ", "Buka di Chrome/Safari", "Lanjutkan dengan Kakao", "Lanjutkan dengan Apple", "Lanjutkan dengan nomor telepon", "atau", "Email", "Kata sandi", "Lanjutkan dengan email", "Daftar", "Lupa kata sandi?", "Nama (panggilan)", "Kata sandi (min. 6 karakter)", "Daftar", "Sudah punya akun? → Masuk", "Masukkan email dan kata sandi", "Sedang masuk...", "Tidak ada akun dengan email ini", "Kata sandi salah", "Email tidak valid", "Terlalu banyak percobaan. Coba lagi nanti", "Email atau kata sandi salah", "Gagal masuk: ", "Masukkan email Anda", "Kata sandi minimal 6 karakter", "Sedang mendaftar...", "Email ini sudah digunakan", "Kata sandi terlalu pendek", "Gagal mendaftar: ", "Masukkan email terlebih dahulu", "Email reset terkirim ✓", "Gagal mengirim. Periksa email Anda", "Dengan mendaftar, Anda menyetujui {terms} dan {privacy}.", "Ketentuan Layanan", "Kebijakan Privasi"],
+  it:["Chatta senza accedere", "Lingue diverse, <strong>una sola conversazione</strong>", "Continua con Google", "Continua con Google (si apre in Chrome/Safari)", "L'accesso con Google è bloccato in questa app, quindi il pulsante apre Chrome/Safari. ", "Apri in Chrome/Safari", "Continua con Kakao", "Continua con Apple", "Continua con il numero di telefono", "oppure", "Email", "Password", "Continua con email", "Registrati", "Password dimenticata?", "Nome (soprannome)", "Password (min. 6 caratteri)", "Registrati", "Hai già un account? → Accedi", "Inserisci email e password", "Accesso in corso...", "Nessun account con questa email", "Password errata", "Email non valida", "Troppi tentativi. Riprova più tardi", "Email o password errate", "Accesso non riuscito: ", "Inserisci la tua email", "La password deve avere almeno 6 caratteri", "Registrazione in corso...", "Questa email è già in uso", "Password troppo corta", "Registrazione non riuscita: ", "Inserisci prima la tua email", "Email di reimpostazione inviata ✓", "Invio non riuscito. Controlla la tua email", "Registrandoti accetti i {terms} e l'{privacy}.", "Termini di servizio", "Informativa sulla privacy"],
+  da:["Chat uden at logge ind", "Forskellige sprog, <strong>én samtale</strong>", "Fortsæt med Google", "Fortsæt med Google (åbner i Chrome/Safari)", "Google-login er blokeret i denne app, så knappen åbner Chrome/Safari. ", "Åbn i Chrome/Safari", "Fortsæt med Kakao", "Fortsæt med Apple", "Fortsæt med telefonnummer", "eller", "E-mail", "Adgangskode", "Fortsæt med e-mail", "Tilmeld dig", "Glemt adgangskode?", "Navn (kaldenavn)", "Adgangskode (mindst 6 tegn)", "Tilmeld dig", "Har du allerede en konto? → Log ind", "Indtast e-mail og adgangskode", "Logger ind...", "Der findes ingen konto med denne e-mail", "Forkert adgangskode", "Ugyldig e-mailadresse", "For mange forsøg. Prøv igen senere", "Forkert e-mail eller adgangskode", "Login mislykkedes: ", "Indtast din e-mail", "Adgangskoden skal være mindst 6 tegn", "Tilmelder...", "Denne e-mail er allerede i brug", "Adgangskoden er for kort", "Tilmelding mislykkedes: ", "Indtast først din e-mail", "E-mail til nulstilling sendt ✓", "Kunne ikke sende. Tjek din e-mail", "Ved tilmelding accepterer du {terms} og {privacy}.", "Servicevilkår", "Privatlivspolitik"]
+};
+Object.keys(UI_T3).forEach(function(l){if(!UI_T[l])UI_T[l]={};UI_T_KEYS3.forEach(function(k,i){UI_T[l][k]=UI_T3[l][i];});});
+
+// 만두 ID 만들기 화면 (16개 언어)
+const UI_T_KEYS4=["id_title", "id_sub_html", "id_ph", "id_hint_html", "id_start_btn", "id_have", "id_reload_btn", "id_min3", "id_max20", "id_checking", "id_taken", "id_available", "id_check_fail", "id_reloading", "id_welcome_back", "id_make_new", "id_error", "id_len", "id_saving", "id_save_fail"];
+const UI_T4={
+  ko:["나만의 MANDU ID", "친구들이 나를 찾을 수 있는<br>나만의 고유 주소예요", "영문+숫자+_ (3~20자)", "영문 소문자, 숫자, _ 만 사용 가능해요<br>한번 만들면 변경이 어려워요!", "시작하기", "이미 만두 ID가 있으신가요?", "내 계정 다시 불러오기", "3자 이상 입력해주세요", "20자 이하로 입력해주세요", "확인 중...", "이미 사용 중인 ID예요", "✓ 사용 가능한 ID예요!", "확인 실패. 다시 시도해주세요", "계정 정보를 다시 확인하는 중...", "반가워요 @{id}", "새 만두 ID를 만들어주세요!", "오류가 발생했어요. 다시 시도해주세요", "3~20자로 입력해주세요", "저장 중...", "저장 실패. 다시 시도해주세요"],
+  en:["Your MANDU ID", "Your own unique address<br>so friends can find you", "letters + numbers + _ (3–20)", "Only lowercase letters, numbers and _<br>It is hard to change once created!", "Get started", "Already have a MANDU ID?", "Reload my account", "Enter at least 3 characters", "Enter 20 characters or fewer", "Checking...", "This ID is already taken", "✓ This ID is available!", "Check failed. Please try again", "Checking your account again...", "Welcome back @{id}", "Please create a new MANDU ID!", "Something went wrong. Please try again", "Enter 3–20 characters", "Saving...", "Could not save. Please try again"],
+  ja:["あなたのMANDU ID", "友だちがあなたを見つけられる<br>あなただけのアドレスです", "英字+数字+_（3〜20文字）", "英小文字・数字・_ のみ使えます<br>一度作ると変更は難しいです！", "はじめる", "すでにMANDU IDをお持ちですか？", "アカウントを再読み込み", "3文字以上入力してください", "20文字以内で入力してください", "確認中...", "このIDはすでに使われています", "✓ このIDは使えます！", "確認できませんでした。もう一度お試しください", "アカウント情報を再確認しています...", "おかえりなさい @{id}", "新しいMANDU IDを作成してください！", "エラーが発生しました。もう一度お試しください", "3〜20文字で入力してください", "保存中...", "保存できませんでした。もう一度お試しください"],
+  zh:["我的 MANDU ID", "好友可以通过它找到你的<br>专属地址", "字母+数字+_（3–20 位）", "仅可使用小写字母、数字和 _<br>创建后很难修改！", "开始", "已经有 MANDU ID 了？", "重新加载我的账号", "请至少输入 3 个字符", "请输入不超过 20 个字符", "正在检查...", "该 ID 已被使用", "✓ 该 ID 可以使用！", "检查失败，请重试", "正在重新检查账号信息...", "欢迎回来 @{id}", "请创建新的 MANDU ID！", "出错了，请重试", "请输入 3–20 个字符", "正在保存...", "保存失败，请重试"],
+  es:["Tu MANDU ID", "Tu dirección única<br>para que tus amigos te encuentren", "letras + números + _ (3–20)", "Solo minúsculas, números y _<br>¡Es difícil cambiarlo después!", "Empezar", "¿Ya tienes un MANDU ID?", "Volver a cargar mi cuenta", "Escribe al menos 3 caracteres", "Escribe 20 caracteres o menos", "Comprobando...", "Este ID ya está en uso", "✓ ¡Este ID está disponible!", "No se pudo comprobar. Inténtalo de nuevo", "Comprobando tu cuenta de nuevo...", "Hola de nuevo @{id}", "¡Crea un nuevo MANDU ID!", "Algo salió mal. Inténtalo de nuevo", "Escribe de 3 a 20 caracteres", "Guardando...", "No se pudo guardar. Inténtalo de nuevo"],
+  fr:["Votre MANDU ID", "Votre adresse unique<br>pour que vos amis vous trouvent", "lettres + chiffres + _ (3–20)", "Uniquement minuscules, chiffres et _<br>Difficile à modifier ensuite !", "Commencer", "Vous avez déjà un MANDU ID ?", "Recharger mon compte", "Saisissez au moins 3 caractères", "Saisissez 20 caractères maximum", "Vérification...", "Cet ID est déjà pris", "✓ Cet ID est disponible !", "Échec de la vérification. Réessayez", "Nouvelle vérification de votre compte...", "Bon retour @{id}", "Créez un nouveau MANDU ID !", "Une erreur est survenue. Réessayez", "Saisissez 3 à 20 caractères", "Enregistrement...", "Échec de l'enregistrement. Réessayez"],
+  de:["Deine MANDU ID", "Deine eigene Adresse,<br>unter der Freunde dich finden", "Buchstaben + Zahlen + _ (3–20)", "Nur Kleinbuchstaben, Zahlen und _<br>Später kaum änderbar!", "Los geht's", "Du hast schon eine MANDU ID?", "Mein Konto neu laden", "Mindestens 3 Zeichen eingeben", "Höchstens 20 Zeichen eingeben", "Wird geprüft...", "Diese ID ist schon vergeben", "✓ Diese ID ist verfügbar!", "Prüfung fehlgeschlagen. Bitte erneut versuchen", "Konto wird erneut geprüft...", "Willkommen zurück @{id}", "Bitte erstelle eine neue MANDU ID!", "Etwas ist schiefgelaufen. Bitte erneut versuchen", "3–20 Zeichen eingeben", "Wird gespeichert...", "Speichern fehlgeschlagen. Bitte erneut versuchen"],
+  vi:["MANDU ID của bạn", "Địa chỉ riêng của bạn<br>để bạn bè tìm thấy bạn", "chữ + số + _ (3–20)", "Chỉ dùng chữ thường, số và _<br>Tạo rồi sẽ khó đổi!", "Bắt đầu", "Bạn đã có MANDU ID?", "Tải lại tài khoản của tôi", "Nhập ít nhất 3 ký tự", "Nhập tối đa 20 ký tự", "Đang kiểm tra...", "ID này đã được dùng", "✓ ID này có thể dùng!", "Kiểm tra thất bại. Vui lòng thử lại", "Đang kiểm tra lại tài khoản...", "Chào mừng trở lại @{id}", "Hãy tạo MANDU ID mới!", "Đã xảy ra lỗi. Vui lòng thử lại", "Nhập 3–20 ký tự", "Đang lưu...", "Lưu thất bại. Vui lòng thử lại"],
+  th:["MANDU ID ของคุณ", "ที่อยู่เฉพาะของคุณ<br>ให้เพื่อนค้นหาคุณได้", "ตัวอักษร + ตัวเลข + _ (3–20)", "ใช้ได้เฉพาะตัวพิมพ์เล็ก ตัวเลข และ _<br>สร้างแล้วเปลี่ยนได้ยาก!", "เริ่มต้น", "มี MANDU ID อยู่แล้ว?", "โหลดบัญชีของฉันใหม่", "กรอกอย่างน้อย 3 ตัว", "กรอกไม่เกิน 20 ตัว", "กำลังตรวจสอบ...", "ID นี้มีคนใช้แล้ว", "✓ ใช้ ID นี้ได้!", "ตรวจสอบไม่สำเร็จ กรุณาลองใหม่", "กำลังตรวจสอบบัญชีอีกครั้ง...", "ยินดีต้อนรับกลับ @{id}", "กรุณาสร้าง MANDU ID ใหม่!", "เกิดข้อผิดพลาด กรุณาลองใหม่", "กรอก 3–20 ตัว", "กำลังบันทึก...", "บันทึกไม่สำเร็จ กรุณาลองใหม่"],
+  mn:["Таны MANDU ID", "Найзууд тань таныг олох<br>өвөрмөц хаяг", "үсэг + тоо + _ (3–20)", "Зөвхөн жижиг латин үсэг, тоо, _<br>Үүсгэсний дараа өөрчлөхөд хэцүү!", "Эхлэх", "MANDU ID-тай юу?", "Бүртгэлээ дахин ачаалах", "Дор хаяж 3 тэмдэгт оруулна уу", "20-оос ихгүй тэмдэгт оруулна уу", "Шалгаж байна...", "Энэ ID ашиглагдаж байна", "✓ Энэ ID-г ашиглах боломжтой!", "Шалгаж чадсангүй. Дахин оролдоно уу", "Бүртгэлийг дахин шалгаж байна...", "Тавтай морил @{id}", "Шинэ MANDU ID үүсгэнэ үү!", "Алдаа гарлаа. Дахин оролдоно уу", "3–20 тэмдэгт оруулна уу", "Хадгалж байна...", "Хадгалж чадсангүй. Дахин оролдоно уу"],
+  hi:["आपकी MANDU ID", "आपका अपना पता<br>जिससे दोस्त आपको ढूँढ सकें", "अक्षर + अंक + _ (3–20)", "केवल छोटे अक्षर, अंक और _<br>बनाने के बाद बदलना मुश्किल है!", "शुरू करें", "पहले से MANDU ID है?", "मेरा खाता फिर से लोड करें", "कम से कम 3 अक्षर दर्ज करें", "20 या कम अक्षर दर्ज करें", "जाँच हो रही है...", "यह ID पहले से ली गई है", "✓ यह ID उपलब्ध है!", "जाँच विफल। फिर से कोशिश करें", "खाता फिर से जाँचा जा रहा है...", "फिर से स्वागत है @{id}", "कृपया नई MANDU ID बनाएँ!", "कुछ गलत हो गया। फिर से कोशिश करें", "3–20 अक्षर दर्ज करें", "सहेजा जा रहा है...", "सहेजा नहीं जा सका। फिर से कोशिश करें"],
+  pt:["Seu MANDU ID", "Seu endereço único<br>para seus amigos te encontrarem", "letras + números + _ (3–20)", "Só letras minúsculas, números e _<br>É difícil mudar depois!", "Começar", "Já tem um MANDU ID?", "Recarregar minha conta", "Digite pelo menos 3 caracteres", "Digite no máximo 20 caracteres", "Verificando...", "Este ID já está em uso", "✓ Este ID está disponível!", "Falha na verificação. Tente novamente", "Verificando sua conta de novo...", "Bem-vindo de volta @{id}", "Crie um novo MANDU ID!", "Algo deu errado. Tente novamente", "Digite de 3 a 20 caracteres", "Salvando...", "Não foi possível salvar. Tente novamente"],
+  ar:["معرّف MANDU الخاص بك", "عنوانك الفريد<br>ليجدك أصدقاؤك", "أحرف + أرقام + _ (3–20)", "أحرف لاتينية صغيرة وأرقام و_ فقط<br>يصعب تغييره بعد إنشائه!", "ابدأ", "لديك معرّف MANDU بالفعل؟", "إعادة تحميل حسابي", "أدخل 3 أحرف على الأقل", "أدخل 20 حرفًا أو أقل", "جارٍ التحقق...", "هذا المعرّف مستخدم بالفعل", "✓ هذا المعرّف متاح!", "فشل التحقق. حاول مرة أخرى", "جارٍ التحقق من حسابك مجددًا...", "مرحبًا بعودتك @{id}", "يرجى إنشاء معرّف MANDU جديد!", "حدث خطأ. حاول مرة أخرى", "أدخل من 3 إلى 20 حرفًا", "جارٍ الحفظ...", "تعذر الحفظ. حاول مرة أخرى"],
+  id:["MANDU ID Anda", "Alamat unik Anda<br>agar teman bisa menemukan Anda", "huruf + angka + _ (3–20)", "Hanya huruf kecil, angka, dan _<br>Sulit diubah setelah dibuat!", "Mulai", "Sudah punya MANDU ID?", "Muat ulang akun saya", "Masukkan minimal 3 karakter", "Masukkan maksimal 20 karakter", "Memeriksa...", "ID ini sudah dipakai", "✓ ID ini tersedia!", "Gagal memeriksa. Coba lagi", "Memeriksa ulang akun Anda...", "Selamat datang kembali @{id}", "Silakan buat MANDU ID baru!", "Terjadi kesalahan. Coba lagi", "Masukkan 3–20 karakter", "Menyimpan...", "Gagal menyimpan. Coba lagi"],
+  it:["Il tuo MANDU ID", "Il tuo indirizzo unico<br>per farti trovare dagli amici", "lettere + numeri + _ (3–20)", "Solo lettere minuscole, numeri e _<br>Difficile da cambiare dopo!", "Inizia", "Hai già un MANDU ID?", "Ricarica il mio account", "Inserisci almeno 3 caratteri", "Inserisci al massimo 20 caratteri", "Verifica in corso...", "Questo ID è già in uso", "✓ Questo ID è disponibile!", "Verifica non riuscita. Riprova", "Ricontrollo del tuo account...", "Bentornato @{id}", "Crea un nuovo MANDU ID!", "Qualcosa è andato storto. Riprova", "Inserisci da 3 a 20 caratteri", "Salvataggio...", "Salvataggio non riuscito. Riprova"],
+  da:["Dit MANDU ID", "Din egen unikke adresse,<br>så venner kan finde dig", "bogstaver + tal + _ (3–20)", "Kun små bogstaver, tal og _<br>Svært at ændre bagefter!", "Kom i gang", "Har du allerede et MANDU ID?", "Genindlæs min konto", "Indtast mindst 3 tegn", "Indtast højst 20 tegn", "Tjekker...", "Dette ID er allerede taget", "✓ Dette ID er ledigt!", "Tjek mislykkedes. Prøv igen", "Tjekker din konto igen...", "Velkommen tilbage @{id}", "Opret et nyt MANDU ID!", "Noget gik galt. Prøv igen", "Indtast 3–20 tegn", "Gemmer...", "Kunne ikke gemme. Prøv igen"]
+};
+Object.keys(UI_T4).forEach(function(l){if(!UI_T[l])UI_T[l]={};UI_T_KEYS4.forEach(function(k,i){UI_T[l][k]=UI_T4[l][i];});});
+// 운영자로 오해할 수 있는 예약 ID (보안 규칙의 예약어와 같은 목록)
+const UI_T_ID_RESERVED={ko:"쓸 수 없는 ID예요 (운영자로 오해할 수 있어요)",en:"This ID is not allowed (it could be mistaken for staff)",ja:"このIDは使えません（運営者と誤解される可能性があります）",zh:"此 ID 不可用（可能被误认为官方人员）",es:"Este ID no está permitido (podría confundirse con el equipo)",fr:"Cet ID n'est pas autorisé (il pourrait être confondu avec l'équipe)",de:"Diese ID ist nicht erlaubt (könnte mit dem Team verwechselt werden)",vi:"Không thể dùng ID này (có thể bị nhầm là quản trị viên)",th:"ใช้ ID นี้ไม่ได้ (อาจถูกเข้าใจผิดว่าเป็นผู้ดูแล)",mn:"Энэ ID-г ашиглах боломжгүй (админ гэж андуурагдаж болно)",hi:"यह ID उपयोग नहीं की जा सकती (इसे स्टाफ़ समझा जा सकता है)",pt:"Este ID não é permitido (pode ser confundido com a equipe)",ar:"لا يمكن استخدام هذا المعرّف (قد يُظن أنه من فريق الإدارة)",id:"ID ini tidak diizinkan (bisa dikira staf resmi)",it:"Questo ID non è consentito (potrebbe essere scambiato per lo staff)",da:"Dette ID er ikke tilladt (det kan forveksles med personalet)"};
+Object.keys(UI_T_ID_RESERVED).forEach(function(l){if(!UI_T[l])UI_T[l]={};UI_T[l].id_reserved=UI_T_ID_RESERVED[l];});
+
 let _uiLang='ko';
 function t(key){const T=UI_T[_uiLang]||UI_T.ko;return T[key]||UI_T.ko[key]||key;}
 
+function _lastUILang(){try{return localStorage.getItem('mandu_ui_lang_last');}catch(e){return null;}}
 function applyUILanguage(lang){
   _uiLang=lang||'ko';
   try{_updateIconStyleRow();}catch(e){}
+  try{localStorage.setItem('mandu_ui_lang_last',_uiLang);}catch(e){}
   document.documentElement.dir=(lang==='ar')?'rtl':'ltr';
   const T=UI_T[_uiLang]||UI_T.ko;
   try{renderLegalLabels();}catch(e){}
@@ -5698,6 +5952,9 @@ function applyUILanguage(lang){
   document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
     const k=el.getAttribute('data-i18n-placeholder');el.placeholder=t(k);
   });
+  // 로그인한 뒤에는 '로그인 후 생성' 대신 실제 내 링크
+  const mld=document.getElementById('my-link-display');
+  if(mld&&currentUser&&!currentUser.isAnonymous)mld.textContent=getMyLink();
   // 국가 드롭다운: 브라우저 내장 Intl.DisplayNames로 현지 언어 국가명 자동 생성
   try{
     const regionLang=(lang==='zh')?'zh-Hans':lang;
@@ -6267,8 +6524,8 @@ function renderLegalLabels(){
   const n=document.getElementById('plan-legal-notice');
   if(n)n.innerHTML=legalMsg(onetimeDef(_selectedPlanKey)?'pack_notice':'plan_notice').replace('{terms}',legalLink('terms',legalMsg('terms'))).replace('{refund}',legalLink('refund',legalMsg('refund')));
   const la=document.getElementById('login-legal-agree');
-  if(la)la.innerHTML=legalMsg('login_agree').replace('{terms}',legalLink('terms',legalMsg('terms')))
-    .replace('{privacy}','<span onclick="showPrivacyPolicy()" style="color:var(--primary);cursor:pointer;text-decoration:underline;">'+legalMsg('privacy')+'</span>');
+  if(la)la.innerHTML=_esc(t('legal_login_agree')).replace('{terms}',legalLink('terms',_esc(t('legal_terms'))))
+    .replace('{privacy}','<span onclick="showPrivacyPolicy()" style="color:var(--primary);cursor:pointer;text-decoration:underline;">'+_esc(t('legal_privacy'))+'</span>');
 }
 document.addEventListener('DOMContentLoaded',renderLegalLabels);
 
@@ -6354,6 +6611,7 @@ function syncInstallBanner(){
   const fab=document.querySelector('#main-screen .fab');
   const navH=nav?nav.offsetHeight:0;
   b.style.bottom=(navH+12)+'px';
+  document.body.style.setProperty('--pwa-pad',visible?(b.offsetHeight+16)+'px':'0px');
   if(fab)fab.style.bottom=(visible&&nav)?(navH+12+b.offsetHeight+14)+'px':'';
 }
 window.addEventListener('beforeinstallprompt',function(e){
