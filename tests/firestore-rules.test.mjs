@@ -173,6 +173,19 @@ await ok('openStoreRoom: 직원 다시 넣기(새 직원 칸만)', updateDoc(doc
   'memberNames.G3':'손님', 'memberPhotos.G3':'', 'memberNames.S2':'직원', 'memberPhotos.S2':'', name:'손님' }));
 await ok('매장이 아닌 회원 링크의 익명 손님 → store_ 방(손님 본인 한도)', setDoc(doc(anon('G4'), 'rooms/store_G4_V'), { type:'direct', members:['G4','V'], memberNames:{G4:'손님',V:'Victim'}, memberPhotos:{G4:'',V:''},
   lastMessageTime: serverTimestamp(), lastMessage:'', storeUid:'V', customerUid:'G4', staff:[], optIn:{G4:true} }));
+console.log('== 재방문 손님 (링크 없이 다시 열기 → resumeGuest)');
+await seed('public_profiles/H5', { displayName:'Shop5', photoURL:'', manduid:'shop5', isGuest:false, store:{ active:true, quick:[], staff:[] } });
+await ok('첫 방문: 익명 손님방 만들기', setDoc(doc(anon('G5'), 'rooms/guest_G5_H5'), { type:'direct', members:['G5','H5'], memberNames:{G5:'Guest',H5:'Shop5'}, memberPhotos:{G5:'',H5:''},
+  lastMessageTime: serverTimestamp(), lastMessage:'', storeUid:'H5', customerUid:'G5', staff:[], optIn:{G5:true}, isGuestRoom:true }));
+await ok('재방문: 내 방 목록 쿼리(익명)', getDocs(query(collection(anon('G5'), 'rooms'), where('members','array-contains','G5'))));
+await no('재방문: 남의 방 목록 쿼리', getDocs(query(collection(anon('G5'), 'rooms'), where('members','array-contains','H5'))));
+await seed('public_profiles/H5', { displayName:'Shop5', photoURL:'', manduid:'shop5', isGuest:false, store:{ active:false, quick:[], staff:[] } });
+await ok('매장 설정을 끈 뒤에도 같은 방 다시 열기(내 칸만)', updateDoc(doc(anon('G5'), 'rooms/guest_G5_H5'), { members:['G5','H5'], staff:[], type:'direct',
+  'memberNames.G5':'Guest', 'memberPhotos.G5':'', 'optIn.G5':true }));
+await ok('그 방에서 계속 메시지', addDoc(collection(anon('G5'), 'rooms/guest_G5_H5/messages'), { text:'hi again', uid:'G5', createdAt: serverTimestamp() }));
+await ok('보낸 뒤 방 갱신', setDoc(doc(anon('G5'), 'rooms/guest_G5_H5'), { lastMessage:'hi again', lastMessageTime: serverTimestamp(), lastMessageUid:'G5', msgSeq: increment(1), readSeq:{G5:1}, optIn:{G5:true} }, { merge:true }));
+await no('매장 설정이 꺼진 가게에 새 익명 손님방', setDoc(doc(anon('G6'), 'rooms/guest_G6_H5'), { type:'direct', members:['G6','H5'], memberNames:{G6:'G',H5:'Shop5'}, memberPhotos:{G6:'',H5:''},
+  lastMessageTime: serverTimestamp(), lastMessage:'', storeUid:'H5', customerUid:'G6', staff:[], optIn:{G6:true}, isGuestRoom:true }));
 await ok('초대 링크로 들어온 사람의 입장 안내(kind join)', addDoc(collection(db('R'), 'rooms/G2/messages'), { type:'system', kind:'join', uids:['R'], createdAt: serverTimestamp() }));
 await ok('카드북 연결 끄기(삭제)', deleteDoc(doc(c1, 'cardbook_index/c1@x.com')));
 
