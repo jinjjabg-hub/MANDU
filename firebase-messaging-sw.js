@@ -23,7 +23,7 @@ messaging.onBackgroundMessage(function(payload){
     const n=parseInt(d.badge,10);
     self.navigator.setAppBadge(n>0?n:1).catch(function(){});
   }
-  return self.registration.showNotification(d.title||'MANDU 🥟',{
+  return self.registration.showNotification(d.title||'MANDU',{
     body:d.body||'새 메시지가 있어요',
     icon:'/icon-192.png',
     badge:'/icon-192.png',
