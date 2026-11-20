@@ -629,22 +629,20 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <circle cx="114" cy="94" r="5.5" fill="#6b38d4"/>
     <path d="M80,112 Q100,128 120,112" stroke="#6b38d4" stroke-width="4" fill="none" stroke-linecap="round"/>
   </svg>
-  <div class="id-title">나만의 MANDU ID</div>
-  <div class="id-sub">친구들이 나를 찾을 수 있는<br>나만의 고유 주소예요 🥟</div>
+  <div class="id-title" data-i18n="id_title">나만의 MANDU ID</div>
+  <div class="id-sub" data-i18n-html="id_sub_html">친구들이 나를 찾을 수 있는<br>나만의 고유 주소예요 🥟</div>
   <div class="id-input-wrap">
-    <div class="id-input-row">
+    <div class="id-input-row" dir="ltr">
       <span class="id-prefix">@</span>
-      <input id="mandu-id-input" type="text" placeholder="영문+숫자+_ (3~20자)" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      <input id="mandu-id-input" type="text" placeholder="영문+숫자+_ (3~20자)" data-i18n-placeholder="id_ph" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
     </div>
     <div id="id-check-msg" class="id-check-msg"></div>
-    <div class="id-hint">영문 소문자, 숫자, _ 만 사용 가능해요<br>한번 만들면 변경이 어려워요!</div>
+    <div class="id-hint" data-i18n-html="id_hint_html">영문 소문자, 숫자, _ 만 사용 가능해요<br>한번 만들면 변경이 어려워요!</div>
   </div>
-  <button class="id-confirm-btn" id="id-confirm-btn" onclick="createManduid()" disabled>시작하기 🥟</button>
+  <button class="id-confirm-btn" id="id-confirm-btn" onclick="createManduid()" disabled data-i18n="id_start_btn">시작하기 🥟</button>
   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:4px;">
-    <div style="font-size:12px;color:var(--outline);">이미 만두 ID가 있으신가요?</div>
-    <button onclick="retryFindManduid()" style="background:none;border:1.5px solid var(--primary);color:var(--primary);border-radius:100px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
-      내 계정 다시 불러오기
-    </button>
+    <div style="font-size:12px;color:var(--outline);" data-i18n="id_have">이미 만두 ID가 있으신가요?</div>
+    <button onclick="retryFindManduid()" style="background:none;border:1.5px solid var(--primary);color:var(--primary);border-radius:100px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;" data-i18n="id_reload_btn">내 계정 다시 불러오기</button>
   </div>
 </div>
 
@@ -1775,12 +1773,12 @@ document.addEventListener('DOMContentLoaded',function(){
         return;
       }
       if(cleaned.length<3){
-        setIdMsg('3자 이상 입력해주세요','var(--outline)');return;
+        setIdMsg(t('id_min3'),'var(--outline)');return;
       }
       if(cleaned.length>20){
-        setIdMsg('20자 이하로 입력해주세요','var(--error)');return;
+        setIdMsg(t('id_max20'),'var(--error)');return;
       }
-      setIdMsg('확인 중...','var(--outline)');
+      setIdMsg(t('id_checking'),'var(--outline)');
       idCheckTimeout=setTimeout(()=>checkManduidAvailable(cleaned),600);
     });
   }
@@ -1795,21 +1793,21 @@ async function checkManduidAvailable(id){
   try{
     const doc=await db.collection('manduid_index').doc(id).get();
     if(doc.exists){
-      setIdMsg('이미 사용 중인 ID예요 😅','var(--error)');
+      setIdMsg(t('id_taken'),'var(--error)');
       idAvailable=false;
     }else{
-      setIdMsg('✓ 사용 가능한 ID예요!','var(--success)');
+      setIdMsg(t('id_available'),'var(--success)');
       idAvailable=true;
       document.getElementById('id-confirm-btn').disabled=false;
     }
   }catch(e){
-    setIdMsg('확인 실패. 다시 시도해주세요','var(--error)');
+    setIdMsg(t('id_check_fail'),'var(--error)');
   }
 }
 
 async function retryFindManduid(){
   if(!currentUser)return;
-  showToast('계정 정보를 다시 확인하는 중...');
+  showToast(t('id_reloading'));
   try{
     // 1단계: users 문서에서 manduid 직접 확인 (서버에서 강제 읽기)
     const userDoc=await db.collection('users').doc(currentUser.uid).get({source:'server'});
@@ -1818,7 +1816,7 @@ async function retryFindManduid(){
       currentManduid=userData.manduid;
       updateUIAfterLogin();
       showMain();
-      showToast('반가워요 @'+userData.manduid+' 🥟');
+      showToast(t('id_welcome_back').replace('{id}',userData.manduid));
       return;
     }
     // 2단계: manduid_index에서 역방향 조회
@@ -1829,9 +1827,9 @@ async function retryFindManduid(){
       currentManduid=foundId;
       updateUIAfterLogin();
       showMain();
-      showToast('반가워요 @'+foundId+' 🥟');
+      showToast(t('id_welcome_back').replace('{id}',foundId));
     }else{
-      showToast('새 만두 ID를 만들어주세요!');
+      showToast(t('id_make_new'));
     }
   }catch(e){
     console.error('retryFindManduid error:',e);
@@ -1843,27 +1841,27 @@ async function retryFindManduid(){
         currentManduid=ud2.manduid;
         updateUIAfterLogin();
         showMain();
-        showToast('반가워요 @'+ud2.manduid+' 🥟');
+        showToast(t('id_welcome_back').replace('{id}',ud2.manduid));
       }else{
-        showToast('오류가 발생했어요. 다시 시도해요');
+        showToast(t('id_error'));
       }
-    }catch(e2){showToast('오류가 발생했어요. 다시 시도해요');}
+    }catch(e2){showToast(t('id_error'));}
   }
 }
 
 async function createManduid(){
   if(!currentUser||!idAvailable)return;
   const id=document.getElementById('mandu-id-input').value.toLowerCase().replace(/[^a-z0-9_]/g,'');
-  if(id.length<3||id.length>20){showToast('3~20자로 입력해주세요');return;}
+  if(id.length<3||id.length>20){showToast(t('id_len'));return;}
 
   const btn=document.getElementById('id-confirm-btn');
   btn.disabled=true;
-  btn.textContent='저장 중...';
+  btn.textContent=t('id_saving');
 
   try{
     // 중복 최종 확인
     const existing=await db.collection('manduid_index').doc(id).get();
-    if(existing.exists){showToast('이미 사용 중인 ID예요');btn.disabled=false;btn.textContent='시작하기 🥟';return;}
+    if(existing.exists){showToast(t('id_taken'));btn.disabled=false;btn.textContent=t('id_start_btn');return;}
 
     // 저장
     await db.collection('manduid_index').doc(id).set({uid:currentUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
@@ -1873,12 +1871,12 @@ async function createManduid(){
     currentManduid=id;
     updateUIAfterLogin();
     showMain();
-    showToast('환영해요 @'+id+' 🥟');
+    showToast(t('welcome_toast').replace('{id}',id));
     setTimeout(afterNewAccountReferral,1200);
   }catch(e){
-    showToast('저장 실패. 다시 시도해요');
+    showToast(t('id_save_fail'));
     btn.disabled=false;
-    btn.textContent='시작하기 🥟';
+    btn.textContent=t('id_start_btn');
   }
 }
 
@@ -2181,7 +2179,7 @@ auth.onAuthStateChanged(async function(user){
           currentManduid=foundId;
           updateUIAfterLogin();
           showMain();
-          showToast('반가워요 @'+foundId+' 🥟');
+          showToast(t('id_welcome_back').replace('{id}',foundId));
           return;
         }
       }catch(e){}
@@ -5620,6 +5618,28 @@ const UI_T3={
   da:["Chat uden at logge ind", "Forskellige sprog, <strong>én samtale</strong>", "Fortsæt med Google", "Fortsæt med Google (åbner i Chrome/Safari)", "Google-login er blokeret i denne app, så knappen åbner Chrome/Safari. ", "Åbn i Chrome/Safari", "Fortsæt med Kakao", "Fortsæt med Apple", "Fortsæt med telefonnummer", "eller", "E-mail", "Adgangskode", "Fortsæt med e-mail", "Tilmeld dig", "Glemt adgangskode?", "Navn (kaldenavn)", "Adgangskode (mindst 6 tegn)", "Tilmeld dig", "Har du allerede en konto? → Log ind", "Indtast e-mail og adgangskode", "Logger ind...", "Der findes ingen konto med denne e-mail", "Forkert adgangskode", "Ugyldig e-mailadresse", "For mange forsøg. Prøv igen senere", "Forkert e-mail eller adgangskode", "Login mislykkedes: ", "Indtast din e-mail", "Adgangskoden skal være mindst 6 tegn", "Tilmelder...", "Denne e-mail er allerede i brug", "Adgangskoden er for kort", "Tilmelding mislykkedes: ", "Indtast først din e-mail", "E-mail til nulstilling sendt ✓", "Kunne ikke sende. Tjek din e-mail", "Ved tilmelding accepterer du {terms} og {privacy}.", "Servicevilkår", "Privatlivspolitik"]
 };
 Object.keys(UI_T3).forEach(function(l){if(!UI_T[l])UI_T[l]={};UI_T_KEYS3.forEach(function(k,i){UI_T[l][k]=UI_T3[l][i];});});
+
+// 만두 ID 만들기 화면 (16개 언어)
+const UI_T_KEYS4=["id_title", "id_sub_html", "id_ph", "id_hint_html", "id_start_btn", "id_have", "id_reload_btn", "id_min3", "id_max20", "id_checking", "id_taken", "id_available", "id_check_fail", "id_reloading", "id_welcome_back", "id_make_new", "id_error", "id_len", "id_saving", "id_save_fail"];
+const UI_T4={
+  ko:["나만의 MANDU ID", "친구들이 나를 찾을 수 있는<br>나만의 고유 주소예요 🥟", "영문+숫자+_ (3~20자)", "영문 소문자, 숫자, _ 만 사용 가능해요<br>한번 만들면 변경이 어려워요!", "시작하기 🥟", "이미 만두 ID가 있으신가요?", "내 계정 다시 불러오기", "3자 이상 입력해주세요", "20자 이하로 입력해주세요", "확인 중...", "이미 사용 중인 ID예요 😅", "✓ 사용 가능한 ID예요!", "확인 실패. 다시 시도해주세요", "계정 정보를 다시 확인하는 중...", "반가워요 @{id} 🥟", "새 만두 ID를 만들어주세요!", "오류가 발생했어요. 다시 시도해주세요", "3~20자로 입력해주세요", "저장 중...", "저장 실패. 다시 시도해주세요"],
+  en:["Your MANDU ID", "Your own unique address<br>so friends can find you 🥟", "letters + numbers + _ (3–20)", "Only lowercase letters, numbers and _<br>It is hard to change once created!", "Get started 🥟", "Already have a MANDU ID?", "Reload my account", "Enter at least 3 characters", "Enter 20 characters or fewer", "Checking...", "This ID is already taken 😅", "✓ This ID is available!", "Check failed. Please try again", "Checking your account again...", "Welcome back @{id} 🥟", "Please create a new MANDU ID!", "Something went wrong. Please try again", "Enter 3–20 characters", "Saving...", "Could not save. Please try again"],
+  ja:["あなたのMANDU ID", "友だちがあなたを見つけられる<br>あなただけのアドレスです 🥟", "英字+数字+_（3〜20文字）", "英小文字・数字・_ のみ使えます<br>一度作ると変更は難しいです！", "はじめる 🥟", "すでにMANDU IDをお持ちですか？", "アカウントを再読み込み", "3文字以上入力してください", "20文字以内で入力してください", "確認中...", "このIDはすでに使われています 😅", "✓ このIDは使えます！", "確認できませんでした。もう一度お試しください", "アカウント情報を再確認しています...", "おかえりなさい @{id} 🥟", "新しいMANDU IDを作成してください！", "エラーが発生しました。もう一度お試しください", "3〜20文字で入力してください", "保存中...", "保存できませんでした。もう一度お試しください"],
+  zh:["我的 MANDU ID", "好友可以通过它找到你的<br>专属地址 🥟", "字母+数字+_（3–20 位）", "仅可使用小写字母、数字和 _<br>创建后很难修改！", "开始 🥟", "已经有 MANDU ID 了？", "重新加载我的账号", "请至少输入 3 个字符", "请输入不超过 20 个字符", "正在检查...", "该 ID 已被使用 😅", "✓ 该 ID 可以使用！", "检查失败，请重试", "正在重新检查账号信息...", "欢迎回来 @{id} 🥟", "请创建新的 MANDU ID！", "出错了，请重试", "请输入 3–20 个字符", "正在保存...", "保存失败，请重试"],
+  es:["Tu MANDU ID", "Tu dirección única<br>para que tus amigos te encuentren 🥟", "letras + números + _ (3–20)", "Solo minúsculas, números y _<br>¡Es difícil cambiarlo después!", "Empezar 🥟", "¿Ya tienes un MANDU ID?", "Volver a cargar mi cuenta", "Escribe al menos 3 caracteres", "Escribe 20 caracteres o menos", "Comprobando...", "Este ID ya está en uso 😅", "✓ ¡Este ID está disponible!", "No se pudo comprobar. Inténtalo de nuevo", "Comprobando tu cuenta de nuevo...", "Hola de nuevo @{id} 🥟", "¡Crea un nuevo MANDU ID!", "Algo salió mal. Inténtalo de nuevo", "Escribe de 3 a 20 caracteres", "Guardando...", "No se pudo guardar. Inténtalo de nuevo"],
+  fr:["Votre MANDU ID", "Votre adresse unique<br>pour que vos amis vous trouvent 🥟", "lettres + chiffres + _ (3–20)", "Uniquement minuscules, chiffres et _<br>Difficile à modifier ensuite !", "Commencer 🥟", "Vous avez déjà un MANDU ID ?", "Recharger mon compte", "Saisissez au moins 3 caractères", "Saisissez 20 caractères maximum", "Vérification...", "Cet ID est déjà pris 😅", "✓ Cet ID est disponible !", "Échec de la vérification. Réessayez", "Nouvelle vérification de votre compte...", "Bon retour @{id} 🥟", "Créez un nouveau MANDU ID !", "Une erreur est survenue. Réessayez", "Saisissez 3 à 20 caractères", "Enregistrement...", "Échec de l'enregistrement. Réessayez"],
+  de:["Deine MANDU ID", "Deine eigene Adresse,<br>unter der Freunde dich finden 🥟", "Buchstaben + Zahlen + _ (3–20)", "Nur Kleinbuchstaben, Zahlen und _<br>Später kaum änderbar!", "Los geht's 🥟", "Du hast schon eine MANDU ID?", "Mein Konto neu laden", "Mindestens 3 Zeichen eingeben", "Höchstens 20 Zeichen eingeben", "Wird geprüft...", "Diese ID ist schon vergeben 😅", "✓ Diese ID ist verfügbar!", "Prüfung fehlgeschlagen. Bitte erneut versuchen", "Konto wird erneut geprüft...", "Willkommen zurück @{id} 🥟", "Bitte erstelle eine neue MANDU ID!", "Etwas ist schiefgelaufen. Bitte erneut versuchen", "3–20 Zeichen eingeben", "Wird gespeichert...", "Speichern fehlgeschlagen. Bitte erneut versuchen"],
+  vi:["MANDU ID của bạn", "Địa chỉ riêng của bạn<br>để bạn bè tìm thấy bạn 🥟", "chữ + số + _ (3–20)", "Chỉ dùng chữ thường, số và _<br>Tạo rồi sẽ khó đổi!", "Bắt đầu 🥟", "Bạn đã có MANDU ID?", "Tải lại tài khoản của tôi", "Nhập ít nhất 3 ký tự", "Nhập tối đa 20 ký tự", "Đang kiểm tra...", "ID này đã được dùng 😅", "✓ ID này có thể dùng!", "Kiểm tra thất bại. Vui lòng thử lại", "Đang kiểm tra lại tài khoản...", "Chào mừng trở lại @{id} 🥟", "Hãy tạo MANDU ID mới!", "Đã xảy ra lỗi. Vui lòng thử lại", "Nhập 3–20 ký tự", "Đang lưu...", "Lưu thất bại. Vui lòng thử lại"],
+  th:["MANDU ID ของคุณ", "ที่อยู่เฉพาะของคุณ<br>ให้เพื่อนค้นหาคุณได้ 🥟", "ตัวอักษร + ตัวเลข + _ (3–20)", "ใช้ได้เฉพาะตัวพิมพ์เล็ก ตัวเลข และ _<br>สร้างแล้วเปลี่ยนได้ยาก!", "เริ่มต้น 🥟", "มี MANDU ID อยู่แล้ว?", "โหลดบัญชีของฉันใหม่", "กรอกอย่างน้อย 3 ตัว", "กรอกไม่เกิน 20 ตัว", "กำลังตรวจสอบ...", "ID นี้มีคนใช้แล้ว 😅", "✓ ใช้ ID นี้ได้!", "ตรวจสอบไม่สำเร็จ กรุณาลองใหม่", "กำลังตรวจสอบบัญชีอีกครั้ง...", "ยินดีต้อนรับกลับ @{id} 🥟", "กรุณาสร้าง MANDU ID ใหม่!", "เกิดข้อผิดพลาด กรุณาลองใหม่", "กรอก 3–20 ตัว", "กำลังบันทึก...", "บันทึกไม่สำเร็จ กรุณาลองใหม่"],
+  mn:["Таны MANDU ID", "Найзууд тань таныг олох<br>өвөрмөц хаяг 🥟", "үсэг + тоо + _ (3–20)", "Зөвхөн жижиг латин үсэг, тоо, _<br>Үүсгэсний дараа өөрчлөхөд хэцүү!", "Эхлэх 🥟", "MANDU ID-тай юу?", "Бүртгэлээ дахин ачаалах", "Дор хаяж 3 тэмдэгт оруулна уу", "20-оос ихгүй тэмдэгт оруулна уу", "Шалгаж байна...", "Энэ ID ашиглагдаж байна 😅", "✓ Энэ ID-г ашиглах боломжтой!", "Шалгаж чадсангүй. Дахин оролдоно уу", "Бүртгэлийг дахин шалгаж байна...", "Тавтай морил @{id} 🥟", "Шинэ MANDU ID үүсгэнэ үү!", "Алдаа гарлаа. Дахин оролдоно уу", "3–20 тэмдэгт оруулна уу", "Хадгалж байна...", "Хадгалж чадсангүй. Дахин оролдоно уу"],
+  hi:["आपकी MANDU ID", "आपका अपना पता<br>जिससे दोस्त आपको ढूँढ सकें 🥟", "अक्षर + अंक + _ (3–20)", "केवल छोटे अक्षर, अंक और _<br>बनाने के बाद बदलना मुश्किल है!", "शुरू करें 🥟", "पहले से MANDU ID है?", "मेरा खाता फिर से लोड करें", "कम से कम 3 अक्षर दर्ज करें", "20 या कम अक्षर दर्ज करें", "जाँच हो रही है...", "यह ID पहले से ली गई है 😅", "✓ यह ID उपलब्ध है!", "जाँच विफल। फिर से कोशिश करें", "खाता फिर से जाँचा जा रहा है...", "फिर से स्वागत है @{id} 🥟", "कृपया नई MANDU ID बनाएँ!", "कुछ गलत हो गया। फिर से कोशिश करें", "3–20 अक्षर दर्ज करें", "सहेजा जा रहा है...", "सहेजा नहीं जा सका। फिर से कोशिश करें"],
+  pt:["Seu MANDU ID", "Seu endereço único<br>para seus amigos te encontrarem 🥟", "letras + números + _ (3–20)", "Só letras minúsculas, números e _<br>É difícil mudar depois!", "Começar 🥟", "Já tem um MANDU ID?", "Recarregar minha conta", "Digite pelo menos 3 caracteres", "Digite no máximo 20 caracteres", "Verificando...", "Este ID já está em uso 😅", "✓ Este ID está disponível!", "Falha na verificação. Tente novamente", "Verificando sua conta de novo...", "Bem-vindo de volta @{id} 🥟", "Crie um novo MANDU ID!", "Algo deu errado. Tente novamente", "Digite de 3 a 20 caracteres", "Salvando...", "Não foi possível salvar. Tente novamente"],
+  ar:["معرّف MANDU الخاص بك", "عنوانك الفريد<br>ليجدك أصدقاؤك 🥟", "أحرف + أرقام + _ (3–20)", "أحرف لاتينية صغيرة وأرقام و_ فقط<br>يصعب تغييره بعد إنشائه!", "ابدأ 🥟", "لديك معرّف MANDU بالفعل؟", "إعادة تحميل حسابي", "أدخل 3 أحرف على الأقل", "أدخل 20 حرفًا أو أقل", "جارٍ التحقق...", "هذا المعرّف مستخدم بالفعل 😅", "✓ هذا المعرّف متاح!", "فشل التحقق. حاول مرة أخرى", "جارٍ التحقق من حسابك مجددًا...", "مرحبًا بعودتك @{id} 🥟", "يرجى إنشاء معرّف MANDU جديد!", "حدث خطأ. حاول مرة أخرى", "أدخل من 3 إلى 20 حرفًا", "جارٍ الحفظ...", "تعذر الحفظ. حاول مرة أخرى"],
+  id:["MANDU ID Anda", "Alamat unik Anda<br>agar teman bisa menemukan Anda 🥟", "huruf + angka + _ (3–20)", "Hanya huruf kecil, angka, dan _<br>Sulit diubah setelah dibuat!", "Mulai 🥟", "Sudah punya MANDU ID?", "Muat ulang akun saya", "Masukkan minimal 3 karakter", "Masukkan maksimal 20 karakter", "Memeriksa...", "ID ini sudah dipakai 😅", "✓ ID ini tersedia!", "Gagal memeriksa. Coba lagi", "Memeriksa ulang akun Anda...", "Selamat datang kembali @{id} 🥟", "Silakan buat MANDU ID baru!", "Terjadi kesalahan. Coba lagi", "Masukkan 3–20 karakter", "Menyimpan...", "Gagal menyimpan. Coba lagi"],
+  it:["Il tuo MANDU ID", "Il tuo indirizzo unico<br>per farti trovare dagli amici 🥟", "lettere + numeri + _ (3–20)", "Solo lettere minuscole, numeri e _<br>Difficile da cambiare dopo!", "Inizia 🥟", "Hai già un MANDU ID?", "Ricarica il mio account", "Inserisci almeno 3 caratteri", "Inserisci al massimo 20 caratteri", "Verifica in corso...", "Questo ID è già in uso 😅", "✓ Questo ID è disponibile!", "Verifica non riuscita. Riprova", "Ricontrollo del tuo account...", "Bentornato @{id} 🥟", "Crea un nuovo MANDU ID!", "Qualcosa è andato storto. Riprova", "Inserisci da 3 a 20 caratteri", "Salvataggio...", "Salvataggio non riuscito. Riprova"],
+  da:["Dit MANDU ID", "Din egen unikke adresse,<br>så venner kan finde dig 🥟", "bogstaver + tal + _ (3–20)", "Kun små bogstaver, tal og _<br>Svært at ændre bagefter!", "Kom i gang 🥟", "Har du allerede et MANDU ID?", "Genindlæs min konto", "Indtast mindst 3 tegn", "Indtast højst 20 tegn", "Tjekker...", "Dette ID er allerede taget 😅", "✓ Dette ID er ledigt!", "Tjek mislykkedes. Prøv igen", "Tjekker din konto igen...", "Velkommen tilbage @{id} 🥟", "Opret et nyt MANDU ID!", "Noget gik galt. Prøv igen", "Indtast 3–20 tegn", "Gemmer...", "Kunne ikke gemme. Prøv igen"]
+};
+Object.keys(UI_T4).forEach(function(l){if(!UI_T[l])UI_T[l]={};UI_T_KEYS4.forEach(function(k,i){UI_T[l][k]=UI_T4[l][i];});});
 
 let _uiLang='ko';
 function t(key){const T=UI_T[_uiLang]||UI_T.ko;return T[key]||UI_T.ko[key]||key;}
