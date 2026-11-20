@@ -3,8 +3,8 @@
 PWA를 안드로이드 앱(.apk / .aab)으로 패키징하는 방법입니다.  
 **빌드는 GitHub Actions로 자동화되어 있습니다. 로컬 Android SDK 설치 불필요.**
 
-> ⚠️ **GitHub Actions 워크플로우 활성화**: PAT에 `workflow` 스코프 추가 후  
-> `twa/build-twa.workflow.yml` 파일을 `.github/workflows/build-twa.yml`로 복사하세요.
+> 빌드 워크플로우는 `.github/workflows/build-twa.yml` 에 있습니다(이미 활성화됨).  
+> 예전 안내의 `twa/build-twa.workflow.yml` 복사본은 오래된 버전이라 삭제했습니다 — 덮어쓰면 빌드가 깨집니다.
 
 ---
 
@@ -12,7 +12,7 @@ PWA를 안드로이드 앱(.apk / .aab)으로 패키징하는 방법입니다.
 
 ```
 만두/
-├── twa/build-twa.workflow.yml        ← 이 파일을 .github/workflows/로 복사
+├── .github/workflows/build-twa.yml   ← 빌드 워크플로우 (실제 사용 중)
 ├── .well-known/
 │   └── assetlinks.json              ← TWA 도메인 신뢰 검증 (SHA-256 기입 완료)
 ├── twa/

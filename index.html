@@ -19,6 +19,7 @@
 }catch(e){}})();
 </script>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MANDU</title>
 <script>
@@ -1861,6 +1862,7 @@ async function createManduid(){
     // 저장
     await db.collection('manduid_index').doc(id).set({uid:currentUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
     await db.collection('users').doc(currentUser.uid).update({manduid:id});
+    setTimeout(syncPublicProfile,0);
 
     currentManduid=id;
     updateUIAfterLogin();
@@ -2193,9 +2195,8 @@ auth.onAuthStateChanged(async function(user){
       }catch(e){}
     }
     if(hostUID&&hostUID!==user.uid){
-      const hostDoc=await db.collection('users').doc(hostUID).get();
-      if(hostDoc.exists){
-        const hd=hostDoc.data();
+      const hd=await _getProfile(hostUID);
+      if(hd){
         if(!forceDM&&_storeStaff(hd,hostUID).length){await openStoreRoom(hd,hostUID);}else{await startDM(hd);}
         return;
       }
@@ -2241,16 +2242,35 @@ function _setGuestHost(d){
 async function _readPublicProfile(uid){
   try{const d=await db.collection('public_profiles').doc(uid).get();return d.exists?d.data():null;}catch(e){return null;}
 }
-function syncPublicProfile(){
-  if(!currentUser||currentUser.isAnonymous||!currentManduid)return;
-  const u=usersMap[currentUser.uid]||{};
-  db.collection('public_profiles').doc(currentUser.uid).set({
-    displayName:String(u.displayName||currentUser.displayName||'').slice(0,60),
-    photoURL:String(u.photoURL||currentUser.photoURL||'').slice(0,500),
-    manduid:currentManduid,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(function(e){console.warn('공개 명함 저장 실패:',e&&e.code);});
-  syncDiscoverProfile();
+// 다른 사람이 보는 내 정보는 public_profiles에만 둔다 (users 문서는 본인만 읽을 수 있음 — 이메일·알림 토큰 보호)
+function _publicStore(st){
+  st=st||{};
+  return {greetOn:!!st.greetOn,greeting:String(st.greeting||'').slice(0,300),awayOn:!!st.awayOn,awayMsg:String(st.awayMsg||'').slice(0,300),
+    quick:(Array.isArray(st.quick)?st.quick:[]).slice(0,20).map(function(q){return String(q).slice(0,200);}),
+    staff:(Array.isArray(st.staff)?st.staff:[]).slice(0,10).map(String)};
+}
+async function syncPublicProfile(){
+  if(!currentUser)return;
+  const me=currentUser.uid;
+  let u=usersMap[me]||{};
+  try{const d=await db.collection('users').doc(me).get();if(d.exists)u=d.data();}catch(e){}
+  try{
+    await db.collection('public_profiles').doc(me).set({
+      displayName:String(u.displayName||currentUser.displayName||localStorage.getItem('mandu_guest_name')||'').slice(0,60),
+      photoURL:String(u.photoURL||currentUser.photoURL||'').slice(0,500),
+      manduid:String(currentManduid||u.manduid||'').slice(0,20),
+      isGuest:!!(currentUser.isAnonymous||u.isGuest),
+      store:_publicStore(u.store),
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){console.warn('공개 명함 저장 실패:',e&&e.code);}
+  if(!currentUser.isAnonymous)syncDiscoverProfile();
+}
+// 다른 사람의 공개 정보 (이름·사진·만두ID·매장 설정). 예전 users 문서와 같은 모양으로 돌려준다.
+function _profileRef(uid){return db.collection('public_profiles').doc(uid);}
+async function _getProfile(uid){
+  if(!uid)return null;
+  try{const d=await _profileRef(uid).get();if(!d.exists)return null;const u=d.data();u.uid=uid;return u;}catch(e){return null;}
 }
 async function loadGuestHostInfo(){
   _setGuestHost(await _readPublicProfile(hostUID));
@@ -2285,9 +2305,8 @@ function detectBrowserLang(){
 async function openGuestRoom(){
   if(!currentUser||!hostUID)return;
   try{
-    const hostDoc=await db.collection('users').doc(hostUID).get();
-    if(!hostDoc.exists){showToast('잘못된 링크예요');show('login-screen');return;}
-    const host=hostDoc.data();
+    const host=await _getProfile(hostUID);
+    if(!host){showToast('잘못된 링크예요');show('login-screen');return;}
     const guestName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
     // 브라우저 언어 자동 감지 → UI 화면 언어 + 번역 대상 언어 둘 다 즉시 적용
     const detectedLang=detectBrowserLang();
@@ -2719,9 +2738,8 @@ async function pickContacts(){
 async function discoverStartDM(uid){
   if(!uid)return;
   try{
-    var snap=await db.collection('users').doc(uid).get();
-    if(!snap.exists)return;
-    var partner=snap.data();partner.uid=uid;
+    var partner=await _getProfile(uid);
+    if(!partner)return;
     await startDM(partner);
     switchTab('chats');
   }catch(e){showToast('채팅방 생성에 실패했어요');}
@@ -3049,7 +3067,7 @@ async function showBlockedList(){
   const items=[];
   for(const uid of ids){
     let name=uid.slice(0,6);
-    try{const s=await db.collection('users').doc(uid).get();if(s.exists){const d=s.data();name=(d.displayName||name)+(d.manduid?' @'+d.manduid:'');}}catch(e){}
+    const d=await _getProfile(uid);if(d){name=(d.displayName||name)+(d.manduid?' @'+d.manduid:'');}
     items.push({icon:'lock_open',label:_L('차단 해제: ','Unblock: ')+name,fn:function(){unblockUser(uid);}});
   }
   _modSheet(_L('차단한 사용자','Blocked users'),items);
@@ -3127,7 +3145,7 @@ async function _getStore(uid){
   const c=_storeCache[uid];
   if(c&&Date.now()-c.t<60000)return c.d;
   let d={};
-  try{const snap=await db.collection('users').doc(uid).get();d=(snap.exists&&snap.data().store)||{};}catch(e){}
+  const pf=await _getProfile(uid);d=(pf&&pf.store)||{};
   _storeCache[uid]={t:Date.now(),d:d};
   return d;
 }
@@ -3195,7 +3213,7 @@ async function openStoreRoom(host,hostUid){
   if(anon)data.isGuestRoom=true;
   if(staff.length){
     data.type='group';data.name=myName;data.members=[me,hostUid].concat(staff);
-    const docs=await Promise.all(staff.map(function(u){return db.collection('users').doc(u).get().catch(function(){return null;});}));
+    const docs=await Promise.all(staff.map(function(u){return _profileRef(u).get().catch(function(){return null;});}));
     docs.forEach(function(sd,i){const u=sd&&sd.exists?sd.data():{};data.memberNames[staff[i]]=u.displayName||'';data.memberPhotos[staff[i]]=u.photoURL||'';});
   }
   await db.collection('rooms').doc(roomId).set(data,{merge:true});
@@ -3229,7 +3247,7 @@ async function showStoreSettings(){
   if(!currentUser||currentUser.isAnonymous)return;
   let st={};
   try{const snap=await db.collection('users').doc(currentUser.uid).get();st=(snap.exists&&snap.data().store)||{};}catch(e){}
-  _storeDraft={greetOn:!!st.greetOn,greeting:st.greeting||'',awayOn:!!st.awayOn,awayMsg:st.awayMsg||'',quick:(st.quick||[]).slice(0,20),staff:(st.staff||[]).slice(0,10)};
+  _storeDraft={greetOn:!!st.greetOn,greeting:st.greeting||'',awayOn:!!st.awayOn,awayMsg:st.awayMsg||'',quick:(st.quick||[]).slice(0,20),staff:(st.staff||[]).slice(0,10),guestDaily:STORE_GUEST_DAILY_OPTIONS.indexOf(st.guestDaily)>=0?st.guestDaily:2000};
   closeStoreSettings();
   const el=document.createElement('div');el.id='store-screen';el.className='store-screen';
   el.innerHTML=
@@ -3248,6 +3266,9 @@ async function showStoreSettings(){
       '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('함께 응대할 직원','Staff')+'</span></div>'+
         '<div class="store-sec-desc">'+_L('선택한 친구는 내 QR·링크로 들어온 손님과의 대화방에 함께 들어가 누구든 답할 수 있어요. 앞으로 새로 들어오는 손님부터 적용돼요. (최대 10명)','Selected friends join chats with customers who come through your QR or link, so anyone can reply. Applies to customers who enter from now on. (Up to 10)')+'</div>'+
         '<div id="store-staff-list"></div></div>'+
+      '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('손님 1명당 하루 번역','Daily translation per customer')+'</span></div>'+
+        '<div class="store-sec-desc">'+_L('링크·QR로 들어온 손님의 번역은 내 한도에서 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)','Customer translations use your quota. Set how much one customer can use per day to prevent abuse. (about 30 characters per message)')+'</div>'+
+        '<select class="store-in" id="store-guest-daily" style="width:100%;"></select></div>'+
       '<button class="store-save" onclick="saveStoreSettings()">'+_L('저장','Save')+'</button>'+
     '</div>';
   document.body.appendChild(el);
@@ -3259,7 +3280,13 @@ async function showStoreSettings(){
     tg.onclick=function(){_storeDraft[x[1]]=!_storeDraft[x[1]];tg.className='toggle '+(_storeDraft[x[1]]?'on':'');};
   });
   _storeRenderQuick();_storeRenderStaff();
+  const gd=document.getElementById('store-guest-daily');
+  STORE_GUEST_DAILY_OPTIONS.forEach(function(n){const o=document.createElement('option');o.value=String(n);o.textContent=fmtChars(n)+(n===2000?_L(' (기본)',' (default)'):'');gd.appendChild(o);});
+  gd.value=String(_storeDraft.guestDaily);
+  gd.onchange=function(){_storeDraft.guestDaily=Number(gd.value);};
 }
+// 서버(main.py GUEST_DAILY_OPTIONS)와 같은 값
+const STORE_GUEST_DAILY_OPTIONS=[1000,2000,5000,10000];
 function closeStoreSettings(){const e=document.getElementById('store-screen');if(e)e.remove();}
 function _storeRenderQuick(){
   const list=document.getElementById('store-quick-list');if(!list)return;
@@ -3310,6 +3337,7 @@ async function saveStoreSettings(){
   try{
     await db.collection('users').doc(currentUser.uid).update({store:_storeDraft});
     if(usersMap[currentUser.uid])usersMap[currentUser.uid].store=_storeDraft;
+    syncPublicProfile();
     showToast(_L('매장 설정을 저장했어요','Store settings saved'));
     closeStoreSettings();
   }catch(e){console.error('매장 설정 저장 실패:',e);showToast(_L('저장에 실패했어요. 다시 시도해주세요','Could not save. Please try again.'));}
@@ -3746,7 +3774,7 @@ function loadRooms(){
         const item=document.createElement('div');
         item.className='room-item';
         item.innerHTML=
-          '<div class="av-wrap"><div class="av">'+(photo?'<img src="'+_esc(photo)+'" alt="">':( isGroup?'👥':'👤'))+'</div></div>'+
+          '<div class="av-wrap"><div class="av">'+(_safeUrl(photo)?'<img src="'+_esc(_safeUrl(photo))+'" alt="">':( isGroup?'👥':'👤'))+'</div></div>'+
           '<div class="room-info"><div class="room-name-row"><span class="room-name">'+_esc(name)+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
           '<div class="room-last">'+(r.lastMessage?_esc(r.lastMessage):t('chat_start_hint'))+'</div></div>'+
           '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'<button class="room-del" title="'+_L('삭제','Delete')+'"><span class="ms">delete</span></button></div>';
@@ -3758,7 +3786,7 @@ function loadRooms(){
       // 에러 콜백이 없으면 에러 발생 시(권한 거부 등) "불러오는 중..."에서 영원히 멈춤
       console.error('loadRooms 실패:',err);
       sub.textContent='불러오기 실패';
-      list.innerHTML='<div class="empty-state"><div class="empty-emoji">⚠️</div><div class="empty-title">채팅 목록을 불러오지 못했어요</div><div class="empty-desc">'+(err&&err.message?err.message:'')+'</div></div>';
+      list.innerHTML='<div class="empty-state"><div class="empty-emoji">⚠️</div><div class="empty-title">채팅 목록을 불러오지 못했어요</div><div class="empty-desc">'+_esc(err&&err.message?err.message:'')+'</div></div>';
     });
 }
 
@@ -3778,7 +3806,9 @@ function loadUsers(){
 function _watchProfiles(uids){
   (uids||[]).forEach(function(uid){
     if(!uid||_profileUnsubs[uid])return;
-    _profileUnsubs[uid]=db.collection('users').doc(uid).onSnapshot(function(d){
+    // 내 문서는 users(본인만 읽기 가능), 다른 사람은 공개 프로필
+    const ref=(currentUser&&uid===currentUser.uid)?db.collection('users').doc(uid):_profileRef(uid);
+    _profileUnsubs[uid]=ref.onSnapshot(function(d){
       if(d.exists){const u=d.data();u.uid=d.id;usersMap[d.id]=u;}else delete usersMap[d.id];
       _scheduleFriendRender();
     },function(e){console.warn('프로필 구독 실패:',uid,e&&e.code);});
@@ -3821,7 +3851,9 @@ function _renderGroupCards(docs){
   });
 }
 function _esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function _avatarInto(el,url){el.textContent='';if(url){const img=document.createElement('img');img.src=url;img.alt='';el.appendChild(img);}else el.textContent='👤';}
+// 외부에서 온 주소는 http(s)만 허용 — javascript: 같은 위험한 주소 차단 (XSS 방지)
+function _safeUrl(u){u=String(u==null?'':u).trim();return /^https?:\/\//i.test(u)?u:'';}
+function _avatarInto(el,url){el.textContent='';url=_safeUrl(url);if(url){const img=document.createElement('img');img.src=url;img.alt='';el.appendChild(img);}else el.textContent='👤';}
 function _friendsRef(){return db.collection('friends').doc(currentUser.uid);}
 // field: added | hidden | fav — 화면에 먼저 반영하고 저장
 function _setFriendFlag(field,uid,on){
@@ -3874,7 +3906,7 @@ async function showHiddenFriends(){
   const items=[];
   for(const uid of ids){
     let u=usersMap[uid];
-    if(!u){try{const sd=await db.collection('users').doc(uid).get();if(sd.exists)u=sd.data();}catch(e){}}
+    if(!u)u=await _getProfile(uid);
     const name=u?((u.displayName||'')+(u.manduid?' @'+u.manduid:'')):uid.slice(0,6);
     items.push({icon:'visibility',label:_L('다시 보이기: ','Unhide: ')+name,fn:function(){unhideFriend(uid);}});
   }
@@ -4000,7 +4032,10 @@ function openRoom(roomId,name,photo,isGroup){
   _updateChatBell();
   document.getElementById('chat-title').textContent=name;
   const icon=document.getElementById('chat-icon');
-  icon.innerHTML=photo?'<img src="'+photo+'" alt="" style="width:100%;height:100%;object-fit:cover;">':(isGroup?'👥':'👤');
+  icon.textContent='';
+  const safePhoto=_safeUrl(photo);
+  if(safePhoto){const pi=document.createElement('img');pi.src=safePhoto;pi.alt='';pi.style.cssText='width:100%;height:100%;object-fit:cover;';icon.appendChild(pi);}
+  else icon.textContent=isGroup?'👥':'👤';
   show('chat-screen');
   const lang=localStorage.getItem('mandu_lang_'+(currentUser?currentUser.uid:''));
   if(lang)document.getElementById('my-lang').value=lang;
@@ -4319,6 +4354,7 @@ function _myBonusInfo(){
   const packUsedMonth=((u.packUsed||{})[getYearMonth()])||0;
   return {avail:avail+pack,usedMonth:usedMonth+packUsedMonth,exp:exp,bonus:avail,pack:pack,packExp:pexp};
 }
+let _guestDailyWarnShown=false;
 const MAX_CHARS_PER_MSG=500; // 1회 최대 입력
 
 // ── 1단계: 번역 스킵 필터 ──────────────────────────────────
@@ -4543,9 +4579,11 @@ function _renderReferralAdmin(){
   }
 }
 
+// 사용량의 '달'은 서버와 같이 한국 시간(KST) 기준 — 해외에서 접속하거나 매월 1일 0~9시에도 서버와 같은 달로 센다
+function _kstNow(){const d=new Date(Date.now()+9*3600000);return {y:d.getUTCFullYear(),m:d.getUTCMonth()+1};}
 function getYearMonth(){
-  const d=new Date();
-  return d.getFullYear()+'_'+(d.getMonth()+1);
+  const k=_kstNow();
+  return k.y+'_'+k.m;
 }
 
 // getUserPlan은 아래(2110행 근처)에 Firestore 연동 버전으로 통합됨
@@ -4684,6 +4722,11 @@ async function translateEx(text,targetLang,opts){
         showToast(isGuest?_L('이 가게의 이번 달 번역 한도가 다 찼어요','This store has used up its translations for this month'):t('usage_limit_exceeded_toast'));
         return none;
       }
+      if(res.status===429){
+        // 손님 하루 번역 한도(서버) — 다시 시도해도 같은 결과라 바로 멈춘다
+        if(!_guestDailyWarnShown){_guestDailyWarnShown=true;showToast(isGuest?_L('오늘 이 가게에서 번역할 수 있는 양을 다 썼어요. 내일 다시 이용해 주세요','You have reached today\'s translation limit for this store. Please try again tomorrow.'):_L('잠시 후 다시 시도해주세요','Please try again later'));}
+        return none;
+      }
       if(!res.ok){
         if(attempt<2){await new Promise(function(r){setTimeout(r,2000+attempt*2000);});continue;}
         return none;
@@ -4809,8 +4852,9 @@ function renderMsg(d,skipTranslate){
     const st=document.createElement('img');st.src=stickerSrc;st.className='msg-sticker';st.alt=_stickerLabel();st.draggable=false;
     b.appendChild(st);
   }else if(d.imageUrl){
-    const img=document.createElement('img');img.src=d.imageUrl;img.className='msg-image';
-    img.onclick=function(){window.open(d.imageUrl,'_blank');};
+    const imgUrl=_safeUrl(d.imageUrl);
+    const img=document.createElement('img');if(imgUrl)img.src=imgUrl;img.className='msg-image';
+    img.onclick=function(){if(imgUrl)window.open(imgUrl,'_blank','noopener');};
     b.appendChild(img);
     if(d.text)b.appendChild(document.createTextNode(d.text));
   }else if(d.fileUrl){
@@ -4820,7 +4864,14 @@ function renderMsg(d,skipTranslate){
     const icon=iconMap[ext]||'📎';
     const cls=clsMap[ext]||'etc';
     b.style.padding='0';b.style.background='none';b.style.border='none';
-    b.innerHTML='<a class="msg-file" href="'+d.fileUrl+'" target="_blank" download="'+d.fileName+'"><div class="file-icon '+cls+'">'+icon+'</div><div class="file-info"><div class="file-name">'+(d.fileName||'파일')+'</div><div class="file-size">'+(d.fileSize||'')+'</div></div><span class="ms" style="font-size:18px;color:var(--primary);flex-shrink:0;">download</span></a>';
+    // 파일 이름·주소는 상대가 보낸 값이라 HTML로 넣지 않는다 (XSS 방지)
+    const fa=document.createElement('a');fa.className='msg-file';fa.target='_blank';fa.rel='noopener noreferrer';
+    const fUrl=_safeUrl(d.fileUrl);if(fUrl)fa.href=fUrl;
+    fa.setAttribute('download',String(d.fileName||''));
+    fa.innerHTML='<div class="file-icon '+cls+'">'+icon+'</div><div class="file-info"><div class="file-name"></div><div class="file-size"></div></div><span class="ms" style="font-size:18px;color:var(--primary);flex-shrink:0;">download</span>';
+    fa.querySelector('.file-name').textContent=String(d.fileName||'파일');
+    fa.querySelector('.file-size').textContent=String(d.fileSize||'');
+    b.appendChild(fa);
   }else{b.textContent=d.text;}
   const timeEl=document.createElement('div');timeEl.className='msg-time';
   timeEl.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
@@ -5082,14 +5133,18 @@ function toggleVoiceInput(){
   try{_voiceRecognition.start();}catch(e){showToast(t('voice_input_error'));}
 }
 
-function sendPushNotification(toUids,body){
-  if(!toUids||toUids.length===0)return;
-  const senderName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
-  fetch('https://mandu-server.onrender.com/api/notify',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({toUids:toUids,roomId:currentRoomId,senderName:senderName,body:body,senderUid:currentUser?currentUser.uid:''})
-  }).catch(function(e){console.warn('푸시 알림 전송 실패:',e);});
+// 보낸 사람·이름은 서버가 로그인 토큰과 방 정보로 확인한다 (사칭 알림 방지)
+async function sendPushNotification(toUids,body){
+  if(!toUids||toUids.length===0||!currentUser||!currentRoomId)return;
+  const roomId=currentRoomId;
+  try{
+    const idToken=await currentUser.getIdToken();
+    await fetch('https://mandu-server.onrender.com/api/notify',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
+      body:JSON.stringify({toUids:toUids,roomId:roomId,body:body})
+    });
+  }catch(e){console.warn('푸시 알림 전송 실패:',e);}
 }
 
 async function sendFile(input){
@@ -5303,9 +5358,8 @@ async function _searchById(qid,seq,results){
     if(seq!==_searchSeq||!idx.exists)return;
     const ix=idx.data()||{};
     if(ix.searchable===false||!ix.uid||ix.uid===currentUser.uid||isBlocked(ix.uid))return;
-    const us=await db.collection('users').doc(ix.uid).get();
-    if(seq!==_searchSeq||!us.exists)return;
-    const u=us.data();u.uid=us.id;
+    const u=await _getProfile(ix.uid);
+    if(seq!==_searchSeq||!u)return;
     if(u.isGuest)return;
     if(results.querySelector('.search-empty'))results.innerHTML='';
     if(!results.querySelector('.search-sec-lbl')){const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent='사용자';results.appendChild(lbl);}
@@ -5438,17 +5492,17 @@ function renderDictList(){
     const parts=key.split('|');
     const from=parts[0],to=parts[1],orig=parts[2];
     const trans=myDictCache[key].trans;
-    const safeKey=encodeURIComponent(key);
     const item=document.createElement('div');
     item.className='dict-item';
     item.innerHTML=
       '<div class="dict-pair">'+
-        '<div class="dict-orig">'+orig+'</div>'+
-        '<div class="dict-trans">'+(LANG_NAMES[from]||from)+' → '+(LANG_NAMES[to]||to)+' · '+trans+'</div>'+
+        '<div class="dict-orig">'+_esc(orig)+'</div>'+
+        '<div class="dict-trans">'+_esc(LANG_NAMES[from]||from)+' → '+_esc(LANG_NAMES[to]||to)+' · '+_esc(trans)+'</div>'+
       '</div>'+
-      '<button class="dict-del" onclick="deleteDictEntry(decodeURIComponent(\''+safeKey+'\'))">'+
+      '<button class="dict-del">'+
         '<span class="ms" style="font-size:18px !important;">delete</span>'+
       '</button>';
+    item.querySelector('.dict-del').onclick=function(){deleteDictEntry(key);};
     list.appendChild(item);
   });
 }
@@ -5630,7 +5684,8 @@ async function renderUsageUI(){
   const btnEl=document.getElementById('usage-upgrade-btn');
   if(!monthEl)return;
 
-  monthEl.textContent=t('usage_month_format').replace('{y}',now.getFullYear()).replace('{m}',now.getMonth()+1);
+  const kst=_kstNow();
+  monthEl.textContent=t('usage_month_format').replace('{y}',kst.y).replace('{m}',kst.m);
   const planLabels={free:t('plan_free'),soft:'SOFT',light:'LIGHT',business:'BUSINESS',premium:'BUSINESS'};
   badgeEl.textContent=planLabels[plan]||t('plan_free');
 
@@ -5650,6 +5705,19 @@ async function renderUsageUI(){
   } else {
     msgEl.textContent=t('usage_msg_used').replace('{used}',fmtChars(used)).replace('{remain}',fmtChars(limit-used));
   }
+  // BUSINESS: 한도를 넘어도 번역은 계속되고, 초과 요금을 받는 달이면 예상 금액을 미리 보여준다 (서버와 같은 계산: 1만 자 단위 내림 × 315원)
+  if((plan==='business'||plan==='premium')&&used>limit){
+    const over=used-limit;
+    let line=_L('한도 초과 ','Over quota ')+fmtChars(over);
+    const from=window._overageFrom;
+    const ym=kst.y*12+kst.m;
+    if(from&&/^\d{4}_\d{1,2}$/.test(from)&&ym>=Number(from.split('_')[0])*12+Number(from.split('_')[1])){
+      line+=' · '+_L('예상 추가 요금 ','Estimated extra charge ')+(Math.floor(over/10000)*315).toLocaleString()+_L('원 (1만 자당 315원, 다음 달 초 결제)',' KRW (315 KRW per 10,000 chars, billed early next month)');
+    }
+    msgEl.textContent=line;
+  }
+  const ou=window._myBilling&&window._myBilling.overageUnpaid;
+  if(ou)msgEl.textContent=_L('⚠️ 초과 요금 ','⚠️ Overage charge of ')+Number(ou.amount||0).toLocaleString()+_L('원이 결제되지 않아 한도 초과 번역이 멈췄어요. 카드를 확인해 주세요',' KRW failed, so translation beyond your quota is paused. Please check your card.');
   // 앱에서는 링크 없는 안내 문구만 허용
   if(document.documentElement.classList.contains('is-app')&&plan!=='business'&&plan!=='premium')msgEl.textContent+=' '+t('usage_web_upgrade_note');
   try{renderSubscriptionLine();}catch(e){}
@@ -5666,7 +5734,9 @@ async function getUserPlan(){
     window._myBilling=data.billing||null;
     // 결제 기간이 끝났는데 갱신되지 않은 유료 플랜은 무료로 표시 (서버도 같은 기준으로 한도 계산)
     const nb=data.billing&&data.billing.nextBillingAt;
-    if(nb&&['soft','light','business'].indexOf(plan)>=0&&(nb.toDate?nb.toDate():new Date(nb.seconds*1000))<=new Date())plan='free';
+    const gu=data.billing&&data.billing.graceUntil;
+    const inGrace=gu&&(gu.toDate?gu.toDate():new Date(gu.seconds*1000))>new Date();
+    if(nb&&!inGrace&&['soft','light','business'].indexOf(plan)>=0&&(nb.toDate?nb.toDate():new Date(nb.seconds*1000))<=new Date())plan='free';
     localStorage.setItem(localKey,plan);
     return plan;
   }catch(e){return localStorage.getItem(localKey)||'free';}
@@ -6016,6 +6086,7 @@ function wakeServer(){
       .then(function(r){return r.json();})
       .then(function(d){
         window._aiAvailable=!!(d&&d.ai);if(typeof initAiTranslate==='function')initAiTranslate();
+        window._overageFrom=(d&&d.overageFrom)||null;
         if(d&&typeof initLoginOptions==='function')initLoginOptions(d);
       })
       .catch(function(){});
@@ -6028,24 +6099,28 @@ handleKakaoReturn();
 const LEGAL_MSG={
   ko:{pack_notice:'1회 결제 · 자동결제 없음 · 충전 글자는 월 한도를 다 쓴 뒤 사용되고 구매일부터 1년간 유효해요 · 결제하면 {terms}과 {refund}에 동의하는 것으로 봐요. 충전 글자를 쓰기 시작하면 청약 철회가 제한될 수 있어요.',terms:'이용약관',terms_sub:'서비스 이용 조건',refund:'환불정책',refund_sub:'정기결제 해지·환불 기준',
       plan_notice:'매월 같은 날 자동결제 · 언제든 해지 가능 · 결제하면 {terms}과 {refund}에 동의하는 것으로 봐요. 결제 후 유료 한도로 번역을 쓰면 청약 철회가 제한될 수 있어요.',
+      past_due:'⚠️ 자동결제 실패 — 카드를 확인해 주세요. {date}까지 다시 시도하고, 그래도 안 되면 무료로 바뀌어요',resubscribe:'다른 카드로 다시 구독',
       next:'다음 결제일 {date}',cancel:'구독 해지',canceled:'해지됨 · {date}까지 이용',resume:'해지 취소',
       cancel_confirm:'정기결제를 해지할까요?\n\n{date}까지는 지금 플랜을 그대로 쓸 수 있고, 그 뒤로는 결제되지 않아요.',
       cancel_done:'해지됐어요. {date}까지 이용할 수 있어요.',resume_done:'해지를 취소했어요. 다음 결제일에 자동결제돼요.',
       login_agree:'가입 시 {terms} 및 {privacy}에 동의하는 것으로 간주됩니다.',privacy:'개인정보처리방침'},
   en:{pack_notice:'One-time payment · No auto-renewal · Top-up characters are used after your monthly quota and stay valid for 1 year · By paying you agree to the {terms} and {refund}. Withdrawal may be limited once you start using them.',terms:'Terms of Service',terms_sub:'Conditions of use',refund:'Refund Policy',refund_sub:'Cancellation and refunds',
       plan_notice:'Billed monthly on the same day · Cancel anytime · By paying you agree to the {terms} and {refund}. Withdrawal may be limited once you use the paid quota.',
+      past_due:'⚠️ Automatic payment failed — please check your card. We will retry until {date}; after that you move to Free',resubscribe:'Subscribe with another card',
       next:'Next payment {date}',cancel:'Cancel subscription',canceled:'Canceled · active until {date}',resume:'Undo cancel',
       cancel_confirm:'Cancel your subscription?\n\nYou keep your current plan until {date}, and you won\'t be charged after that.',
       cancel_done:'Canceled. You can use your plan until {date}.',resume_done:'Cancellation undone. You will be billed on the next payment date.',
       login_agree:'By signing up you agree to the {terms} and {privacy}.',privacy:'Privacy Policy'},
   it:{pack_notice:'Pagamento unico · Nessun rinnovo automatico · I caratteri ricaricati si usano dopo il limite mensile e valgono 1 anno · Pagando accetti i {terms} e la {refund}. Il diritto di recesso può essere limitato una volta iniziato a usarli.',terms:'Termini di servizio',terms_sub:'Condizioni di utilizzo',refund:'Politica di rimborso',refund_sub:'Disdetta e rimborsi',
       plan_notice:'Addebito mensile nello stesso giorno · Disdici quando vuoi · Pagando accetti i {terms} e la {refund}. Il diritto di recesso può essere limitato una volta usato il limite a pagamento.',
+      past_due:'⚠️ Pagamento automatico non riuscito — controlla la carta. Riproveremo fino al {date}, poi passerai al piano gratuito',resubscribe:'Abbonati con un\'altra carta',
       next:'Prossimo pagamento {date}',cancel:'Annulla abbonamento',canceled:'Annullato · attivo fino al {date}',resume:'Annulla la disdetta',
       cancel_confirm:'Vuoi annullare l\'abbonamento?\n\nMantieni il piano attuale fino al {date}, poi non verrà più addebitato nulla.',
       cancel_done:'Annullato. Puoi usare il tuo piano fino al {date}.',resume_done:'Disdetta annullata. Il pagamento verrà addebitato alla prossima scadenza.',
       login_agree:'Registrandoti accetti i {terms} e l\'{privacy}.',privacy:'Informativa sulla privacy'},
   da:{pack_notice:'Engangsbetaling · Ingen automatisk fornyelse · Optankede tegn bruges efter din månedlige kvote og gælder i 1 år · Ved betaling accepterer du {terms} og {refund}. Fortrydelsesretten kan være begrænset, når du begynder at bruge dem.',terms:'Servicevilkår',terms_sub:'Vilkår for brug',refund:'Refusionspolitik',refund_sub:'Opsigelse og refusion',
       plan_notice:'Betales månedligt på samme dato · Opsig når som helst · Ved betaling accepterer du {terms} og {refund}. Fortrydelsesretten kan være begrænset, når den betalte kvote er taget i brug.',
+      past_due:'⚠️ Automatisk betaling mislykkedes — tjek dit kort. Vi prøver igen indtil {date}, derefter skifter du til Gratis',resubscribe:'Abonnér med et andet kort',
       next:'Næste betaling {date}',cancel:'Opsig abonnement',canceled:'Opsagt · aktivt til {date}',resume:'Fortryd opsigelse',
       cancel_confirm:'Vil du opsige dit abonnement?\n\nDu beholder dit nuværende abonnement til {date}, og derefter trækkes der ikke flere betalinger.',
       cancel_done:'Opsagt. Du kan bruge dit abonnement til {date}.',resume_done:'Opsigelsen er fortrudt. Betalingen trækkes på næste forfaldsdato.',
@@ -6076,10 +6151,14 @@ function renderSubscriptionLine(){
   const b=window._myBilling;
   const nb=b&&b.nextBillingAt;
   const active=nb&&((nb.toDate?nb.toDate():new Date(nb.seconds*1000))>new Date());
-  if(!active||isAppMode()){el.style.display='none';el.innerHTML='';return;}
+  const gu=b&&b.status==='past_due'&&b.graceUntil;
+  const pastDue=gu&&((gu.toDate?gu.toDate():new Date(gu.seconds*1000))>new Date());
+  if((!active&&!pastDue)||isAppMode()){el.style.display='none';el.innerHTML='';return;}
   const date=fmtBillingDate(nb);
   const linkStyle='color:var(--primary);cursor:pointer;text-decoration:underline;font-weight:600;';
-  if(b.status==='canceled'){
+  if(pastDue){
+    el.innerHTML='<span style="color:var(--error,#ba1a1a);">'+legalMsg('past_due').replace('{date}',fmtBillingDate(gu))+'</span> · <span style="'+linkStyle+'" onclick="showPlanSheet()">'+legalMsg('resubscribe')+'</span>';
+  }else if(b.status==='canceled'){
     el.innerHTML=legalMsg('canceled').replace('{date}',date)+' · <span style="'+linkStyle+'" onclick="cancelSubscription(true)">'+legalMsg('resume')+'</span>';
   }else{
     el.innerHTML=legalMsg('next').replace('{date}',date)+' · <span style="'+linkStyle+'" onclick="cancelSubscription(false)">'+legalMsg('cancel')+'</span>';
