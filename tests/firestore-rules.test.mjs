@@ -42,6 +42,7 @@ await ok('파일 메시지', addDoc(collection(db('A'), dm + '/messages'), { tex
 await ok('안 읽음 수·마지막 메시지 갱신', setDoc(doc(db('A'), dm), { lastMessage:'hi', lastMessageTime: serverTimestamp(), lastMessageUid:'A', unreadCount:{ B: increment(1) } }, { merge:true }));
 await ok('내 읽음 표시(markRead)', setDoc(doc(db('B'), dm), { readBy:{ B: serverTimestamp() }, unreadCount:{ B:0 } }, { merge:true }));
 await no('남의 읽음 표시 조작', setDoc(doc(db('B'), dm), { readBy:{ A: serverTimestamp() } }, { merge:true }));
+await no('2000자 넘는 메시지', addDoc(collection(db('A'), dm + '/messages'), { text:'가'.repeat(2001), uid:'A', displayName:'Alice', createdAt: serverTimestamp() }));
 await no('남인 척 메시지(uid 위조)', addDoc(collection(db('B'), dm + '/messages'), { text:'x', uid:'A', createdAt: serverTimestamp() }));
 await no('uid 없는 가짜 공지', addDoc(collection(db('B'), dm + '/messages'), { text:'결제 오류! 링크 클릭', displayName:'MANDU 고객센터', createdAt: serverTimestamp() }));
 await ok('시스템 안내 메시지', addDoc(collection(db('A'), dm + '/messages'), { type:'system', text:'Bob 님이 들어왔어요', createdAt: serverTimestamp() }));

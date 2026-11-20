@@ -3237,7 +3237,7 @@ async function showStoreSettings(){
   if(!currentUser||currentUser.isAnonymous)return;
   let st={};
   try{const snap=await db.collection('users').doc(currentUser.uid).get();st=(snap.exists&&snap.data().store)||{};}catch(e){}
-  _storeDraft={greetOn:!!st.greetOn,greeting:st.greeting||'',awayOn:!!st.awayOn,awayMsg:st.awayMsg||'',quick:(st.quick||[]).slice(0,20),staff:(st.staff||[]).slice(0,10)};
+  _storeDraft={greetOn:!!st.greetOn,greeting:st.greeting||'',awayOn:!!st.awayOn,awayMsg:st.awayMsg||'',quick:(st.quick||[]).slice(0,20),staff:(st.staff||[]).slice(0,10),guestDaily:STORE_GUEST_DAILY_OPTIONS.indexOf(st.guestDaily)>=0?st.guestDaily:2000};
   closeStoreSettings();
   const el=document.createElement('div');el.id='store-screen';el.className='store-screen';
   el.innerHTML=
@@ -3256,6 +3256,9 @@ async function showStoreSettings(){
       '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('함께 응대할 직원','Staff')+'</span></div>'+
         '<div class="store-sec-desc">'+_L('선택한 친구는 내 QR·링크로 들어온 손님과의 대화방에 함께 들어가 누구든 답할 수 있어요. 앞으로 새로 들어오는 손님부터 적용돼요. (최대 10명)','Selected friends join chats with customers who come through your QR or link, so anyone can reply. Applies to customers who enter from now on. (Up to 10)')+'</div>'+
         '<div id="store-staff-list"></div></div>'+
+      '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('손님 1명당 하루 번역','Daily translation per customer')+'</span></div>'+
+        '<div class="store-sec-desc">'+_L('링크·QR로 들어온 손님의 번역은 내 한도에서 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)','Customer translations use your quota. Set how much one customer can use per day to prevent abuse. (about 30 characters per message)')+'</div>'+
+        '<select class="store-in" id="store-guest-daily" style="width:100%;"></select></div>'+
       '<button class="store-save" onclick="saveStoreSettings()">'+_L('저장','Save')+'</button>'+
     '</div>';
   document.body.appendChild(el);
@@ -3267,7 +3270,13 @@ async function showStoreSettings(){
     tg.onclick=function(){_storeDraft[x[1]]=!_storeDraft[x[1]];tg.className='toggle '+(_storeDraft[x[1]]?'on':'');};
   });
   _storeRenderQuick();_storeRenderStaff();
+  const gd=document.getElementById('store-guest-daily');
+  STORE_GUEST_DAILY_OPTIONS.forEach(function(n){const o=document.createElement('option');o.value=String(n);o.textContent=fmtChars(n)+(n===2000?_L(' (기본)',' (default)'):'');gd.appendChild(o);});
+  gd.value=String(_storeDraft.guestDaily);
+  gd.onchange=function(){_storeDraft.guestDaily=Number(gd.value);};
 }
+// 서버(main.py GUEST_DAILY_OPTIONS)와 같은 값
+const STORE_GUEST_DAILY_OPTIONS=[1000,2000,5000,10000];
 function closeStoreSettings(){const e=document.getElementById('store-screen');if(e)e.remove();}
 function _storeRenderQuick(){
   const list=document.getElementById('store-quick-list');if(!list)return;
@@ -4335,6 +4344,7 @@ function _myBonusInfo(){
   const packUsedMonth=((u.packUsed||{})[getYearMonth()])||0;
   return {avail:avail+pack,usedMonth:usedMonth+packUsedMonth,exp:exp,bonus:avail,pack:pack,packExp:pexp};
 }
+let _guestDailyWarnShown=false;
 const MAX_CHARS_PER_MSG=500; // 1회 최대 입력
 
 // ── 1단계: 번역 스킵 필터 ──────────────────────────────────
@@ -4698,6 +4708,11 @@ async function translateEx(text,targetLang,opts){
       if(res.status===402){
         // 게스트는 사장님 한도로 번역하므로, 업그레이드 안내 대신 가게 한도 안내를 띄운다
         showToast(isGuest?_L('이 가게의 이번 달 번역 한도가 다 찼어요','This store has used up its translations for this month'):t('usage_limit_exceeded_toast'));
+        return none;
+      }
+      if(res.status===429){
+        // 손님 하루 번역 한도(서버) — 다시 시도해도 같은 결과라 바로 멈춘다
+        if(!_guestDailyWarnShown){_guestDailyWarnShown=true;showToast(isGuest?_L('오늘 이 가게에서 번역할 수 있는 양을 다 썼어요. 내일 다시 이용해 주세요','You have reached today\'s translation limit for this store. Please try again tomorrow.'):_L('잠시 후 다시 시도해주세요','Please try again later'));}
         return none;
       }
       if(!res.ok){
