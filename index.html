@@ -1785,7 +1785,14 @@ function setIdMsg(msg,color){
   if(el){el.textContent=msg;el.style.color=color;}
 }
 
+// 운영자·공식 계정으로 오해할 수 있는 아이디는 만들 수 없다 (firestore.rules 의 manduidAllowed 와 같은 조건)
+function _manduidReserved(id){
+  return /^(root|system|staff|team|help|helpdesk|cs|manager|operator|notice|security|service)$/.test(id)
+    ||/^mandu_?(team|cs|help|staff|app|kr|notice|bot|manager)?$/.test(id)
+    ||/(admin|official|support)/.test(id);
+}
 async function checkManduidAvailable(id){
+  if(_manduidReserved(id)){setIdMsg('쓸 수 없는 ID예요 (운영자로 오해할 수 있어요)','var(--error)');idAvailable=false;return;}
   try{
     const doc=await db.collection('manduid_index').doc(id).get();
     if(doc.exists){
@@ -1849,6 +1856,7 @@ async function createManduid(){
   if(!currentUser||!idAvailable)return;
   const id=document.getElementById('mandu-id-input').value.toLowerCase().replace(/[^a-z0-9_]/g,'');
   if(id.length<3||id.length>20){showToast('3~20자로 입력해주세요');return;}
+  if(_manduidReserved(id)){showToast('쓸 수 없는 ID예요 (운영자로 오해할 수 있어요)');return;}
 
   const btn=document.getElementById('id-confirm-btn');
   btn.disabled=true;
@@ -1915,9 +1923,7 @@ async function initFCM(){
         if(!doc.exists)return;
         const r=doc.data();
         const isGroup=r.type==='group';
-        const entries=r.memberNames?Object.entries(r.memberNames):[];
-        const otherEntry=entries.find(function(en){return en[0]!==currentUser.uid;});
-        const name=isGroup?((r.customerUid===currentUser.uid&&r.memberNames&&r.memberNames[r.storeUid])||r.name):(otherEntry?otherEntry[1]:t('chat_default_room_name'));
+        const name=_roomTitle(r);
         openRoom(roomId,name,r.photoURL||'',isGroup);
       }).catch(function(){});
     });
@@ -1926,11 +1932,34 @@ async function initFCM(){
   }
 }
 
-function markRead(roomId){
+// 안 읽은 수: 방의 msgSeq(메시지마다 +1) − readSeq[나](마지막으로 읽은 번호) + 예전 방식 unreadCount[나].
+// 규칙상 남의 칸(readSeq·unreadCount·optIn)은 쓸 수 없고, msgSeq 는 1씩만 늘릴 수 있다. 서버 배지도 같은 식.
+const _roomSeq={};
+function _seqOf(r){const n=r&&r.msgSeq;return typeof n==='number'?n:0;}
+function _unreadN(r,uid){
+  if(!r)return 0;
+  const rs=(r.readSeq&&typeof r.readSeq[uid]==='number')?r.readSeq[uid]:0;
+  const legacy=(r.unreadCount&&typeof r.unreadCount[uid]==='number')?r.unreadCount[uid]:0;
+  return Math.max(0,_seqOf(r)-rs)+Math.max(0,legacy);
+}
+// 메시지를 보낼 때 방 문서에 함께 쓰는 값: 메시지 번호 +1, 나는 읽은 것으로, 이 방 알림 받기(optIn) 표시.
+function _addSendCounters(incUpdate){
+  const me=currentUser.uid;
+  const known=Math.max(_roomSeq[currentRoomId]||0,_seqOf(_currentRoomData));
+  incUpdate.msgSeq=firebase.firestore.FieldValue.increment(1);
+  incUpdate.readSeq={[me]:known+1};
+  incUpdate.optIn={[me]:true};
+  _roomSeq[currentRoomId]=known+1;
+  return incUpdate;
+}
+function markRead(roomId,seq){
   if(!currentUser||!roomId)return;
-  const update={readBy:{[currentUser.uid]:firebase.firestore.FieldValue.serverTimestamp()}};
-  update.unreadCount={[currentUser.uid]:0}; // 중첩 객체로 (set(merge)에서 'unreadCount.uid' 키는 점 들어간 별도 칸이 됨)
-  db.collection('rooms').doc(roomId).set(update,{merge:true});
+  const me=currentUser.uid;
+  const update={readBy:{[me]:firebase.firestore.FieldValue.serverTimestamp()}};
+  update.unreadCount={[me]:0}; // 중첩 객체로 (set(merge)에서 'unreadCount.uid' 키는 점 들어간 별도 칸이 됨)
+  const known=Math.max(typeof seq==='number'?seq:0,_roomSeq[roomId]||0,roomId===currentRoomId?_seqOf(_currentRoomData):0);
+  if(known>0)update.readSeq={[me]:known};
+  db.collection('rooms').doc(roomId).set(update,{merge:true}).catch(function(e){console.warn('읽음 표시 실패:',e&&e.code);});
 }
 
 function updateReadReceipt(readBy){
@@ -2033,6 +2062,7 @@ async function confirmDeleteAccount(){
     await db.collection('friends').doc(user.uid).delete().catch(function(){});
     await db.collection('public_profiles').doc(user.uid).delete().catch(function(){});
     await db.collection('discover_profiles').doc(user.uid).delete().catch(function(){});
+    if(user.email)await db.collection('cardbook_index').doc(user.email.toLowerCase()).delete().catch(function(){});
     await db.collection('users').doc(user.uid).delete();
     await user.delete();
     showToast('탈퇴가 완료됐어요.');
@@ -2078,9 +2108,12 @@ function buildManduidBase(email){
   let b=(email||'').split('@')[0].toLowerCase()
     .replace(/[.\-+]/g,'_').replace(/[^a-z0-9_]/g,'')
     .replace(/^[_0-9]+/,'').replace(/_+/g,'_').replace(/^_|_$/g,'');
+  b=b.replace(/admin|official|support/g,'').replace(/_+/g,'_').replace(/^_|_$/g,'');
   if(!b)b='user';
   if(b.length<3)b=b+'_mandu';
-  return b.substring(0,18);
+  b=b.substring(0,18);
+  if(_manduidReserved(b))b=(b+'_1').substring(0,20);
+  return b;
 }
 async function selectInitialLang(lang){
   if(!_pendingNewUser)return;
@@ -2260,7 +2293,8 @@ async function syncPublicProfile(){
       photoURL:String(u.photoURL||currentUser.photoURL||'').slice(0,500),
       manduid:String(currentManduid||u.manduid||'').slice(0,20),
       isGuest:!!(currentUser.isAnonymous||u.isGuest),
-      store:_publicStore(u.store),
+      // 매장 설정을 한 번이라도 저장한 회원만 store 를 싣는다(active: 익명 손님방을 받는 매장 표시 — 주인 번역 한도 사용).
+      ...(u.store&&!currentUser.isAnonymous?{store:Object.assign({active:true},_publicStore(u.store))}:{}),
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
   }catch(e){console.warn('공개 명함 저장 실패:',e&&e.code);}
@@ -2368,15 +2402,26 @@ async function loadCardbookConsent(){
     const d=await db.collection('users').doc(currentUser.uid).get();
     _cardbookConsent=!!(d.exists&&d.data().cardbookConsent===true);
     renderCardbookConsent();
+    // 예전 방식(users 목록 조회) 동의자 → cardbook_index 로 옮기고, 만두ID가 바뀌었으면 맞춘다
+    const email=(currentUser.email||'').toLowerCase();
+    if(_cardbookConsent&&email&&currentUser.emailVerified){
+      db.collection('cardbook_index').doc(email).set({uid:currentUser.uid,manduid:String(currentManduid||''),updatedAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(function(){});
+      if(d.data().emailLower)db.collection('users').doc(currentUser.uid).set({emailLower:firebase.firestore.FieldValue.delete()},{merge:true}).catch(function(){});
+    }
   }catch(e){}
 }
 async function toggleCardbookConsent(){
   if(!currentUser||currentUser.isAnonymous)return;
   const next=!_cardbookConsent;
   try{
-    const data={cardbookConsent:next};
-    if(next)data.emailLower=(currentUser.email||'').toLowerCase();
-    await db.collection('users').doc(currentUser.uid).set(data,{merge:true});
+    // 카드북은 cardbook_index/{이메일} 한 장(uid·만두ID만)으로 찾는다 — users 문서는 본인만 읽을 수 있다.
+    const email=(currentUser.email||'').toLowerCase();
+    const ref=email?db.collection('cardbook_index').doc(email):null;
+    if(next){
+      if(!ref||!currentUser.emailVerified)throw new Error('no verified email');
+      await ref.set({uid:currentUser.uid,manduid:String(currentManduid||''),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    }else if(ref){await ref.delete().catch(function(){});}
+    await db.collection('users').doc(currentUser.uid).set({cardbookConsent:next,emailLower:firebase.firestore.FieldValue.delete()},{merge:true});
     _cardbookConsent=next;
     renderCardbookConsent();
     showToast(t(next?'cardbook_consent_on':'cardbook_consent_off'));
@@ -3163,7 +3208,7 @@ async function _isFirstOpen(roomId){
 }
 async function _postAutoMsg(roomId,asUid,name,text,kind){
   await db.collection('rooms').doc(roomId).collection('messages').add({
-    text:String(text).slice(0,500),asUid:asUid,auto:kind,displayName:name||'',
+    text:String(text).slice(0,500),asUid:asUid,auto:kind,
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
 }
@@ -3200,26 +3245,49 @@ async function openStoreRoom(host,hostUid){
   const myName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
   const staff=forceDM?[]:_storeStaff(host,hostUid);
   const anon=!!currentUser.isAnonymous;
-  const roomId=(anon?'guest_':'store_')+me+'_'+hostUid;
+  // 익명 손님방(guest_)은 주인의 번역 한도를 쓴다 — 주인이 매장 설정을 켠 경우에만(규칙·서버도 같은 조건).
+  // 매장이 아닌 회원의 링크로 들어온 익명 손님은 store_ 방(손님 본인 한도)으로 연다.
+  const paidByHost=anon&&_storeActive(host&&host.store);
+  const roomId=(paidByHost?'guest_':'store_')+me+'_'+hostUid;
+  const ref=db.collection('rooms').doc(roomId);
   const firstOpen=await _isFirstOpen(roomId);
-  const data={
-    type:'direct',members:[me,hostUid],
-    memberNames:{[me]:myName,[hostUid]:host.displayName||''},
-    memberPhotos:{[me]:currentUser.photoURL||'',[hostUid]:host.photoURL||''},
-    lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),
-    storeUid:hostUid,customerUid:me,staff:staff
-  };
-  if(firstOpen)data.lastMessage='';
-  if(anon)data.isGuestRoom=true;
-  if(staff.length){
-    data.type='group';data.name=myName;data.members=[me,hostUid].concat(staff);
-    const docs=await Promise.all(staff.map(function(u){return _profileRef(u).get().catch(function(){return null;});}));
-    docs.forEach(function(sd,i){const u=sd&&sd.exists?sd.data():{};data.memberNames[staff[i]]=u.displayName||'';data.memberPhotos[staff[i]]=u.photoURL||'';});
-  }
-  await db.collection('rooms').doc(roomId).set(data,{merge:true});
-  // 예전에 직원이 함께 있던 방이면, 남아 있는 직원 이름·사진·그룹 이름을 지워 1:1 방으로 완전히 되돌린다
-  if(forceDM&&!firstOpen){
-    try{await db.collection('rooms').doc(roomId).update({memberNames:data.memberNames,memberPhotos:data.memberPhotos,name:firebase.firestore.FieldValue.delete()});}catch(e){console.warn('1:1 방 정리 실패:',e);}
+  const members=[me,hostUid].concat(staff);
+  const isGroup=staff.length>0;
+  const staffDocs=isGroup?await Promise.all(staff.map(function(u){return _profileRef(u).get().catch(function(){return null;});})):[];
+  const staffInfo={};
+  staffDocs.forEach(function(sd,i){const u=sd&&sd.exists?sd.data():{};staffInfo[staff[i]]={n:u.displayName||'',p:u.photoURL||''};});
+  let prev=null;
+  try{const snap=await ref.get();prev=snap.exists?snap.data():null;}catch(e){prev=null;}
+  if(!prev){
+    const data={
+      type:isGroup?'group':'direct',members:members,
+      memberNames:{[me]:myName,[hostUid]:host.displayName||''},
+      memberPhotos:{[me]:currentUser.photoURL||'',[hostUid]:host.photoURL||''},
+      lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessage:'',
+      storeUid:hostUid,customerUid:me,staff:staff,optIn:{[me]:true}
+    };
+    if(paidByHost)data.isGuestRoom=true;
+    if(isGroup){
+      data.name=myName.slice(0,100);
+      staff.forEach(function(u){data.memberNames[u]=staffInfo[u].n;data.memberPhotos[u]=staffInfo[u].p;});
+    }
+    await ref.set(data);
+  }else{
+    // 이미 있는 방: 내 칸·직원 구성만 맞춘다. 남(주인·남아 있는 직원)의 이름·사진 칸은 규칙상 바꿀 수 없다.
+    const FV=firebase.firestore.FieldValue;
+    const old=prev.members||[];
+    const upd={members:members,staff:staff,type:isGroup?'group':'direct',
+      ['memberNames.'+me]:myName,['memberPhotos.'+me]:currentUser.photoURL||'',['optIn.'+me]:true};
+    members.forEach(function(u){
+      if(old.indexOf(u)>=0)return;
+      const info=u===hostUid?{n:host.displayName||'',p:host.photoURL||''}:(staffInfo[u]||{n:'',p:''});
+      upd['memberNames.'+u]=info.n;upd['memberPhotos.'+u]=info.p;
+    });
+    // 빠진 직원의 이름·사진 칸은 지워 1:1 방으로 완전히 되돌린다
+    old.forEach(function(u){if(members.indexOf(u)<0){upd['memberNames.'+u]=FV.delete();upd['memberPhotos.'+u]=FV.delete();}});
+    if(isGroup){if(!prev.name)upd.name=myName.slice(0,100);}
+    else if('name' in prev)upd.name=FV.delete();
+    try{await ref.update(upd);}catch(e){console.warn('매장 방 갱신 실패:',e&&e.code);}
   }
   openRoom(roomId,host.displayName,host.photoURL,false);
   if(firstOpen)_autoGreet(roomId,hostUid,host);
@@ -3680,7 +3748,7 @@ async function joinByInvite(){
       const msg=t('addmember_system_msg').replace('{names}',myName||_L('새 멤버','A new member'));
       const roomRef=db.collection('rooms').doc(r.data.roomId);
       try{
-        await roomRef.collection('messages').add({type:'system',text:msg,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+        await roomRef.collection('messages').add({type:'system',kind:'join',uids:[currentUser.uid],createdAt:firebase.firestore.FieldValue.serverTimestamp()});
         await roomRef.set({lastMessage:msg,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
       }catch(e){console.warn('입장 메시지 실패:',e);}
     }
@@ -3749,8 +3817,8 @@ function loadRooms(){
         if(isRoomMuted(d.id))return sum;
         const r=d.data();const rb=r.readBy||{};const mr=rb[currentUser.uid];
         const isU=r.lastMessageTime&&r.lastMessageUid&&r.lastMessageUid!==currentUser.uid&&(!mr||r.lastMessageTime.toMillis()>mr.toMillis());
-        const n=(r.unreadCount&&r.unreadCount[currentUser.uid])||0;
-        return sum+(n>0?n:(isU?1:0));
+        const n=_unreadN(r,currentUser.uid);
+        return sum+(isU?Math.max(n,1):0);
       },0);
       if('setAppBadge' in navigator){
         if(badgeCount>0)navigator.setAppBadge(badgeCount).catch(function(){});
@@ -3765,7 +3833,7 @@ function loadRooms(){
       docs.forEach(function(doc){
         const r=doc.data();
         const isGroup=r.type==='group';
-        const name=isGroup?((r.customerUid===currentUser.uid&&r.memberNames&&r.memberNames[r.storeUid])||r.name):(r.memberNames&&Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})?Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})[1]:t('chat_default_room_name'));
+        const name=_roomTitle(r);
         const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).filter(function(e){return e[0]!==currentUser.uid;})[0]?.[1]:'';
         const partnerUid=!isGroup?Object.keys(r.memberNames||{}).find(function(k){return k!==currentUser.uid;}):null;
         const rb=r.readBy||{};const mr=rb[currentUser.uid];
@@ -3777,7 +3845,7 @@ function loadRooms(){
           '<div class="av-wrap"><div class="av">'+(_safeUrl(photo)?'<img src="'+_esc(_safeUrl(photo))+'" alt="">':( isGroup?'👥':'👤'))+'</div></div>'+
           '<div class="room-info"><div class="room-name-row"><span class="room-name">'+_esc(name)+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
           '<div class="room-last">'+(r.lastMessage?_esc(r.lastMessage):t('chat_start_hint'))+'</div></div>'+
-          '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'<button class="room-del" title="'+_L('삭제','Delete')+'"><span class="ms">delete</span></button></div>';
+          '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+Math.min(Math.max(_unreadN(r,currentUser.uid),1),999)+'</span>':'')+'<button class="room-del" title="'+_L('삭제','Delete')+'"><span class="ms">delete</span></button></div>';
         item.querySelector('.room-del').onclick=function(e){e.stopPropagation();deleteRoom(doc.id,name);};
         item.onclick=function(){openRoom(doc.id,name,photo,isGroup);};
         list.appendChild(item);
@@ -3849,6 +3917,53 @@ function _renderGroupCards(docs){
     c.onclick=function(){openRoom(d.id,name,'',true);};
     box.insertBefore(c,addCard);
   });
+}
+// 방 멤버 이름: 공개 명함(usersMap) → 방의 memberNames 순. 메시지에 적힌 이름은 쓰지 않는다.
+function _memberName(uid){
+  if(!uid)return '';
+  if(currentUser&&uid===currentUser.uid)return currentUser.displayName||localStorage.getItem('mandu_guest_name')||'';
+  const u=usersMap[uid];
+  if(u&&u.displayName)return u.displayName;
+  if(_nameCache[uid]&&_nameCache[uid].n)return _nameCache[uid].n;
+  const names=(_currentRoomData&&_currentRoomData.memberNames)||{};
+  if(!_nameCache[uid]){ // 아직 모르는 사람이면 공개 명함을 한 번 받아 두고 다음 화면부터 쓴다
+    _nameCache[uid]={n:''};
+    _getProfile(uid).then(function(p){if(p&&p.displayName)_nameCache[uid].n=String(p.displayName);});
+  }
+  return names[uid]||'';
+}
+const _nameCache={};
+// 방 목록·알림에서 보이는 방 이름. 1:1 방은 상대의 공개 명함 이름을 먼저 쓴다(방 문서의 이름은 예전 값이 남아 있을 수 있음).
+function _roomOtherUid(r){
+  const me=currentUser&&currentUser.uid;
+  return (r.members||[]).find(function(u){return u!==me;})||Object.keys(r.memberNames||{}).find(function(k){return k!==me;})||null;
+}
+function _roomTitle(r){
+  const me=currentUser&&currentUser.uid;
+  if(r.type==='group'){
+    if(r.customerUid===me&&r.storeUid)return (usersMap[r.storeUid]&&usersMap[r.storeUid].displayName)||(r.memberNames&&r.memberNames[r.storeUid])||r.name||'';
+    return r.name||_L('그룹 대화','Group chat');
+  }
+  const p=_roomOtherUid(r);
+  return (p&&usersMap[p]&&usersMap[p].displayName)||(p&&r.memberNames&&r.memberNames[p])||t('chat_default_room_name');
+}
+// 손님(익명) 방을 받는 매장인지 — firestore.rules 의 storeActive 와 같은 조건
+function _storeActive(st){
+  return !!(st&&(st.active===true||st.greetOn===true||st.awayOn===true||(st.quick||[]).length>0||(st.staff||[]).length>0));
+}
+// 방 문서가 이미 있는지 (없으면 규칙상 읽기 거부 → 없음으로 본다)
+async function _roomExists(ref){
+  try{return (await ref.get()).exists;}catch(e){return false;}
+}
+// 방이 이미 있으면 내 이름·사진 칸만 맞춘다(남의 칸은 규칙상 바꿀 수 없음)
+async function _touchMyRoomFields(ref){
+  const me=currentUser.uid;
+  const myName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'';
+  await ref.set({memberNames:{[me]:myName},memberPhotos:{[me]:currentUser.photoURL||''}},{merge:true});
+}
+function _systemMsgText(d){
+  const names=(Array.isArray(d.uids)?d.uids:[]).slice(0,10).map(function(u){return _memberName(u)||_L('새 멤버','A new member');}).join(', ');
+  return t('addmember_system_msg').replace('{names}',names);
 }
 function _esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 // 외부에서 온 주소는 http(s)만 허용 — javascript: 같은 위험한 주소 차단 (XSS 방지)
@@ -3965,12 +4080,21 @@ async function startDM(partner){
   const ids=[currentUser.uid,partner.uid].sort();
   const roomId=ids.join('_');
   const firstOpen=await _isFirstOpen(roomId);
-  await db.collection('rooms').doc(roomId).set({
-    type:'direct',members:ids,
-    memberNames:{[currentUser.uid]:currentUser.displayName,[partner.uid]:partner.displayName},
-    memberPhotos:{[currentUser.uid]:currentUser.photoURL||'',[partner.uid]:partner.photoURL||''},
-    lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
+  const ref=db.collection('rooms').doc(roomId);
+  let created=false;
+  if(!(await _roomExists(ref))){
+    try{
+      await ref.set({
+        type:'direct',members:ids,
+        memberNames:{[currentUser.uid]:currentUser.displayName||'',[partner.uid]:partner.displayName||''},
+        memberPhotos:{[currentUser.uid]:currentUser.photoURL||'',[partner.uid]:partner.photoURL||''},
+        optIn:{[currentUser.uid]:true},
+        lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      created=true;
+    }catch(e){console.warn('1:1 방 만들기 실패(이미 있을 수 있음):',e&&e.code);}
+  }
+  if(!created){try{await _touchMyRoomFields(ref);}catch(e){console.warn('1:1 방 갱신 실패:',e&&e.code);}}
   openRoom(roomId,partner.displayName,partner.photoURL,false);
   if(firstOpen)_autoGreet(roomId,partner.uid,partner);
 }
@@ -4003,11 +4127,12 @@ async function createRoom(){
   if(selectedUsers.length===1){await startDM(selectedUsers[0]);return;}
   const name=document.getElementById('group-name').value.trim()||'그룹 채팅';
   const members=[currentUser.uid].concat(selectedUsers.map(function(u){return u.uid;}));
-  const memberNames={[currentUser.uid]:currentUser.displayName};
+  const memberNames={[currentUser.uid]:currentUser.displayName||''};
   const memberPhotos={[currentUser.uid]:currentUser.photoURL||''};
-  selectedUsers.forEach(function(u){memberNames[u.uid]=u.displayName;memberPhotos[u.uid]=u.photoURL||'';});
+  selectedUsers.forEach(function(u){memberNames[u.uid]=u.displayName||'';memberPhotos[u.uid]=u.photoURL||'';});
   const ref=await db.collection('rooms').add({
-    type:'group',name:name,members:members,memberNames:memberNames,memberPhotos:memberPhotos,
+    type:'group',name:name.slice(0,100),members:members,memberNames:memberNames,memberPhotos:memberPhotos,
+    optIn:{[currentUser.uid]:true},
     lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
   });
   openRoom(ref.id,name,'',true);
@@ -4045,6 +4170,10 @@ function openRoom(roomId,name,photo,isGroup){
   unsubRoom=db.collection('rooms').doc(roomId).onSnapshot(function(snap){
     const data=snap.data();if(!data)return;
     currentRoomMembers=data.members||[];_currentRoomData=data;
+    _roomSeq[roomId]=Math.max(_roomSeq[roomId]||0,_seqOf(data));
+    // 방을 보고 있는 동안 새 메시지가 오면 읽은 번호를 따라 올린다 (뒤처졌을 때만 써서 반복 쓰기 없음)
+    const myRs=(data.readSeq&&data.readSeq[currentUser.uid])||0;
+    if(currentRoomId===roomId&&!document.hidden&&_seqOf(data)>myRs)markRead(roomId,_seqOf(data));
     updateReadReceipt(data.readBy||{});
   },function(err){console.error('room listener 실패:',err);});
 }
@@ -4297,19 +4426,19 @@ async function confirmAddMember(){
   const newUids=_addMemberSelected.map(function(u){return u.uid;});
   const update={type:'group',members:firebase.firestore.FieldValue.arrayUnion.apply(null,newUids)};
   _addMemberSelected.forEach(function(u){
-    update['memberNames.'+u.uid]=u.displayName;
+    update['memberNames.'+u.uid]=u.displayName||'';
     update['memberPhotos.'+u.uid]=u.photoURL||'';
   });
   if(wasDirect){
     const allNames=Object.assign({},data.memberNames||{});
     _addMemberSelected.forEach(function(u){allNames[u.uid]=u.displayName;});
     const nameList=Object.values(allNames);
-    update.name=nameList.slice(0,4).join(', ')+(nameList.length>4?' 외':'');
+    update.name=(nameList.slice(0,4).join(', ')+(nameList.length>4?' 외':'')).slice(0,100);
   }
   await roomRef.update(update);
   const names=_addMemberSelected.map(function(u){return u.displayName;}).join(', ');
   await roomRef.collection('messages').add({
-    type:'system',text:t('addmember_system_msg').replace('{names}',names),
+    type:'system',kind:'added',uids:newUids,
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
   await roomRef.set({lastMessage:t('addmember_system_msg').replace('{names}',names),lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
@@ -4824,6 +4953,13 @@ function renderMsg(d,skipTranslate){
   if(d.type==='system'){
     const sysEl=document.createElement('div');
     sysEl.style.cssText='text-align:center;font-size:12px;color:var(--outline);margin:12px auto;padding:5px 14px;background:var(--surface-container);border-radius:100px;width:fit-content;';
+    // 새 형식: {kind:'join'|'added', uids:[...]} — 문구는 앱이 내 화면 언어로 만든다(자유 문구 저장 금지: 가짜 공지 방지).
+    if(d.kind){
+      sysEl.textContent=_systemMsgText(d);
+      container.appendChild(sysEl);
+      return;
+    }
+    // 예전 형식(text) — 규칙상 더 이상 새로 쓸 수 없다
     sysEl.textContent=d.text;
     container.appendChild(sysEl);
     const myLang0=document.getElementById('my-lang').value;
@@ -4842,7 +4978,8 @@ function renderMsg(d,skipTranslate){
   if(d.text&&!d.imageUrl&&!d.fileUrl){_recentCtx.push(String(d.text).slice(0,300));if(_recentCtx.length>20)_recentCtx.shift();}
   const w=document.createElement('div');
   w.className='msg-wrap '+(mine?'mine':'theirs');
-  if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}
+  // 보낸 사람 이름은 메시지에 적힌 값(displayName)이 아니라 방 멤버 정보·공개 명함에서 가져온다(사칭 방지)
+  if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=_memberName(d.asUid||d.uid)||'익명';w.appendChild(s);}
   const row=document.createElement('div');row.className='msg-row';
   const b=document.createElement('div');b.className='msg-bubble';
   const stickerSrc=stickerUrl(d.sticker);
@@ -5005,13 +5142,12 @@ async function sendImage(input){
     if(!data.secure_url)throw new Error('upload failed');
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',imageUrl:data.secure_url,uid:currentUser.uid,
-      displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     // 상대방 안 읽은 수 + 푸시 알림 (sendFile과 동일하게)
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:'📷 사진',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
+    _addSendCounters(incUpdate);
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('이미지 전송 완료!');
     sendPushNotification(others,'📷 사진');
@@ -5032,12 +5168,11 @@ async function sendMessage(){
   input.value='';input.style.height='auto';
   await db.collection('rooms').doc(currentRoomId).collection('messages').add({
     text:text,uid:currentUser.uid,
-    displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
   const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
   const incUpdate={lastMessage:text,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-  incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
+  _addSendCounters(incUpdate);
   await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
   markRead(currentRoomId);
   sendPushNotification(others,text);
@@ -5068,13 +5203,12 @@ async function sendSticker(id){
   try{
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',sticker:id,uid:currentUser.uid,
-      displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     const label='🥟 '+_stickerLabel();
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:label,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
+    _addSendCounters(incUpdate);
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);
     sendPushNotification(others,label);
@@ -5162,12 +5296,12 @@ async function sendFile(input){
     const fileSize=file.size<1024*1024?(Math.round(file.size/1024)+'KB'):(Math.round(file.size/1024/1024*10)/10+'MB');
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',fileUrl:data.secure_url,fileName:file.name,fileSize:fileSize,
-      uid:currentUser.uid,displayName:currentUser.displayName||'게스트',
+      uid:currentUser.uid,
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:'📎 '+file.name,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
+    _addSendCounters(incUpdate);
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('파일 전송 완료!');
     sendPushNotification(others,'📎 '+file.name);
