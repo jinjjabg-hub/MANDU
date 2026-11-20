@@ -2,6 +2,8 @@
 <html lang="ko">
 <head>
 <script>
+// 첫 화면 속도 측정: 단계마다 performance.mark를 남긴다. 주소에 ?perf=1 을 붙이면 콘솔에 표로 보여준다.
+window._pm=function(n){try{if(!performance.getEntriesByName(n,'mark').length)performance.mark(n);}catch(e){}};
 // 구글 플레이 정책: 앱(TWA)에서는 결제 UI 노출 금지.
 // 앱 여부는 '이 탭'에서만 기억한다(sessionStorage). 예전엔 localStorage에 영구 저장했는데,
 // 안드로이드에서 앱(TWA)과 크롬이 저장소를 함께 써서 앱을 한 번 열면 크롬 웹사이트에서도 결제 화면이 영영 숨겨졌다.
@@ -39,6 +41,43 @@ function openInBrowser(){
   alert('오른쪽 아래(또는 위) ··· 메뉴 → "다른 브라우저로 열기"를 눌러주세요');
 }
 </script>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<script>
+// (글꼴 CSS보다 앞에 둬야 CSS를 기다리지 않고 바로 요청이 나간다)
+// 손님 링크(?u=만두ID): 로그인 확인·Firebase SDK(첫 연결에 2~3초)를 기다리지 않고, 누구나 읽을 수 있는 공개 문서
+// manduid_index/{ID} → public_profiles/{uid} 를 REST로 바로 읽어 둔다. 실패하면 예전처럼 SDK로 읽는다.
+(function(){try{
+  var id=new URLSearchParams(location.search).get('u');
+  if(!id||!/^[A-Za-z0-9_]{3,20}$/.test(id)||!window.fetch)return;
+  var B='https://firestore.googleapis.com/v1/projects/mandutok/databases/(default)/documents/';
+  function val(v){
+    if(!v)return null;
+    if('stringValue' in v)return v.stringValue;
+    if('booleanValue' in v)return v.booleanValue;
+    if('integerValue' in v)return Number(v.integerValue);
+    if('doubleValue' in v)return v.doubleValue;
+    if('timestampValue' in v)return v.timestampValue;
+    if('mapValue' in v)return obj(v.mapValue.fields);
+    if('arrayValue' in v)return (v.arrayValue.values||[]).map(val);
+    return null;
+  }
+  function obj(f){var o={};for(var k in (f||{}))o[k]=val(f[k]);return o;}
+  function get(path){
+    return fetch(B+path).then(function(r){
+      if(r.status===404)return null;
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return r.json().then(function(j){return obj(j.fields);});
+    });
+  }
+  window._guestPrefetchId=id;
+  window._guestPrefetch=get('manduid_index/'+encodeURIComponent(id)).then(function(ix){
+    _pm('rest_index_done');
+    if(!ix||typeof ix.uid!=='string'||!ix.uid)return {uid:null,profile:null};
+    return get('public_profiles/'+encodeURIComponent(ix.uid)).then(function(p){_pm('rest_profile_done');return {uid:ix.uid,profile:p};});
+  });
+  window._guestPrefetch.catch(function(){});
+}catch(e){}})();
+</script>
 <link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -66,8 +105,7 @@ function openInBrowser(){
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- 알림(firebase-messaging)·QR 코드(qrcodejs) 스크립트는 첫 화면에 필요 없어서 쓸 때 불러온다(_loadScript) -->
 <style>
 :root{--primary:#6b38d4;--primary-container:#8455ef;--primary-fixed:#e9ddff;--primary-fixed-dim:#d0bcff;--on-primary:#fff;--secondary-container:#e4e0f5;--background:#f8f9ff;--surface:#fff;--surface-container:#e6eeff;--surface-container-low:#eff4ff;--surface-container-high:#dee9fc;--on-surface:#121c2a;--on-surface-variant:#494454;--outline:#7b7486;--outline-variant:#cbc3d7;--error:#ba1a1a;--success:#22c55e;}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -1641,6 +1679,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 </div>
 
 <script>
+_pm('sdk_loaded');
 const BASE_URL='https://mandu.bizmy.net/';
 const LANG_FLAGS={ko:'🇰🇷',en:'🇺🇸',ja:'🇯🇵',zh:'🇨🇳',es:'🇪🇸',fr:'🇫🇷',de:'🇩🇪',vi:'🇻🇳',th:'🇹🇭',mn:'🇲🇳',hi:'🇮🇳',pt:'🇧🇷',ar:'🇸🇦',id:'🇮🇩',it:'🇮🇹',da:'🇩🇰'};
 
@@ -1657,7 +1696,23 @@ const auth=firebase.auth();
 const db=firebase.firestore();
 const provider=new firebase.auth.GoogleAuthProvider();
 let messaging=null;
-try{if(firebase.messaging.isSupported())messaging=firebase.messaging();}catch(e){}
+// 첫 화면에 필요 없는 스크립트는 처음 쓸 때 한 번만 불러온다
+const _scriptLoads={};
+function _loadScript(src){
+  if(!_scriptLoads[src])_scriptLoads[src]=new Promise(function(res,rej){
+    const s=document.createElement('script');s.src=src;s.async=true;
+    s.onload=function(){res();};s.onerror=function(){delete _scriptLoads[src];rej(new Error('script load failed: '+src));};
+    document.head.appendChild(s);
+  });
+  return _scriptLoads[src];
+}
+const MESSAGING_SDK_SRC='https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js';
+const QRCODE_SRC='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+async function _ensureMessaging(){
+  if(messaging)return messaging;
+  try{await _loadScript(MESSAGING_SDK_SRC);if(await firebase.messaging.isSupported())messaging=firebase.messaging();}catch(e){}
+  return messaging;
+}
 
 let currentUser=null,currentRoomId=null,currentRoomMembers=[];
 let unsubMsg=null,unsubRoom=null,lastMyMsgWrap=null;
@@ -1816,6 +1871,10 @@ let qrInstances={};
 function generateQR(elementId, link, size){
   const el=document.getElementById(elementId);
   if(!el)return;
+  if(typeof QRCode==='undefined'){
+    _loadScript(QRCODE_SRC).then(function(){generateQR(elementId,link,size);}).catch(function(e){console.log('QR 스크립트 로드 실패:',e);});
+    return;
+  }
   el.innerHTML=''; // 기존 QR 초기화
   try{
     qrInstances[elementId]=new QRCode(el,{
@@ -1997,8 +2056,9 @@ function initOnline(){
 }
 
 async function initFCM(){
-  if(!messaging||!currentUser||isGuest)return;
+  if(!currentUser||isGuest)return;
   if(!('Notification' in window)||!('serviceWorker' in navigator))return;
+  if(!(await _ensureMessaging())||!currentUser||isGuest)return;
   try{
     // 캐시용 sw.js와 같은 / 범위에 등록하면 브라우저가 하나만 남겨서(대개 sw.js)
     // 푸시를 받아도 알림을 띄우지 못함 → 알림용은 별도 범위로 분리
@@ -2234,8 +2294,41 @@ async function autoCreateManduid(user){
   throw new Error('autoCreateManduid: no available ID');
 }
 
+// ?u=만두ID → hostUID. 페이지 맨 앞에서 REST로 읽어 둔 결과(_guestPrefetch)를 먼저 쓰고, 없거나 실패하면 SDK로 읽는다.
+let _guestHostData=null; // 미리 읽어 둔 가게 공개 명함(public_profiles) — hostUID 와 짝
+async function _resolveGuestHost(){
+  if(!guestManduidParam||hostUID)return;
+  if(window._guestPrefetch&&window._guestPrefetchId===guestManduidParam){
+    try{
+      const pre=await window._guestPrefetch;
+      if(pre.uid){hostUID=pre.uid;_guestHostData=pre.profile||null;}
+      return; // REST가 '없음'이라고 답했으면 SDK로 다시 묻지 않는다
+    }catch(e){}
+  }
+  try{
+    const idDoc=await db.collection('manduid_index').doc(guestManduidParam).get();
+    _pm('manduid_index_done');
+    if(idDoc.exists)hostUID=idDoc.data().uid;
+  }catch(e){}
+}
+// 미리 읽어 둔 가게 명함이 있으면 그것을, 없으면 Firestore에서
+async function _getGuestHostProfile(uid){
+  if(_guestHostData&&uid===hostUID){const u=Object.assign({},_guestHostData);u.uid=uid;return u;}
+  return await _getProfile(uid);
+}
+// 내 만두 ID·채팅 목록은 기기에 기억해 두고 다음에 열 때 먼저 그린다(서버 결과로 곧 갱신)
+function _cacheKeyMid(uid){return 'mandu_mid_'+uid;}
+function _cacheKeyRooms(uid){return 'mandu_rooms_'+uid;}
+function _clearStartupCache(uid){
+  try{
+    if(uid){localStorage.removeItem(_cacheKeyMid(uid));localStorage.removeItem(_cacheKeyRooms(uid));return;}
+    Object.keys(localStorage).forEach(function(k){if(k.indexOf('mandu_mid_')===0||k.indexOf('mandu_rooms_')===0)localStorage.removeItem(k);});
+  }catch(e){}
+}
+
 // ── 인증 상태 변경 ────────────────────────────────────────
 auth.onAuthStateChanged(async function(user){
+  _pm(user?(user.isAnonymous?'auth_anon':'auth_user'):'auth_null');
   // 로딩 화면 반드시 숨김 (에러 발생해도 무한 로딩 방지)
   try{document.getElementById('loading').style.display='none';}catch(e){}
   try{
@@ -2244,12 +2337,7 @@ auth.onAuthStateChanged(async function(user){
     if(isGuest&&user.isAnonymous&&joinCode){await joinByInvite();return;}
     if(isGuest&&user.isAnonymous){
       // ?u=만두ID 방식으로 들어온 경우 hostUID 변환
-      if(guestManduidParam&&!hostUID){
-        try{
-          const idDoc=await db.collection('manduid_index').doc(guestManduidParam).get();
-          if(idDoc.exists)hostUID=idDoc.data().uid;
-        }catch(e){}
-      }
+      await _resolveGuestHost();
       await openGuestRoom();
       return;
     }
@@ -2265,14 +2353,33 @@ auth.onAuthStateChanged(async function(user){
       }catch(e){console.warn('이름 저장 실패:',e);}
     }
 
-    // Firestore에 기본 정보 저장
-    await db.collection('users').doc(user.uid).set({
+    // Firestore에 기본 정보 저장 — 기다리지 않고 아래 조회와 함께 보낸다(manduid는 이 쓰기와 상관없음)
+    const setP=db.collection('users').doc(user.uid).set({
       uid:user.uid,displayName:user.displayName||'',photoURL:user.photoURL||'',
       email:user.email||'',lastSeen:firebase.firestore.FieldValue.serverTimestamp()
-    },{merge:true});
+    },{merge:true}).then(function(){_pm('users_set_done');});
+    setP.catch(function(e){console.warn('users 기본 정보 저장 실패:',e&&e.code);});
 
     // 만두 ID 확인 — 서버에서 직접 읽기 (캐시 무시)
-    const userDoc=await db.collection('users').doc(user.uid).get({source:'server'});
+    const getP=db.collection('users').doc(user.uid).get({source:'server'}).then(function(d){_pm('users_get_server_done');return d;});
+
+    // 재방문(이 기기에서 만두 ID를 이미 확인함) + 링크로 들어온 게 아니면: 서버 응답을 기다리지 않고 메인을 먼저 연다.
+    // 서버 확인은 뒤에서 하고, ID가 바뀌었으면 화면만 고친다.
+    let cachedMid=null;try{cachedMid=localStorage.getItem(_cacheKeyMid(user.uid));}catch(e){}
+    if(cachedMid&&!joinCode&&!guestManduidParam&&!hostUID){
+      currentManduid=cachedMid;
+      updateUIAfterLogin();
+      showMain();
+      getP.then(function(d){
+        if(!currentUser||currentUser.uid!==user.uid)return;
+        const m=(d.data()||{}).manduid;
+        if(!m){_clearStartupCache(user.uid);return;} // 다음에 열 때는 예전처럼 서버 확인 후 진행
+        if(m!==currentManduid){currentManduid=m;updateUIAfterLogin();}
+      }).catch(function(e){console.warn('만두 ID 서버 확인 실패:',e&&e.code);});
+      return;
+    }
+
+    const userDoc=await getP;
     const userData=userDoc.data()||{};
 
     if(!userData.manduid){
@@ -2303,14 +2410,9 @@ auth.onAuthStateChanged(async function(user){
     if(joinCode){showMain();await joinByInvite();return;}
 
     // ?u= 또는 ?host= 로 접근한 경우 DM 바로 열기
-    if(guestManduidParam&&!hostUID){
-      try{
-        const idDoc=await db.collection('manduid_index').doc(guestManduidParam).get();
-        if(idDoc.exists)hostUID=idDoc.data().uid;
-      }catch(e){}
-    }
+    await _resolveGuestHost();
     if(hostUID&&hostUID!==user.uid){
-      const hd=await _getProfile(hostUID);
+      const hd=await _getGuestHostProfile(hostUID);
       if(hd){
         if(!forceDM&&_storeStaff(hd,hostUID).length){await openStoreRoom(hd,hostUID);}else{await startDM(hd);}
         return;
@@ -2320,20 +2422,22 @@ auth.onAuthStateChanged(async function(user){
   }else{
     if(heartbeatInterval){clearInterval(heartbeatInterval);heartbeatInterval=null;}
     currentUser=null;currentManduid=null;
+    _clearStartupCache(); // 로그아웃·탈퇴: 기기에 기억해 둔 만두 ID·채팅 목록 지우기
     if(isGuest&&joinCode){
       await loadInviteInfo();
       show('guest-screen');
     }else if(isGuest&&(hostUID||guestManduidParam)){
       if(guestManduidParam&&!hostUID){
-        try{
-          const idDoc=await db.collection('manduid_index').doc(guestManduidParam).get();
-          if(idDoc.exists){
-            hostUID=idDoc.data().uid;
-            _setGuestHost(await _readPublicProfile(hostUID));
-          }
-        }catch(e){}
+        await _resolveGuestHost();
+        if(hostUID){
+          if(!_guestHostData)_guestHostData=await _readPublicProfile(hostUID);
+          _setGuestHost(_guestHostData);
+          _pm('public_profile_done');
+        }
       }else{await loadGuestHostInfo();}
       show('guest-screen');
+      // 손님이 이름을 쓰는 동안 Firestore 연결을 미리 열어 둔다(대화방 입장이 빨라짐)
+      if(hostUID)setTimeout(function(){_profileRef(hostUID).get().catch(function(){});},0);
     }else{
       if(!localStorage.getItem('mandu_onboarding_done')){showOnboarding();}
       else{show('login-screen');}
@@ -2421,7 +2525,7 @@ function detectBrowserLang(fallback){
 async function openGuestRoom(){
   if(!currentUser||!hostUID)return;
   try{
-    const host=await _getProfile(hostUID);
+    const host=await _getGuestHostProfile(hostUID);
     if(!host){showToast('잘못된 링크예요');show('login-screen');return;}
     const guestName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
     // 브라우저 언어 자동 감지 → UI 화면 언어 + 번역 대상 언어 둘 다 즉시 적용
@@ -2544,6 +2648,7 @@ function updateUIAfterLogin(){
   loadCardbookConsent();
 
   const mid=currentManduid||'—';
+  if(currentManduid){try{localStorage.setItem(_cacheKeyMid(currentUser.uid),currentManduid);}catch(e){}}
   document.getElementById('hero-manduid').textContent='@'+mid;
   document.getElementById('settings-manduid').textContent='@'+mid;
   document.getElementById('my-link-display').textContent=getMyLink();
@@ -2587,6 +2692,7 @@ let _exitPressTime=0;
 let _historyInited=false;
 
 function show(id){
+  _pm('show_'+id);
   SCREENS.forEach(function(s){document.getElementById(s).style.display='none';});
   const el=document.getElementById(id);
   el.style.display='flex';
@@ -3818,11 +3924,45 @@ function handleBack(){
 }
 
 let _roomsSoundReady=false,_roomsSoundReadyAt=0;const _roomLastSoundMs={};
+// 채팅 목록 기기 저장: Timestamp는 {__ts:ms}로 바꿔 저장하고, 꺼낼 때 다시 Timestamp로 만든다
+function _roomCacheEnc(v){
+  if(v&&typeof v.toMillis==='function')return {__ts:v.toMillis()};
+  if(Array.isArray(v))return v.map(_roomCacheEnc);
+  if(v&&typeof v==='object'){const o={};Object.keys(v).forEach(function(k){o[k]=_roomCacheEnc(v[k]);});return o;}
+  return v;
+}
+function _roomCacheDec(v){
+  if(v&&typeof v==='object'&&!Array.isArray(v)&&typeof v.__ts==='number')return firebase.firestore.Timestamp.fromMillis(v.__ts);
+  if(Array.isArray(v))return v.map(_roomCacheDec);
+  if(v&&typeof v==='object'){const o={};Object.keys(v).forEach(function(k){o[k]=_roomCacheDec(v[k]);});return o;}
+  return v;
+}
+function _saveRoomsCache(uid,snap){
+  try{
+    const docs=snap.docs.slice().sort(function(a,b){
+      const at=a.data().lastMessageTime,bt=b.data().lastMessageTime;
+      return (bt?bt.toMillis():0)-(at?at.toMillis():0);
+    }).slice(0,80).map(function(d){return {id:d.id,d:_roomCacheEnc(d.data())};});
+    localStorage.setItem(_cacheKeyRooms(uid),JSON.stringify({at:Date.now(),docs:docs}));
+  }catch(e){}
+}
+function _cachedRoomsSnap(uid){
+  try{
+    const c=JSON.parse(localStorage.getItem(_cacheKeyRooms(uid))||'null');
+    if(!c||!Array.isArray(c.docs))return null;
+    const docs=c.docs.map(function(x){const data=_roomCacheDec(x.d);return {id:x.id,data:function(){return data;}};});
+    return {docs:docs,empty:!docs.length,_cached:true};
+  }catch(e){return null;}
+}
 function loadRooms(){
   const list=document.getElementById('room-list');
   const sub=document.getElementById('chats-sub');
+  const myUid=currentUser.uid;
+  let gotServer=false;
   db.collection('rooms').where('members','array-contains',currentUser.uid)
     .onSnapshot(_roomsRender=function(snap){
+      if(snap._cached){if(gotServer)return;}       // 기기에 저장해 둔 목록: 서버 결과가 오면 더 그리지 않음
+      else if(snap!==_lastRoomsSnap){gotServer=true;_pm('rooms_snapshot');if(currentUser&&currentUser.uid===myUid)_saveRoomsCache(myUid,snap);}
       // 다른 방(지금 열어 둔 방 제외)에 상대가 새 메시지를 보내면 알림음 — 첫 로딩·내가 보낸 메시지는 제외
       if(_roomsSoundReady&&snap.docChanges&&!document.hidden){
         const chatOpen=document.getElementById('chat-screen').style.display==='flex';
@@ -3837,7 +3977,7 @@ function loadRooms(){
         });
       }
       snap.docs.forEach(function(d){const lt=d.data().lastMessageTime;if(lt)_roomLastSoundMs[d.id]=Math.max(_roomLastSoundMs[d.id]||0,lt.toMillis());});
-      if(!_roomsSoundReady){_roomsSoundReady=true;_roomsSoundReadyAt=Date.now()-5000;}
+      if(!_roomsSoundReady&&!snap._cached){_roomsSoundReady=true;_roomsSoundReadyAt=Date.now()-5000;}
       _lastRoomsSnap=snap;
       list.innerHTML='';
       if(snap.empty){
@@ -3913,6 +4053,8 @@ function loadRooms(){
       sub.textContent='불러오기 실패';
       list.innerHTML='<div class="empty-state"><div class="empty-emoji"><span class="ms">error</span></div><div class="empty-title">채팅 목록을 불러오지 못했어요</div><div class="empty-desc">'+_esc(err&&err.message?err.message:'')+'</div></div>';
     });
+  // 서버 결과가 오기 전에, 이 기기에 저장해 둔 지난 채팅 목록을 먼저 그린다(앱을 처음 열 때만)
+  if(!_lastRoomsSnap&&!gotServer){const c=_cachedRoomsSnap(myUid);if(c&&!c.empty){try{_roomsRender(c);_pm('rooms_cached_render');}catch(e){console.warn('저장된 채팅 목록 표시 실패:',e);}}}
 }
 
 // 전체 가입자를 내려받지 않는다 — 내 프로필·친구·대화 상대 문서만 한 명씩 구독 (firestore.rules에서 목록 조회 금지)
@@ -6211,6 +6353,7 @@ function wakeServer(){
     fetch('https://mandu-server.onrender.com/api/ping',{cache:'no-store'})
       .then(function(r){return r.json();})
       .then(function(d){
+        _pm('server_ping_done');
         window._aiAvailable=!!(d&&d.ai);if(typeof initAiTranslate==='function')initAiTranslate();
         window._overageFrom=(d&&d.overageFrom)||null;
         if(d&&typeof initLoginOptions==='function')initLoginOptions(d);
@@ -6271,6 +6414,12 @@ function renderLegalLabels(){
     .replace('{privacy}','<span onclick="showPrivacyPolicy()" style="color:var(--primary);cursor:pointer;text-decoration:underline;">'+legalMsg('privacy')+'</span>');
 }
 document.addEventListener('DOMContentLoaded',renderLegalLabels);
+// ?perf=1 : 첫 화면 단계별 시간(ms, 페이지 열기 시작 기준)을 콘솔 표로
+if(/[?&]perf=1\b/.test(location.search))setTimeout(function(){try{
+  var n=performance.getEntriesByType('navigation')[0]||{};var rows=[{step:'html_loaded(DOMContentLoaded)',ms:Math.round(n.domContentLoadedEventEnd||0)}];
+  performance.getEntriesByType('mark').forEach(function(m){rows.push({step:m.name,ms:Math.round(m.startTime)});});
+  rows.sort(function(a,b){return a.ms-b.ms;});console.table(rows);
+}catch(e){}},8000);
 
 // 사용량 카드 아래 구독 상태 줄 (웹에서만 — 앱에서는 .web-only 로 숨김)
 function renderSubscriptionLine(){
