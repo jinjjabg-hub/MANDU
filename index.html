@@ -665,10 +665,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   </div>
   <div class="login-brand">MANDU</div>
   <div class="login-sub">Translation Messenger</div>
-  <div class="login-desc">언어가 달라도 <strong>대화는 하나로</strong></div>
+  <div class="login-desc" data-i18n-html="login_desc_html">언어가 달라도 <strong>대화는 하나로</strong></div>
   <button class="google-btn" id="loginBtn">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
-    <span id="google-login-lbl">Google로 시작하기</span>
+    <span id="google-login-lbl" data-i18n="login_google">Google로 시작하기</span>
   </button>
   <div class="inapp-only" style="width:100%;max-width:280px;font-size:12px;color:var(--outline);text-align:center;line-height:1.6;">
     <span id="inapp-google-hint">Google 로그인은 이 앱 안에서 막혀 있어요.</span>
@@ -691,17 +691,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 
   <div style="display:flex;align-items:center;gap:12px;width:100%;max-width:280px;">
     <div style="flex:1;height:1px;background:var(--outline-variant);"></div>
-    <div style="font-size:12px;color:var(--outline);font-weight:600;">또는</div>
+    <div style="font-size:12px;color:var(--outline);font-weight:600;" data-i18n="login_or">또는</div>
     <div style="flex:1;height:1px;background:var(--outline-variant);"></div>
   </div>
 
   <!-- 이메일 로그인 폼 -->
   <div id="email-login-form" style="width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px;">
-    <input id="email-input" type="email" placeholder="이메일" autocomplete="email"
+    <input id="email-input" type="email" placeholder="이메일" data-i18n-placeholder="login_email_ph" autocomplete="email"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'">
     <div style="position:relative;">
-      <input id="pw-input" type="password" placeholder="비밀번호" autocomplete="current-password"
+      <input id="pw-input" type="password" placeholder="비밀번호" data-i18n-placeholder="login_pw_ph" autocomplete="current-password"
         style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 44px 12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
         onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'"
         onkeydown="if(event.key==='Enter')emailLogin()">
@@ -712,34 +712,30 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     </div>
     <div id="email-login-msg" style="font-size:12px;font-weight:600;min-height:16px;padding:0 4px;"></div>
     <button onclick="emailLogin()"
-      style="width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
-      이메일로 시작하기
-    </button>
+      style="width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;" data-i18n="login_email_btn">이메일로 시작하기</button>
     <div style="display:flex;justify-content:space-between;padding:0 4px;">
-      <span onclick="showEmailSignup()" style="font-size:12px;color:var(--primary);font-weight:600;cursor:pointer;">회원가입</span>
-      <span onclick="sendPasswordReset()" style="font-size:12px;color:var(--outline);cursor:pointer;">비밀번호 찾기</span>
+      <span onclick="showEmailSignup()" style="font-size:12px;color:var(--primary);font-weight:600;cursor:pointer;" data-i18n="login_signup_link">회원가입</span>
+      <span onclick="sendPasswordReset()" style="font-size:12px;color:var(--outline);cursor:pointer;" data-i18n="login_forgot">비밀번호 찾기</span>
     </div>
   </div>
 
   <!-- 회원가입 폼 -->
   <div id="email-signup-form" style="width:100%;max-width:280px;display:none;flex-direction:column;gap:10px;">
-    <input id="signup-name-input" type="text" placeholder="이름 (닉네임)" autocomplete="nickname"
+    <input id="signup-name-input" type="text" placeholder="이름 (닉네임)" data-i18n-placeholder="signup_name_ph" autocomplete="nickname"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'">
-    <input id="signup-email-input" type="email" placeholder="이메일" autocomplete="email"
+    <input id="signup-email-input" type="email" placeholder="이메일" data-i18n-placeholder="login_email_ph" autocomplete="email"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'">
-    <input id="signup-pw-input" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="new-password"
+    <input id="signup-pw-input" type="password" placeholder="비밀번호 (6자 이상)" data-i18n-placeholder="signup_pw_ph" autocomplete="new-password"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'"
       onkeydown="if(event.key==='Enter')emailSignup()">
     <div id="email-signup-msg" style="font-size:12px;font-weight:600;min-height:16px;padding:0 4px;"></div>
     <button onclick="emailSignup()"
-      style="width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
-      가입하기
-    </button>
+      style="width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;" data-i18n="signup_btn">가입하기</button>
     <div style="text-align:center;">
-      <span onclick="showEmailLogin()" style="font-size:12px;color:var(--outline);cursor:pointer;">이미 계정이 있어요 → 로그인</span>
+      <span onclick="showEmailLogin()" style="font-size:12px;color:var(--outline);cursor:pointer;" data-i18n="signup_have_account">이미 계정이 있어요 → 로그인</span>
     </div>
   </div>
 
@@ -1970,42 +1966,42 @@ function setEmailMsg(id,msg,isError){
 async function emailLogin(){
   const email=document.getElementById('email-input').value.trim();
   const pw=document.getElementById('pw-input').value;
-  if(!email||!pw){setEmailMsg('email-login-msg','이메일과 비밀번호를 입력해주세요',true);return;}
-  setEmailMsg('email-login-msg','로그인 중...',false);
+  if(!email||!pw){setEmailMsg('email-login-msg',t('msg_enter_email_pw'),true);return;}
+  setEmailMsg('email-login-msg',t('msg_logging_in'),false);
   try{
     await auth.signInWithEmailAndPassword(email,pw);
   }catch(e){
-    const msgs={'auth/user-not-found':'등록되지 않은 이메일이에요','auth/wrong-password':'비밀번호가 틀렸어요',
-      'auth/invalid-email':'이메일 형식이 올바르지 않아요','auth/too-many-requests':'잠시 후 다시 시도해주세요',
-      'auth/invalid-credential':'이메일 또는 비밀번호가 틀렸어요'};
-    setEmailMsg('email-login-msg',msgs[e.code]||'로그인 실패: '+e.message,true);
+    const msgs={'auth/user-not-found':t('msg_user_not_found'),'auth/wrong-password':t('msg_wrong_pw'),
+      'auth/invalid-email':t('msg_invalid_email'),'auth/too-many-requests':t('msg_too_many'),
+      'auth/invalid-credential':t('msg_invalid_cred')};
+    setEmailMsg('email-login-msg',msgs[e.code]||t('msg_login_fail')+e.message,true);
   }
 }
 async function emailSignup(){
   const name=document.getElementById('signup-name-input').value.trim();
   const email=document.getElementById('signup-email-input').value.trim();
   const pw=document.getElementById('signup-pw-input').value;
-  if(!name){setEmailMsg('email-signup-msg','이름을 입력해주세요',true);return;}
-  if(!email){setEmailMsg('email-signup-msg','이메일을 입력해주세요',true);return;}
-  if(pw.length<6){setEmailMsg('email-signup-msg','비밀번호는 6자 이상이에요',true);return;}
-  setEmailMsg('email-signup-msg','가입 중...',false);
+  if(!name){setEmailMsg('email-signup-msg',t('guest_name_required'),true);return;}
+  if(!email){setEmailMsg('email-signup-msg',t('msg_enter_email'),true);return;}
+  if(pw.length<6){setEmailMsg('email-signup-msg',t('msg_pw_short'),true);return;}
+  setEmailMsg('email-signup-msg',t('msg_signing_up'),false);
   try{
     window._pendingDisplayName=name; // 가입 직후 로그인 처리가 먼저 돌아도 이름을 다시 묻지 않도록
     const cred=await auth.createUserWithEmailAndPassword(email,pw);
     await cred.user.updateProfile({displayName:name,photoURL:''});
   }catch(e){
-    const msgs={'auth/email-already-in-use':'이미 사용 중인 이메일이에요',
-      'auth/invalid-email':'이메일 형식이 올바르지 않아요','auth/weak-password':'비밀번호가 너무 짧아요'};
-    setEmailMsg('email-signup-msg',msgs[e.code]||'가입 실패: '+e.message,true);
+    const msgs={'auth/email-already-in-use':t('msg_email_in_use'),
+      'auth/invalid-email':t('msg_invalid_email'),'auth/weak-password':t('msg_weak_pw')};
+    setEmailMsg('email-signup-msg',msgs[e.code]||t('msg_signup_fail')+e.message,true);
   }
 }
 async function sendPasswordReset(){
   const email=document.getElementById('email-input').value.trim();
-  if(!email){setEmailMsg('email-login-msg','이메일을 먼저 입력해주세요',true);return;}
+  if(!email){setEmailMsg('email-login-msg',t('msg_email_first'),true);return;}
   try{
     await auth.sendPasswordResetEmail(email);
-    setEmailMsg('email-login-msg','재설정 메일을 보냈어요 ✓',false);
-  }catch(e){setEmailMsg('email-login-msg','전송 실패. 이메일을 확인해주세요',true);}
+    setEmailMsg('email-login-msg',t('msg_reset_sent'),false);
+  }catch(e){setEmailMsg('email-login-msg',t('msg_reset_fail'),true);}
 }
 function showEmailSignup(){
   document.getElementById('email-login-form').style.display='none';
@@ -2217,7 +2213,8 @@ auth.onAuthStateChanged(async function(user){
   }else{
     if(heartbeatInterval){clearInterval(heartbeatInterval);heartbeatInterval=null;}
     currentUser=null;currentManduid=null;
-    if(isGuest)applyUILanguage(detectBrowserLang()); // 손님 첫 화면은 브라우저 언어로
+    // 로그인 전 화면(손님·온보딩·로그인)도 화면 언어를 맞춘다: 손님은 브라우저 언어, 그 외엔 이 기기에서 마지막으로 쓴 언어 → 브라우저 언어
+    applyUILanguage(isGuest?detectBrowserLang():(_lastUILang()||detectBrowserLang()));
     if(isGuest&&joinCode){
       await loadInviteInfo();
       show('guest-screen');
@@ -2384,7 +2381,7 @@ function upgradeToGoogle(){
 function showLoginFromGuest(){
   show('login-screen');
   const b=document.getElementById('login-back-guest');
-  if(b){b.style.display='block';b.textContent='← '+_L('로그인 없이 바로 대화하기','Chat without signing in');}
+  if(b){b.style.display='block';b.textContent='← '+t('login_back_guest');}
 }
 function backToGuest(){
   const b=document.getElementById('login-back-guest');if(b)b.style.display='none';
@@ -3461,13 +3458,13 @@ function initLoginOptions(cfg){
   set('kakao-login-btn',on('kakao'));set('apple-login-btn',on('apple'));set('phone-login-btn',on('phone'));
   set('extra-logins',on('kakao')||on('apple')||on('phone'));
   const txt=function(id,v){const el=document.getElementById(id);if(el)el.textContent=v;};
-  txt('kakao-login-lbl',_L('카카오로 시작하기','Continue with Kakao'));
+  txt('kakao-login-lbl',t('login_kakao'));
   txt('guest-login-lnk',t('guest_login'));
-  if(window.MANDU_INAPP)txt('google-login-lbl',_L('Google로 시작하기 (Chrome·Safari에서 열림)','Continue with Google (opens in Chrome/Safari)'));
-  txt('inapp-google-hint',_L('카카오톡·네이버 앱 안에서는 Google 로그인이 막혀 있어서, 버튼을 누르면 Chrome·Safari로 열려요. ','Google sign-in is blocked inside this app, so the button opens Chrome/Safari. '));
-  txt('inapp-open-lnk',_L('Chrome·Safari로 열기','Open in Chrome/Safari'));
-  txt('apple-login-lbl',_L('Apple로 시작하기','Continue with Apple'));
-  txt('phone-login-lbl',_L('전화번호로 시작하기','Continue with phone number'));
+  if(window.MANDU_INAPP)txt('google-login-lbl',t('login_google_inapp'));
+  txt('inapp-google-hint',t('login_inapp_hint'));
+  txt('inapp-open-lnk',t('login_inapp_open'));
+  txt('apple-login-lbl',t('login_apple'));
+  txt('phone-login-lbl',t('login_phone'));
 }
 function _loginErr(e){
   console.error('로그인 실패:',e);
@@ -5602,11 +5599,35 @@ const UI_T2={
 };
 Object.keys(UI_T2).forEach(function(l){if(!UI_T[l])UI_T[l]={};UI_T_KEYS2.forEach(function(k,i){UI_T[l][k]=UI_T2[l][i];});});
 
+// 온보딩 뒤 로그인 화면 문구·로그인 안내 메시지 (16개 언어)
+const UI_T_KEYS3=["login_back_guest", "login_desc_html", "login_google", "login_google_inapp", "login_inapp_hint", "login_inapp_open", "login_kakao", "login_apple", "login_phone", "login_or", "login_email_ph", "login_pw_ph", "login_email_btn", "login_signup_link", "login_forgot", "signup_name_ph", "signup_pw_ph", "signup_btn", "signup_have_account", "msg_enter_email_pw", "msg_logging_in", "msg_user_not_found", "msg_wrong_pw", "msg_invalid_email", "msg_too_many", "msg_invalid_cred", "msg_login_fail", "msg_enter_email", "msg_pw_short", "msg_signing_up", "msg_email_in_use", "msg_weak_pw", "msg_signup_fail", "msg_email_first", "msg_reset_sent", "msg_reset_fail", "legal_login_agree", "legal_terms", "legal_privacy"];
+const UI_T3={
+  ko:["로그인 없이 바로 대화하기", "언어가 달라도 <strong>대화는 하나로</strong>", "Google로 시작하기", "Google로 시작하기 (Chrome·Safari에서 열림)", "카카오톡·네이버 앱 안에서는 Google 로그인이 막혀 있어서, 버튼을 누르면 Chrome·Safari로 열려요. ", "Chrome·Safari로 열기", "카카오로 시작하기", "Apple로 시작하기", "전화번호로 시작하기", "또는", "이메일", "비밀번호", "이메일로 시작하기", "회원가입", "비밀번호 찾기", "이름 (닉네임)", "비밀번호 (6자 이상)", "가입하기", "이미 계정이 있어요 → 로그인", "이메일과 비밀번호를 입력해주세요", "로그인 중...", "등록되지 않은 이메일이에요", "비밀번호가 틀렸어요", "이메일 형식이 올바르지 않아요", "잠시 후 다시 시도해주세요", "이메일 또는 비밀번호가 틀렸어요", "로그인 실패: ", "이메일을 입력해주세요", "비밀번호는 6자 이상이에요", "가입 중...", "이미 사용 중인 이메일이에요", "비밀번호가 너무 짧아요", "가입 실패: ", "이메일을 먼저 입력해주세요", "재설정 메일을 보냈어요 ✓", "전송 실패. 이메일을 확인해주세요", "가입 시 {terms} 및 {privacy}에 동의하는 것으로 간주됩니다.", "이용약관", "개인정보처리방침"],
+  en:["Chat without signing in", "Different languages, <strong>one conversation</strong>", "Continue with Google", "Continue with Google (opens in Chrome/Safari)", "Google sign-in is blocked inside this app, so the button opens Chrome/Safari. ", "Open in Chrome/Safari", "Continue with Kakao", "Continue with Apple", "Continue with phone number", "or", "Email", "Password", "Continue with email", "Sign up", "Forgot password?", "Name (nickname)", "Password (6+ characters)", "Sign up", "Already have an account? → Log in", "Please enter your email and password", "Signing in...", "No account found for this email", "Wrong password", "Invalid email address", "Too many attempts. Please try again later", "Wrong email or password", "Sign-in failed: ", "Please enter your email", "Password must be at least 6 characters", "Signing up...", "This email is already in use", "Password is too short", "Sign-up failed: ", "Enter your email first", "Reset email sent ✓", "Could not send. Please check your email", "By signing up you agree to the {terms} and {privacy}.", "Terms of Service", "Privacy Policy"],
+  ja:["ログインせずにチャットする", "言葉が違っても、<strong>会話はひとつに</strong>", "Googleで始める", "Googleで始める（Chrome・Safariで開きます）", "このアプリ内ではGoogleログインがブロックされているため、ボタンを押すとChrome・Safariで開きます。", "Chrome・Safariで開く", "カカオで始める", "Appleで始める", "電話番号で始める", "または", "メールアドレス", "パスワード", "メールで始める", "新規登録", "パスワードをお忘れですか？", "名前（ニックネーム）", "パスワード（6文字以上）", "登録する", "アカウントをお持ちの方 → ログイン", "メールアドレスとパスワードを入力してください", "ログイン中...", "登録されていないメールアドレスです", "パスワードが違います", "メールアドレスの形式が正しくありません", "しばらくしてからもう一度お試しください", "メールアドレスまたはパスワードが違います", "ログイン失敗：", "メールアドレスを入力してください", "パスワードは6文字以上です", "登録中...", "このメールアドレスはすでに使われています", "パスワードが短すぎます", "登録失敗：", "先にメールアドレスを入力してください", "再設定メールを送信しました ✓", "送信できませんでした。メールアドレスをご確認ください", "登録すると{terms}と{privacy}に同意したものとみなされます。", "利用規約", "プライバシーポリシー"],
+  zh:["无需登录直接聊天", "语言不同，<strong>对话如一</strong>", "使用 Google 继续", "使用 Google 继续（在 Chrome/Safari 中打开）", "此应用内无法使用 Google 登录，点击按钮将在 Chrome/Safari 中打开。", "在 Chrome/Safari 中打开", "使用 Kakao 继续", "使用 Apple 继续", "使用手机号继续", "或", "邮箱", "密码", "使用邮箱继续", "注册", "忘记密码？", "名字（昵称）", "密码（至少 6 位）", "注册", "已有账号 → 登录", "请输入邮箱和密码", "正在登录...", "该邮箱尚未注册", "密码错误", "邮箱格式不正确", "尝试次数过多，请稍后再试", "邮箱或密码错误", "登录失败：", "请输入邮箱", "密码至少需要 6 位", "正在注册...", "该邮箱已被使用", "密码太短", "注册失败：", "请先输入邮箱", "重置邮件已发送 ✓", "发送失败，请检查邮箱", "注册即表示您同意{terms}和{privacy}。", "服务条款", "隐私政策"],
+  es:["Chatear sin iniciar sesión", "Idiomas distintos, <strong>una sola conversación</strong>", "Continuar con Google", "Continuar con Google (se abre en Chrome/Safari)", "El inicio de sesión con Google está bloqueado en esta app, así que el botón abre Chrome/Safari. ", "Abrir en Chrome/Safari", "Continuar con Kakao", "Continuar con Apple", "Continuar con número de teléfono", "o", "Correo electrónico", "Contraseña", "Continuar con correo", "Registrarse", "¿Olvidaste tu contraseña?", "Nombre (apodo)", "Contraseña (6+ caracteres)", "Registrarse", "¿Ya tienes cuenta? → Iniciar sesión", "Escribe tu correo y contraseña", "Iniciando sesión...", "No hay ninguna cuenta con este correo", "Contraseña incorrecta", "Correo no válido", "Demasiados intentos. Inténtalo más tarde", "Correo o contraseña incorrectos", "Error al iniciar sesión: ", "Escribe tu correo", "La contraseña debe tener al menos 6 caracteres", "Registrando...", "Este correo ya está en uso", "La contraseña es demasiado corta", "Error al registrarse: ", "Primero escribe tu correo", "Correo de restablecimiento enviado ✓", "No se pudo enviar. Revisa tu correo", "Al registrarte aceptas los {terms} y la {privacy}.", "Términos del servicio", "Política de privacidad"],
+  fr:["Discuter sans se connecter", "Des langues différentes, <strong>une seule conversation</strong>", "Continuer avec Google", "Continuer avec Google (s'ouvre dans Chrome/Safari)", "La connexion Google est bloquée dans cette app : le bouton ouvre Chrome/Safari. ", "Ouvrir dans Chrome/Safari", "Continuer avec Kakao", "Continuer avec Apple", "Continuer avec un numéro de téléphone", "ou", "E-mail", "Mot de passe", "Continuer avec l'e-mail", "S'inscrire", "Mot de passe oublié ?", "Nom (pseudo)", "Mot de passe (6 caractères min.)", "S'inscrire", "Déjà un compte ? → Se connecter", "Saisissez votre e-mail et votre mot de passe", "Connexion...", "Aucun compte pour cet e-mail", "Mot de passe incorrect", "Adresse e-mail invalide", "Trop de tentatives. Réessayez plus tard", "E-mail ou mot de passe incorrect", "Échec de la connexion : ", "Saisissez votre e-mail", "Le mot de passe doit contenir au moins 6 caractères", "Inscription...", "Cet e-mail est déjà utilisé", "Mot de passe trop court", "Échec de l'inscription : ", "Saisissez d'abord votre e-mail", "E-mail de réinitialisation envoyé ✓", "Envoi impossible. Vérifiez votre e-mail", "En vous inscrivant, vous acceptez les {terms} et la {privacy}.", "Conditions d'utilisation", "Politique de confidentialité"],
+  de:["Ohne Anmeldung chatten", "Verschiedene Sprachen, <strong>ein Gespräch</strong>", "Weiter mit Google", "Weiter mit Google (öffnet Chrome/Safari)", "Die Google-Anmeldung ist in dieser App gesperrt, daher öffnet der Button Chrome/Safari. ", "In Chrome/Safari öffnen", "Weiter mit Kakao", "Weiter mit Apple", "Weiter mit Telefonnummer", "oder", "E-Mail", "Passwort", "Weiter mit E-Mail", "Registrieren", "Passwort vergessen?", "Name (Spitzname)", "Passwort (mind. 6 Zeichen)", "Registrieren", "Schon ein Konto? → Anmelden", "Bitte E-Mail und Passwort eingeben", "Anmeldung läuft...", "Für diese E-Mail gibt es kein Konto", "Falsches Passwort", "Ungültige E-Mail-Adresse", "Zu viele Versuche. Bitte später erneut versuchen", "E-Mail oder Passwort falsch", "Anmeldung fehlgeschlagen: ", "Bitte E-Mail eingeben", "Das Passwort muss mindestens 6 Zeichen haben", "Registrierung läuft...", "Diese E-Mail wird bereits verwendet", "Passwort ist zu kurz", "Registrierung fehlgeschlagen: ", "Bitte zuerst die E-Mail eingeben", "E-Mail zum Zurücksetzen gesendet ✓", "Senden fehlgeschlagen. Bitte E-Mail prüfen", "Mit der Registrierung akzeptierst du die {terms} und die {privacy}.", "Nutzungsbedingungen", "Datenschutzerklärung"],
+  vi:["Trò chuyện không cần đăng nhập", "Khác ngôn ngữ, <strong>chung một cuộc trò chuyện</strong>", "Tiếp tục với Google", "Tiếp tục với Google (mở trong Chrome/Safari)", "Đăng nhập Google bị chặn trong ứng dụng này nên nút sẽ mở Chrome/Safari. ", "Mở trong Chrome/Safari", "Tiếp tục với Kakao", "Tiếp tục với Apple", "Tiếp tục với số điện thoại", "hoặc", "Email", "Mật khẩu", "Tiếp tục với email", "Đăng ký", "Quên mật khẩu?", "Tên (biệt danh)", "Mật khẩu (từ 6 ký tự)", "Đăng ký", "Đã có tài khoản? → Đăng nhập", "Vui lòng nhập email và mật khẩu", "Đang đăng nhập...", "Email này chưa được đăng ký", "Sai mật khẩu", "Email không hợp lệ", "Thử quá nhiều lần. Vui lòng thử lại sau", "Sai email hoặc mật khẩu", "Đăng nhập thất bại: ", "Vui lòng nhập email", "Mật khẩu phải có ít nhất 6 ký tự", "Đang đăng ký...", "Email này đã được sử dụng", "Mật khẩu quá ngắn", "Đăng ký thất bại: ", "Hãy nhập email trước", "Đã gửi email đặt lại ✓", "Không gửi được. Vui lòng kiểm tra email", "Khi đăng ký, bạn đồng ý với {terms} và {privacy}.", "Điều khoản dịch vụ", "Chính sách quyền riêng tư"],
+  th:["แชทโดยไม่ต้องเข้าสู่ระบบ", "ต่างภาษา <strong>แต่คุยกันได้</strong>", "ดำเนินการต่อด้วย Google", "ดำเนินการต่อด้วย Google (เปิดใน Chrome/Safari)", "แอปนี้บล็อกการเข้าสู่ระบบด้วย Google ปุ่มนี้จึงจะเปิด Chrome/Safari ", "เปิดใน Chrome/Safari", "ดำเนินการต่อด้วย Kakao", "ดำเนินการต่อด้วย Apple", "ดำเนินการต่อด้วยเบอร์โทรศัพท์", "หรือ", "อีเมล", "รหัสผ่าน", "ดำเนินการต่อด้วยอีเมล", "สมัครสมาชิก", "ลืมรหัสผ่าน?", "ชื่อ (ชื่อเล่น)", "รหัสผ่าน (6 ตัวขึ้นไป)", "สมัครสมาชิก", "มีบัญชีแล้ว → เข้าสู่ระบบ", "กรุณากรอกอีเมลและรหัสผ่าน", "กำลังเข้าสู่ระบบ...", "ไม่พบบัญชีของอีเมลนี้", "รหัสผ่านไม่ถูกต้อง", "รูปแบบอีเมลไม่ถูกต้อง", "ลองหลายครั้งเกินไป กรุณาลองใหม่ภายหลัง", "อีเมลหรือรหัสผ่านไม่ถูกต้อง", "เข้าสู่ระบบไม่สำเร็จ: ", "กรุณากรอกอีเมล", "รหัสผ่านต้องมีอย่างน้อย 6 ตัว", "กำลังสมัคร...", "อีเมลนี้ถูกใช้แล้ว", "รหัสผ่านสั้นเกินไป", "สมัครไม่สำเร็จ: ", "กรุณากรอกอีเมลก่อน", "ส่งอีเมลรีเซ็ตแล้ว ✓", "ส่งไม่สำเร็จ กรุณาตรวจสอบอีเมล", "เมื่อสมัคร ถือว่าคุณยอมรับ{terms}และ{privacy}", "ข้อกำหนดการให้บริการ", "นโยบายความเป็นส่วนตัว"],
+  mn:["Нэвтрэхгүйгээр чатлах", "Хэл өөр ч <strong>яриа нэг</strong>", "Google-ээр үргэлжлүүлэх", "Google-ээр үргэлжлүүлэх (Chrome/Safari-д нээгдэнэ)", "Энэ апп дотор Google нэвтрэлт хаалттай тул товч Chrome/Safari-г нээнэ. ", "Chrome/Safari-д нээх", "Kakao-гоор үргэлжлүүлэх", "Apple-ээр үргэлжлүүлэх", "Утасны дугаараар үргэлжлүүлэх", "эсвэл", "Имэйл", "Нууц үг", "Имэйлээр үргэлжлүүлэх", "Бүртгүүлэх", "Нууц үгээ мартсан уу?", "Нэр (хоч)", "Нууц үг (6+ тэмдэгт)", "Бүртгүүлэх", "Бүртгэлтэй юу? → Нэвтрэх", "Имэйл болон нууц үгээ оруулна уу", "Нэвтэрч байна...", "Энэ имэйлээр бүртгэл олдсонгүй", "Нууц үг буруу байна", "Имэйлийн хэлбэр буруу байна", "Хэт олон оролдлого. Дараа дахин оролдоно уу", "Имэйл эсвэл нууц үг буруу байна", "Нэвтрэх амжилтгүй: ", "Имэйлээ оруулна уу", "Нууц үг дор хаяж 6 тэмдэгт байна", "Бүртгэж байна...", "Энэ имэйл аль хэдийн ашиглагдаж байна", "Нууц үг хэт богино байна", "Бүртгэл амжилтгүй: ", "Эхлээд имэйлээ оруулна уу", "Сэргээх имэйл илгээлээ ✓", "Илгээж чадсангүй. Имэйлээ шалгана уу", "Бүртгүүлснээр та {terms} болон {privacy}-г зөвшөөрсөнд тооцогдоно.", "Үйлчилгээний нөхцөл", "Нууцлалын бодлого"],
+  hi:["बिना लॉग इन किए चैट करें", "भाषा अलग, <strong>बातचीत एक</strong>", "Google से जारी रखें", "Google से जारी रखें (Chrome/Safari में खुलेगा)", "इस ऐप में Google साइन-इन ब्लॉक है, इसलिए बटन Chrome/Safari खोलता है। ", "Chrome/Safari में खोलें", "Kakao से जारी रखें", "Apple से जारी रखें", "फ़ोन नंबर से जारी रखें", "या", "ईमेल", "पासवर्ड", "ईमेल से जारी रखें", "साइन अप", "पासवर्ड भूल गए?", "नाम (उपनाम)", "पासवर्ड (कम से कम 6 अक्षर)", "साइन अप करें", "पहले से खाता है? → लॉग इन", "कृपया ईमेल और पासवर्ड दर्ज करें", "लॉग इन हो रहा है...", "इस ईमेल से कोई खाता नहीं मिला", "गलत पासवर्ड", "अमान्य ईमेल पता", "बहुत अधिक प्रयास। कृपया बाद में फिर कोशिश करें", "गलत ईमेल या पासवर्ड", "लॉग इन विफल: ", "कृपया ईमेल दर्ज करें", "पासवर्ड कम से कम 6 अक्षर का होना चाहिए", "साइन अप हो रहा है...", "यह ईमेल पहले से उपयोग में है", "पासवर्ड बहुत छोटा है", "साइन अप विफल: ", "पहले ईमेल दर्ज करें", "रीसेट ईमेल भेजा गया ✓", "भेजा नहीं जा सका। कृपया ईमेल जाँचें", "साइन अप करके आप {terms} और {privacy} से सहमत होते हैं।", "सेवा की शर्तें", "गोपनीयता नीति"],
+  pt:["Conversar sem entrar", "Idiomas diferentes, <strong>uma só conversa</strong>", "Continuar com Google", "Continuar com Google (abre no Chrome/Safari)", "O login com Google é bloqueado neste app, então o botão abre o Chrome/Safari. ", "Abrir no Chrome/Safari", "Continuar com Kakao", "Continuar com Apple", "Continuar com número de telefone", "ou", "E-mail", "Senha", "Continuar com e-mail", "Cadastrar", "Esqueceu a senha?", "Nome (apelido)", "Senha (6+ caracteres)", "Cadastrar", "Já tem conta? → Entrar", "Digite seu e-mail e senha", "Entrando...", "Nenhuma conta com este e-mail", "Senha incorreta", "E-mail inválido", "Muitas tentativas. Tente novamente mais tarde", "E-mail ou senha incorretos", "Falha ao entrar: ", "Digite seu e-mail", "A senha precisa ter pelo menos 6 caracteres", "Cadastrando...", "Este e-mail já está em uso", "Senha muito curta", "Falha no cadastro: ", "Digite seu e-mail primeiro", "E-mail de redefinição enviado ✓", "Não foi possível enviar. Verifique seu e-mail", "Ao se cadastrar, você concorda com os {terms} e a {privacy}.", "Termos de serviço", "Política de privacidade"],
+  ar:["الدردشة دون تسجيل الدخول", "لغات مختلفة، <strong>محادثة واحدة</strong>", "المتابعة باستخدام Google", "المتابعة باستخدام Google (يُفتح في Chrome/Safari)", "تسجيل الدخول عبر Google محظور داخل هذا التطبيق، لذا يفتح الزر Chrome/Safari. ", "الفتح في Chrome/Safari", "المتابعة باستخدام Kakao", "المتابعة باستخدام Apple", "المتابعة برقم الهاتف", "أو", "البريد الإلكتروني", "كلمة المرور", "المتابعة بالبريد الإلكتروني", "إنشاء حساب", "نسيت كلمة المرور؟", "الاسم (اسم مستعار)", "كلمة المرور (6 أحرف على الأقل)", "إنشاء حساب", "لديك حساب؟ ← تسجيل الدخول", "يرجى إدخال البريد الإلكتروني وكلمة المرور", "جارٍ تسجيل الدخول...", "لا يوجد حساب بهذا البريد", "كلمة المرور غير صحيحة", "بريد إلكتروني غير صالح", "محاولات كثيرة. حاول لاحقًا", "البريد الإلكتروني أو كلمة المرور غير صحيحة", "فشل تسجيل الدخول: ", "يرجى إدخال البريد الإلكتروني", "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل", "جارٍ إنشاء الحساب...", "هذا البريد مستخدم بالفعل", "كلمة المرور قصيرة جدًا", "فشل إنشاء الحساب: ", "أدخل بريدك الإلكتروني أولًا", "تم إرسال رسالة إعادة التعيين ✓", "تعذر الإرسال. تحقق من بريدك", "بإنشاء حساب فإنك توافق على {terms} و{privacy}.", "شروط الخدمة", "سياسة الخصوصية"],
+  id:["Mengobrol tanpa masuk", "Beda bahasa, <strong>satu percakapan</strong>", "Lanjutkan dengan Google", "Lanjutkan dengan Google (dibuka di Chrome/Safari)", "Login Google diblokir di aplikasi ini, jadi tombol akan membuka Chrome/Safari. ", "Buka di Chrome/Safari", "Lanjutkan dengan Kakao", "Lanjutkan dengan Apple", "Lanjutkan dengan nomor telepon", "atau", "Email", "Kata sandi", "Lanjutkan dengan email", "Daftar", "Lupa kata sandi?", "Nama (panggilan)", "Kata sandi (min. 6 karakter)", "Daftar", "Sudah punya akun? → Masuk", "Masukkan email dan kata sandi", "Sedang masuk...", "Tidak ada akun dengan email ini", "Kata sandi salah", "Email tidak valid", "Terlalu banyak percobaan. Coba lagi nanti", "Email atau kata sandi salah", "Gagal masuk: ", "Masukkan email Anda", "Kata sandi minimal 6 karakter", "Sedang mendaftar...", "Email ini sudah digunakan", "Kata sandi terlalu pendek", "Gagal mendaftar: ", "Masukkan email terlebih dahulu", "Email reset terkirim ✓", "Gagal mengirim. Periksa email Anda", "Dengan mendaftar, Anda menyetujui {terms} dan {privacy}.", "Ketentuan Layanan", "Kebijakan Privasi"],
+  it:["Chatta senza accedere", "Lingue diverse, <strong>una sola conversazione</strong>", "Continua con Google", "Continua con Google (si apre in Chrome/Safari)", "L'accesso con Google è bloccato in questa app, quindi il pulsante apre Chrome/Safari. ", "Apri in Chrome/Safari", "Continua con Kakao", "Continua con Apple", "Continua con il numero di telefono", "oppure", "Email", "Password", "Continua con email", "Registrati", "Password dimenticata?", "Nome (soprannome)", "Password (min. 6 caratteri)", "Registrati", "Hai già un account? → Accedi", "Inserisci email e password", "Accesso in corso...", "Nessun account con questa email", "Password errata", "Email non valida", "Troppi tentativi. Riprova più tardi", "Email o password errate", "Accesso non riuscito: ", "Inserisci la tua email", "La password deve avere almeno 6 caratteri", "Registrazione in corso...", "Questa email è già in uso", "Password troppo corta", "Registrazione non riuscita: ", "Inserisci prima la tua email", "Email di reimpostazione inviata ✓", "Invio non riuscito. Controlla la tua email", "Registrandoti accetti i {terms} e l'{privacy}.", "Termini di servizio", "Informativa sulla privacy"],
+  da:["Chat uden at logge ind", "Forskellige sprog, <strong>én samtale</strong>", "Fortsæt med Google", "Fortsæt med Google (åbner i Chrome/Safari)", "Google-login er blokeret i denne app, så knappen åbner Chrome/Safari. ", "Åbn i Chrome/Safari", "Fortsæt med Kakao", "Fortsæt med Apple", "Fortsæt med telefonnummer", "eller", "E-mail", "Adgangskode", "Fortsæt med e-mail", "Tilmeld dig", "Glemt adgangskode?", "Navn (kaldenavn)", "Adgangskode (mindst 6 tegn)", "Tilmeld dig", "Har du allerede en konto? → Log ind", "Indtast e-mail og adgangskode", "Logger ind...", "Der findes ingen konto med denne e-mail", "Forkert adgangskode", "Ugyldig e-mailadresse", "For mange forsøg. Prøv igen senere", "Forkert e-mail eller adgangskode", "Login mislykkedes: ", "Indtast din e-mail", "Adgangskoden skal være mindst 6 tegn", "Tilmelder...", "Denne e-mail er allerede i brug", "Adgangskoden er for kort", "Tilmelding mislykkedes: ", "Indtast først din e-mail", "E-mail til nulstilling sendt ✓", "Kunne ikke sende. Tjek din e-mail", "Ved tilmelding accepterer du {terms} og {privacy}.", "Servicevilkår", "Privatlivspolitik"]
+};
+Object.keys(UI_T3).forEach(function(l){if(!UI_T[l])UI_T[l]={};UI_T_KEYS3.forEach(function(k,i){UI_T[l][k]=UI_T3[l][i];});});
+
 let _uiLang='ko';
 function t(key){const T=UI_T[_uiLang]||UI_T.ko;return T[key]||UI_T.ko[key]||key;}
 
+function _lastUILang(){try{return localStorage.getItem('mandu_ui_lang_last');}catch(e){return null;}}
 function applyUILanguage(lang){
   _uiLang=lang||'ko';
+  try{localStorage.setItem('mandu_ui_lang_last',_uiLang);}catch(e){}
   document.documentElement.dir=(lang==='ar')?'rtl':'ltr';
   const T=UI_T[_uiLang]||UI_T.ko;
   try{renderLegalLabels();}catch(e){}
@@ -6217,8 +6238,8 @@ function renderLegalLabels(){
   const n=document.getElementById('plan-legal-notice');
   if(n)n.innerHTML=legalMsg(onetimeDef(_selectedPlanKey)?'pack_notice':'plan_notice').replace('{terms}',legalLink('terms',legalMsg('terms'))).replace('{refund}',legalLink('refund',legalMsg('refund')));
   const la=document.getElementById('login-legal-agree');
-  if(la)la.innerHTML=legalMsg('login_agree').replace('{terms}',legalLink('terms',legalMsg('terms')))
-    .replace('{privacy}','<span onclick="showPrivacyPolicy()" style="color:var(--primary);cursor:pointer;text-decoration:underline;">'+legalMsg('privacy')+'</span>');
+  if(la)la.innerHTML=_esc(t('legal_login_agree')).replace('{terms}',legalLink('terms',_esc(t('legal_terms'))))
+    .replace('{privacy}','<span onclick="showPrivacyPolicy()" style="color:var(--primary);cursor:pointer;text-decoration:underline;">'+_esc(t('legal_privacy'))+'</span>');
 }
 document.addEventListener('DOMContentLoaded',renderLegalLabels);
 
