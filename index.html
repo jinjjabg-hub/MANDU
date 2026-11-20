@@ -131,7 +131,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .search-empty-ico{font-size:44px;margin-bottom:12px;}
 .search-empty-txt{font-size:14px;color:var(--outline);}
 
-#login-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:40px;background:var(--background);}
+#login-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:flex-start;gap:20px;padding:40px 40px calc(40px + var(--pwa-pad,0px));background:var(--background);min-height:0;overflow-y:auto;}
+/* 화면보다 내용이 길면 위·아래가 잘리지 않고 스크롤되게 (가운데 정렬은 auto 여백으로) */
+#login-screen>*{flex-shrink:0;}
+#login-screen>.login-logo{margin-top:auto;}
+#login-screen>#biz-footer{margin-bottom:auto;}
+/* 설치 배너가 떠 있을 때 목록 맨 아래(빈 화면 버튼 등)가 배너·탭바에 가리지 않게 */
+#main-screen .scroll-area{padding-bottom:var(--pwa-pad,0px);}
 .login-logo{width:140px;height:140px;animation:float 3s ease-in-out infinite;}
 @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
 .login-brand{font-size:32px;font-weight:800;letter-spacing:10px;color:var(--primary);}
@@ -345,6 +351,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .create-input:focus{border-color:var(--primary);}
 .create-input::placeholder{color:var(--outline);}
 .section-lbl{font-size:10px;font-weight:700;color:var(--outline);letter-spacing:1.5px;text-transform:uppercase;padding:8px 20px 4px;}
+.create-done-btn:disabled{opacity:.4;cursor:default;}
+.empty-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
+.empty-actions .empty-btn{margin-top:0;display:inline-flex;align-items:center;gap:6px;}
+.empty-btn.sub{background:var(--surface);color:var(--primary);border:1.5px solid var(--primary);}
 .create-done-btn{margin:12px 20px 24px;padding:15px;width:calc(100% - 40px);background:var(--primary);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
 #chat-screen{flex:1;display:none;flex-direction:column;min-height:0;position:relative;}
 .chat-hd{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--outline-variant);flex-shrink:0;}
@@ -749,14 +759,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   <div class="guest-host-card">
     <div class="guest-host-avatar"><img id="guest-host-photo" src="" alt=""></div>
     <div class="guest-host-name" id="guest-host-name">—</div>
-    <div class="guest-host-sub">🥟 MANDU로 대화 요청</div>
+    <div class="guest-host-sub" data-i18n="guest_request">🥟 MANDU로 대화 요청</div>
   </div>
   <div class="guest-input-wrap">
-    <label class="guest-input-label">이름을 알려주세요</label>
-    <input class="guest-input" id="guest-name-input" type="text" placeholder="홍길동">
+    <label class="guest-input-label" for="guest-name-input" data-i18n="guest_name_label">이름을 알려주세요</label>
+    <input class="guest-input" id="guest-name-input" type="text" maxlength="30" autocomplete="nickname" placeholder="홍길동" data-i18n-placeholder="guest_name_ph">
   </div>
-  <button class="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기 🥟</button>
-  <div class="guest-login-hint">이미 계정이 있으신가요? <span onclick="showLoginFromGuest()" id="guest-login-lnk">로그인</span></div>
+  <button class="guest-start-btn" onclick="startGuestChat()" data-i18n="guest_start_btn">바로 대화 시작하기 🥟</button>
+  <div class="guest-login-hint"><b style="font-weight:inherit;" data-i18n="guest_have_account">이미 계정이 있으신가요?</b> <span onclick="showLoginFromGuest()" id="guest-login-lnk" data-i18n="guest_login">로그인</span></div>
 </div>
 
 <div id="main-screen">
@@ -871,7 +881,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
             <div class="spc-manduid" id="settings-manduid">@—</div>
             <div class="spc-email" id="settings-email">—</div>
           </div>
-          <button class="spc-edit" onclick="showProfile()"><span class="ms" style="font-size:16px;">edit</span> EDIT</button>
+          <button class="spc-edit" onclick="showProfile()"><span class="ms" style="font-size:16px;">edit</span> <span data-i18n="edit_btn">편집</span></button>
         </div>
       </div>
       <div class="settings-section-label" data-i18n="settings_section_connect">내 연결 수단</div>
@@ -2141,6 +2151,8 @@ auth.onAuthStateChanged(async function(user){
       await openGuestRoom();
       return;
     }
+    // 링크 없이 다시 연 손님(익명 로그인이 남아 있음): 이름을 다시 묻지 않고 하던 대화방으로 보낸다
+    if(user.isAnonymous){await resumeGuest();return;}
     isGuest=false;
 
     // 전화번호·애플·카카오 계정은 이름이 비어 있을 수 있어 먼저 받는다
@@ -2205,6 +2217,7 @@ auth.onAuthStateChanged(async function(user){
   }else{
     if(heartbeatInterval){clearInterval(heartbeatInterval);heartbeatInterval=null;}
     currentUser=null;currentManduid=null;
+    if(isGuest)applyUILanguage(detectBrowserLang()); // 손님 첫 화면은 브라우저 언어로
     if(isGuest&&joinCode){
       await loadInviteInfo();
       show('guest-screen');
@@ -2278,7 +2291,7 @@ async function loadGuestHostInfo(){
 
 async function startGuestChat(){
   const name=document.getElementById('guest-name-input').value.trim();
-  if(!name){showToast('이름을 입력해주세요');return;}
+  if(!name){showToast(t('guest_name_required'));document.getElementById('guest-name-input').focus();return;}
   try{
     // 로그인 직후 바로 대화방이 만들어지므로, 이름을 먼저 저장해 둬야 방에 손님 이름이 들어간다
     localStorage.setItem('mandu_guest_name',name);
@@ -2288,7 +2301,7 @@ async function startGuestChat(){
       isGuest:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
     localStorage.setItem('mandu_guest_name',name);
-  }catch(e){showToast('오류가 발생했어요.');}
+  }catch(e){showToast(t('guest_error'));}
 }
 
 // ── 브라우저 언어 자동 감지 (게스트 입장 시 UX/번역 언어를 자동으로 맞추기 위함) ──
@@ -2300,6 +2313,35 @@ function detectBrowserLang(){
     if(supported.indexOf(code)!==-1)return code;
   }
   return 'ko';
+}
+
+async function resumeGuest(){
+  isGuest=true;
+  applyUILanguage(localStorage.getItem('mandu_ui_lang_'+currentUser.uid)||detectBrowserLang());
+  let docs=[];
+  try{docs=(await db.collection('rooms').where('members','array-contains',currentUser.uid).get()).docs;}catch(e){console.warn('손님 대화방 조회 실패:',e&&e.code);}
+  const ms=function(d){const lt=d.data().lastMessageTime;return lt&&lt.toMillis?lt.toMillis():0;};
+  docs.sort(function(a,b){return ms(b)-ms(a);});
+  const last=docs[0];
+  if(!last){
+    // 대화방이 없는 익명 계정이면 평소 첫 화면으로
+    isGuest=false;
+    if(!localStorage.getItem('mandu_onboarding_done'))showOnboarding();else show('login-screen');
+    return;
+  }
+  const r=last.data();
+  if(r.storeUid&&r.storeUid!==currentUser.uid){
+    hostUID=r.storeUid;
+    loadGuestHostInfo(); // 뒤로 가기 했을 때 보이는 손님 화면용
+    await openGuestRoom();
+    return;
+  }
+  // 그룹 초대로 들어간 방
+  const nm=r.name||_L('그룹 대화','Group chat');
+  _setGuestHost({displayName:nm});
+  const sub=document.querySelector('#guest-screen .guest-host-sub');
+  if(sub){sub.removeAttribute('data-i18n');sub.textContent='🥟 '+_L('그룹 대화','Group chat');}
+  openRoom(last.id,nm,'',r.type==='group');
 }
 
 async function openGuestRoom(){
@@ -3420,7 +3462,7 @@ function initLoginOptions(cfg){
   set('extra-logins',on('kakao')||on('apple')||on('phone'));
   const txt=function(id,v){const el=document.getElementById(id);if(el)el.textContent=v;};
   txt('kakao-login-lbl',_L('카카오로 시작하기','Continue with Kakao'));
-  txt('guest-login-lnk',_L('로그인','Sign in'));
+  txt('guest-login-lnk',t('guest_login'));
   if(window.MANDU_INAPP)txt('google-login-lbl',_L('Google로 시작하기 (Chrome·Safari에서 열림)','Continue with Google (opens in Chrome/Safari)'));
   txt('inapp-google-hint',_L('카카오톡·네이버 앱 안에서는 Google 로그인이 막혀 있어서, 버튼을 누르면 Chrome·Safari로 열려요. ','Google sign-in is blocked inside this app, so the button opens Chrome/Safari. '));
   txt('inapp-open-lnk',_L('Chrome·Safari로 열기','Open in Chrome/Safari'));
@@ -3572,12 +3614,12 @@ function askDisplayName(){
     const sh=document.createElement('div');sh.className='mod-sheet phone-sheet';sh.id='name-sheet';
     sh.innerHTML='<div class="mod-sheet-title"></div><div style="padding:0 8px 4px;"><div class="row"><input id="name-ask-input" type="text" maxlength="30" autocomplete="nickname"></div><button class="primary" id="name-ask-btn"></button><div class="msg" id="name-ask-msg"></div></div>';
     document.body.appendChild(bd);document.body.appendChild(sh);
-    sh.querySelector('.mod-sheet-title').textContent=_L('대화에 표시할 이름을 알려주세요','What name should others see?');
-    const input=document.getElementById('name-ask-input');input.placeholder=_L('이름 (닉네임)','Name');
-    const btn=document.getElementById('name-ask-btn');btn.textContent=_L('시작하기','Continue');
+    sh.querySelector('.mod-sheet-title').textContent=t('name_ask_title');
+    const input=document.getElementById('name-ask-input');input.placeholder=t('name_ask_ph');
+    const btn=document.getElementById('name-ask-btn');btn.textContent=t('name_ask_btn');
     const done=function(){
       const v=input.value.trim();
-      if(!v){const m=document.getElementById('name-ask-msg');m.textContent=_L('이름을 입력해주세요','Please enter a name');m.className='msg err';return;}
+      if(!v){const m=document.getElementById('name-ask-msg');m.textContent=t('guest_name_required');m.className='msg err';return;}
       bd.remove();sh.remove();resolve(v.slice(0,30));
     };
     btn.onclick=done;input.onkeydown=function(e){if(e.key==='Enter')done();};
@@ -3645,6 +3687,7 @@ async function showRoomInvite(reset){
 async function loadInviteInfo(){
   const nameEl=document.getElementById('guest-host-name'),photo=document.getElementById('guest-host-photo');
   const sub=document.querySelector('#guest-screen .guest-host-sub');
+  if(sub)sub.removeAttribute('data-i18n'); // 화면 언어가 바뀌어도 초대 문구를 덮어쓰지 않도록
   if(sub)sub.textContent='🥟 '+_L('그룹 대화에 초대받았어요','You are invited to a group chat');
   if(photo)photo.src=DEFAULT_AVATAR;
   const r=await _serverPost('/api/rooms/invite-info',{code:joinCode},false);
@@ -3718,7 +3761,7 @@ function loadRooms(){
       if(snap.empty){
         _renderGroupCards([]);
         sub.textContent=t('chats_empty_title');
-        list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc')+'</div></div>';
+        list.innerHTML=_chatsEmptyHTML();
         return;
       }
       const docs=snap.docs.filter(function(d){return _roomVisible(d);}).sort(function(a,b){
@@ -3759,7 +3802,7 @@ function loadRooms(){
       sub.textContent=unread>0?t('chats_unread_count').replace('{n}',unread):t('chats_room_count').replace('{n}',docs.length);
       if(!docs.length){
         sub.textContent=t('chats_empty_title');
-        list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc')+'</div></div>';
+        list.innerHTML=_chatsEmptyHTML();
         return;
       }
       docs.forEach(function(doc){
@@ -3975,14 +4018,24 @@ async function startDM(partner){
   if(firstOpen)_autoGreet(roomId,partner.uid,partner);
 }
 
+// 빈 화면의 주 행동: 내 QR 보기 / 링크 복사 (친구·손님이 생겨야 대화가 시작되므로)
+function _shareActionsHTML(){
+  return '<div class="empty-actions"><button class="empty-btn" onclick="showQR()"><span class="ms" style="font-size:18px;">qr_code_2</span>'+_esc(t('chats_empty_qr_btn'))+'</button>'+
+    '<button class="empty-btn sub" onclick="copyMyLink()"><span class="ms" style="font-size:18px;">link</span>'+_esc(t('copy_link_btn'))+'</button></div>';
+}
+function _chatsEmptyHTML(){
+  return '<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('chats_empty_title')+'</div><div class="empty-desc">'+t('chats_empty_desc_owner')+'</div>'+_shareActionsHTML()+'</div>';
+}
 function showCreate(){
   selectedUsers=[];
   show('create-screen');
   const list=document.getElementById('select-user-list');
   list.innerHTML='';
   const friends=myFriends();
+  const doneBtn=document.querySelector('#create-screen .create-done-btn');
+  if(doneBtn)doneBtn.disabled=!friends.length; // 고를 친구가 없으면 만들 수 없음
   if(!friends.length){
-    list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('friends_empty_title')+'</div><div class="empty-desc">'+_L('내 링크·QR을 보내거나, 검색에서 @만두ID로 찾아 대화를 시작하세요','Share your link or QR, or search an exact @ManduID to start a chat')+'</div></div>';
+    list.innerHTML='<div class="empty-state"><div class="empty-emoji">'+MANDU_LOGO_HTML+'</div><div class="empty-title">'+t('friends_empty_title')+'</div><div class="empty-desc">'+_L('내 링크·QR을 보내거나, 검색에서 @만두ID로 찾아 대화를 시작하세요','Share your link or QR, or search an exact @ManduID to start a chat')+'</div>'+_shareActionsHTML()+'</div>';
   }
   friends.forEach(function(u){
     const item=document.createElement('div');
@@ -5527,6 +5580,28 @@ const UI_T={
   da:{usage_web_upgrade_note:"Du kan opgradere på vores hjemmeside.",plan_title:"Vælg abonnement",plan_status:"Nuværende {plan} · {used} brugt denne måned",plan_recommended:"Anbefalet",plan_upgrade_btn:"Opgrader",plan_cancel:"Annuller",plan_free:"Gratis",plan_upgrade_to:"Opgrader til {plan} — ${price}/md.",plan_upgrade_cta:"🚀 Opgrader abonnement",lang_label:"Mit sprog",msg_placeholder:"Skriv en besked...",profile_title:"Min profil",profile_save:"Gem",profile_lang_label:"Standardsprog",qr_title:"Min QR-kode",dict_title:"Min ordbog 📖",search_title:"Søg",plan_per_month:"/md.",plan_soft_tag:"Enkel global chat",plan_light_tag:"Aktiv global kommunikation",plan_biz_tag:"Ubegrænset til erhverv",tab_chats:"Chats",tab_friends:"Venner",tab_discover:"Opdag",tab_settings:"Indstillinger",chats_loading:"Indlæser...",chats_empty_title:"Ingen chats endnu",chats_empty_desc:"Tryk på + for at starte en!",chats_unread_count:"{n} ulæste",chats_room_count:"{n} chats",chat_start_hint:"Start samtalen",chat_default_room_name:"Chat",guest_badge:"Gæst",welcome_toast:"Velkommen @{id} 🥟",ui_lang_changed_toast:"Visningssproget er ændret!",profile_ui_lang_section:"Visningssprog",profile_ui_lang_row:"Appens visningssprog",onb_title_1:"Tal med udlændinge,<br>uden sprogbarrierer",onb_desc_1:"Chat med udenlandske kunder og indkøbere,<br>hver på jeres eget sprog —<br>og forstå hinanden med det samme.",onb_title_2:"Dit sprog,<br>deres sprog",onb_desc_2:"Skriv på dit sprog — de ser det på deres.<br>Koreansk · engelsk · japansk · kinesisk · spansk ·<br>fransk · tysk · vietnamesisk · thai · mongolsk ·<br>hindi · portugisisk · arabisk · indonesisk · italiensk · dansk.<br>Dækker ca. 77 % af verdens befolkning!",onb_title_3:"Ét link,<br>forbindelse med det samme",onb_desc_3:"Send dit link eller din QR-kode — de skriver bare<br>et navn og begynder at chatte, uden tilmelding.<br>Tip: sæt din QR-kode ved kassen.",onb_skip:"Spring over",onb_next:"Næste",onb_start:"Kom i gang 🥟",pwa_install_desc:"<strong>Installer MANDU</strong><br>Åbn den direkte fra din startskærm",pwa_install_btn:"Installer",ios_install_title:"Føj MANDU til startskærmen",android_install_desc:"1. Tryk på <strong>⋮-menuen</strong> øverst til højre i Chrome<br>2. Vælg <strong>“Installer app”</strong> eller <strong>“Føj til startskærm”</strong><br>3. Tryk på <strong>“Installer”</strong>",ios_install_desc:"1. Tryk på <strong>Del-knappen</strong> ⬆️ nederst (eller øverst)<br>2. Vælg <strong>'Føj til hjemmeskærm'</strong> i menuen<br>3. Tryk på <strong>'Tilføj'</strong> øverst til højre",ios_install_ok:"Forstået",friends_search_placeholder:"Søg på navn eller @ManduID...",discover_tab_business:"Erhverv",discover_tab_global:"Global",discover_tab_contacts:"Find kontakter",settings_section_connect:"Mine kontaktoplysninger",settings_row_mylink:"Mit MANDU-link",settings_mylink_default:"Oprettes efter login",settings_row_qr:"Vis QR-kode",settings_row_qr_sub:"Scan for at starte en chat med det samme",settings_section_usage:"Oversættelsesforbrug",settings_section_screen:"Skærm",settings_row_darkmode:"Mørk tilstand",settings_section_dict:"Min ordbog",settings_row_dict:"Tilføj ofte brugte udtryk",settings_row_dict_sub_default:"Hurtig oversættelse uden API",settings_section_invite:"Inviter",settings_row_invite:"Invitationslink",settings_row_invite_sub:"Kopiér link til appen",settings_section_account:"Konto",settings_signout:"Log ud",settings_privacy:"Privatlivspolitik",settings_delete_account:"Slet konto",settings_delete_account_sub:"Slet kontoen og alle data",usage_used_default:"0 tegn",usage_limit_default:"/ 5.000 tegn",usage_msg_default:"Du har ikke brugt oversættelse denne måned endnu.",create_title:"Ny chat",create_group_name_placeholder:"Chatnavn (til gruppechats)",create_select_user_label:"Vælg deltagere",create_done_btn:"Opret chat",chat_autotranslate_on:"Automatisk oversættelse TIL",upgrade_banner_title:"🥟 Kan du lide MANDU?",upgrade_banner_sub:"Tilmeld dig og få alle funktioner gratis!",upgrade_banner_btn:"Tilmeld",emoji_search_placeholder:"Søg emoji...",usage_month_format:"{m}/{y}",usage_msg_90:"⚠️ {pct}% af grænsen er brugt! {remain} tilbage",usage_msg_60:"Over halvdelen er brugt. {remain} tilbage",usage_msg_used:"{used} oversat denne måned. {remain} tilbage.",dict_count_label:"{n} udtryk gemt",profile_name_placeholder:"Indtast dit navn",biz_section_title:"Virksomhedsprofil",biz_intro_banner:"🌏 MANDU er en messenger med fokus på erhverv. Tilføj dine virksomhedsoplysninger, og få kontakt med partnere i hele verden.",biz_country_label:"🌍 Land",biz_no_selection:"Ikke valgt",biz_company_label:"🏢 Virksomhed",biz_company_placeholder:"Virksomheds- eller brandnavn",biz_jobtitle_label:"💼 Stilling",biz_jobtitle_placeholder:"Direktør, teamleder, freelancer osv.",biz_industry_label:"🏭 Branche",biz_bio_label:"✏️ Kort præsentation",biz_bio_placeholder:"Præsenter dig selv i én sætning (maks. 100 tegn)",biz_discover_label:"Vis i Opdag",biz_discover_sub:"Gør min virksomhedsprofil offentlig",biz_save_btn:"Gem virksomhedsprofil 🌏",ind_food:"🍽️ Fødevarer",ind_finance:"💰 Finans / Forsikring",ind_it:"💻 IT / Software",ind_legal:"⚖️ Jura",ind_realestate:"🏠 Ejendomme",ind_manufacturing:"🏭 Produktion",ind_distribution:"🚚 Distribution / Logistik",ind_education:"📚 Uddannelse",ind_healthcare:"🏥 Sundhed",ind_marketing:"📣 Marketing / Reklame",ind_consulting:"💡 Rådgivning",ind_construction:"🏗️ Byggeri",ind_beauty:"💄 Skønhed / Mode",ind_media:"🎬 Medier / Indhold",ind_other:"📌 Andet",copy_link_btn:"Kopiér link",friends_copylink_sub:"Til visitkort",friends_qr_label:"QR-kode",friends_qr_sub:"Scan for at forbinde",friends_groups_title:"Grupper",friends_groups_create_link:"+ Opret",friends_groups_create_btn:"OPRET",friends_section_title:"Venner",status_online:"Online",status_offline:"Offline",friends_empty_title:"Ingen venner endnu",friends_empty_desc:"Del dit link for at invitere venner!",friends_empty_btn:"🔗 Kopiér mit link",friends_no_results:"Ingen resultater",settings_privacy_sub:"Sådan indsamler og bruger vi data",qr_download_btn:"Gem",toast_mylink_copied:"Link kopieret! Sæt det på dit visitkort 🥟",toast_invite_copied:"Invitationslink kopieret! 🥟",toast_qr_open_first:"Åbn QR-koden først",toast_qr_saved:"QR-kode gemt! 🥟",toast_login_required:"Log ind for at bruge dette",plan_beta_banner:"🎉 Betaperiode — alle abonnementer er gratis!",plan_upgrade_to_beta:"Start {plan} gratis",addmember_sheet_title:"Tilføj medlem",addmember_none:"Ingen venner at tilføje",addmember_confirm_btn:"Tilføj",addmember_system_msg:"{names} er kommet med i chatten",addmember_toast:"{names} tilføjet 🎉",usage_limit_exceeded_toast:"Månedens oversættelsesgrænse er nået 😢 Opgrader for at fortsætte!",usage_80_warn_toast:"⚠️ Du har brugt 80% af din oversættelsesgrænse!",translating_loading:"Oversætter...",translate_older_btn:"Oversæt {n} ældre beskeder",voice_input_unsupported:"Denne browser understøtter ikke stemmeinput",voice_input_error:"Stemmegenkendelsen mislykkedes, prøv igen",attach_menu_image:"Foto",attach_menu_file:"Fil",attach_menu_emoji:"Emoji",settings_section_cardbook:"Cardbook-forbindelse",settings_row_cardbook:"Lad Cardbook finde mig",settings_row_cardbook_sub:"Tillad Cardbook at finde mig via min e-mail og vise knappen 'Kontakt på MANDU'",cardbook_consent_on:"Cardbook kan nu finde dig",cardbook_consent_off:"Cardbook-forbindelsen er slået fra",cardbook_consent_fail:"Kunne ikke gemme. Prøv igen"}
 };
 
+// 손님 첫 화면·빈 화면 안내 등 추가 문구 (16개 언어) — 위 UI_T에 합친다
+const UI_T_KEYS2=["guest_request", "guest_name_label", "guest_name_ph", "guest_start_btn", "guest_have_account", "guest_login", "guest_name_required", "guest_error", "chats_empty_desc_owner", "chats_empty_qr_btn", "edit_btn", "name_ask_title", "name_ask_ph", "name_ask_btn"];
+const UI_T2={
+  ko:["🥟 MANDU로 대화 요청", "이름을 알려주세요", "홍길동", "바로 대화 시작하기 🥟", "이미 계정이 있으신가요?", "로그인", "이름을 입력해주세요", "오류가 발생했어요. 다시 시도해주세요", "내 QR이나 링크를 손님·친구에게 보내면 여기에 대화가 생겨요", "내 QR 보기", "편집", "대화에 표시할 이름을 알려주세요", "이름 (닉네임)", "시작하기"],
+  en:["🥟 Chat request via MANDU", "What's your name?", "Your name", "Start chatting 🥟", "Already have an account?", "Log in", "Please enter your name", "Something went wrong. Please try again.", "Share your QR code or link with customers and friends — your chats will show up here.", "Show my QR", "Edit", "What name should others see?", "Name", "Continue"],
+  ja:["🥟 MANDUでチャットのリクエスト", "お名前を教えてください", "お名前", "チャットを始める 🥟", "すでにアカウントをお持ちですか？", "ログイン", "お名前を入力してください", "エラーが発生しました。もう一度お試しください", "QRコードやリンクをお客様や友だちに送ると、ここにチャットが表示されます", "マイQRを表示", "編集", "チャットで表示する名前を教えてください", "名前（ニックネーム）", "はじめる"],
+  zh:["🥟 通过 MANDU 发起聊天", "请告诉我们您的名字", "您的名字", "立即开始聊天 🥟", "已有账号？", "登录", "请输入您的名字", "出错了，请重试", "把你的二维码或链接发给顾客和朋友，聊天就会出现在这里", "查看我的二维码", "编辑", "请设置聊天中显示的名字", "名字（昵称）", "开始"],
+  es:["🥟 Solicitud de chat por MANDU", "¿Cómo te llamas?", "Tu nombre", "Empezar a chatear 🥟", "¿Ya tienes una cuenta?", "Iniciar sesión", "Escribe tu nombre", "Algo salió mal. Inténtalo de nuevo", "Comparte tu código QR o tu enlace con clientes y amigos: tus chats aparecerán aquí", "Ver mi QR", "Editar", "¿Qué nombre verán los demás?", "Nombre (apodo)", "Continuar"],
+  fr:["🥟 Demande de discussion via MANDU", "Comment vous appelez-vous ?", "Votre nom", "Commencer à discuter 🥟", "Vous avez déjà un compte ?", "Se connecter", "Veuillez saisir votre nom", "Une erreur est survenue. Veuillez réessayer", "Partagez votre QR code ou votre lien avec vos clients et amis : vos discussions apparaîtront ici", "Voir mon QR", "Modifier", "Quel nom les autres verront-ils ?", "Nom (pseudo)", "Continuer"],
+  de:["🥟 Chat-Anfrage über MANDU", "Wie heißt du?", "Dein Name", "Jetzt chatten 🥟", "Du hast schon ein Konto?", "Anmelden", "Bitte gib deinen Namen ein", "Etwas ist schiefgelaufen. Bitte versuche es erneut", "Teile deinen QR-Code oder Link mit Kunden und Freunden – deine Chats erscheinen dann hier", "Meinen QR zeigen", "Bearbeiten", "Welchen Namen sollen andere sehen?", "Name (Spitzname)", "Weiter"],
+  vi:["🥟 Yêu cầu trò chuyện qua MANDU", "Cho chúng tôi biết tên bạn", "Tên của bạn", "Bắt đầu trò chuyện 🥟", "Bạn đã có tài khoản?", "Đăng nhập", "Vui lòng nhập tên", "Đã xảy ra lỗi. Vui lòng thử lại", "Gửi mã QR hoặc liên kết của bạn cho khách hàng và bạn bè — cuộc trò chuyện sẽ hiện ở đây", "Xem mã QR của tôi", "Sửa", "Tên hiển thị của bạn là gì?", "Tên (biệt danh)", "Tiếp tục"],
+  th:["🥟 คำขอแชทผ่าน MANDU", "บอกชื่อของคุณหน่อย", "ชื่อของคุณ", "เริ่มแชทเลย 🥟", "มีบัญชีอยู่แล้ว?", "เข้าสู่ระบบ", "กรุณากรอกชื่อ", "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง", "ส่ง QR โค้ดหรือลิงก์ของคุณให้ลูกค้าและเพื่อน แล้วแชทจะแสดงที่นี่", "ดู QR ของฉัน", "แก้ไข", "ชื่อที่จะแสดงในแชท", "ชื่อ (ชื่อเล่น)", "ดำเนินการต่อ"],
+  mn:["🥟 MANDU-р чат хүсэлт", "Нэрээ хэлнэ үү", "Таны нэр", "Чатлаж эхлэх 🥟", "Бүртгэлтэй юу?", "Нэвтрэх", "Нэрээ оруулна уу", "Алдаа гарлаа. Дахин оролдоно уу", "QR код эсвэл линкээ үйлчлүүлэгч, найзууддаа илгээвэл чат энд гарч ирнэ", "Миний QR харах", "Засах", "Чатад харагдах нэрээ оруулна уу", "Нэр (хоч)", "Үргэлжлүүлэх"],
+  hi:["🥟 MANDU से चैट अनुरोध", "अपना नाम बताइए", "आपका नाम", "चैट शुरू करें 🥟", "पहले से खाता है?", "लॉग इन", "कृपया अपना नाम दर्ज करें", "कुछ गलत हो गया। कृपया फिर से कोशिश करें", "अपना QR कोड या लिंक ग्राहकों और दोस्तों को भेजें — आपकी चैट यहाँ दिखेंगी", "मेरा QR देखें", "संपादित करें", "दूसरों को कौन-सा नाम दिखे?", "नाम (उपनाम)", "जारी रखें"],
+  pt:["🥟 Pedido de conversa pelo MANDU", "Qual é o seu nome?", "Seu nome", "Começar a conversar 🥟", "Já tem uma conta?", "Entrar", "Digite seu nome", "Algo deu errado. Tente novamente", "Envie seu QR code ou link para clientes e amigos — suas conversas aparecerão aqui", "Ver meu QR", "Editar", "Que nome os outros vão ver?", "Nome (apelido)", "Continuar"],
+  ar:["🥟 طلب محادثة عبر MANDU", "ما اسمك؟", "اسمك", "ابدأ المحادثة 🥟", "لديك حساب بالفعل؟", "تسجيل الدخول", "يرجى إدخال اسمك", "حدث خطأ. يرجى المحاولة مرة أخرى", "شارك رمز QR أو رابطك مع العملاء والأصدقاء، وستظهر محادثاتك هنا", "عرض رمز QR الخاص بي", "تعديل", "ما الاسم الذي سيراه الآخرون؟", "الاسم (اسم مستعار)", "متابعة"],
+  id:["🥟 Permintaan obrolan lewat MANDU", "Siapa nama Anda?", "Nama Anda", "Mulai mengobrol 🥟", "Sudah punya akun?", "Masuk", "Silakan masukkan nama Anda", "Terjadi kesalahan. Silakan coba lagi", "Bagikan kode QR atau tautan Anda ke pelanggan dan teman — obrolan akan muncul di sini", "Lihat QR saya", "Ubah", "Nama apa yang dilihat orang lain?", "Nama (panggilan)", "Lanjut"],
+  it:["🥟 Richiesta di chat tramite MANDU", "Come ti chiami?", "Il tuo nome", "Inizia a chattare 🥟", "Hai già un account?", "Accedi", "Inserisci il tuo nome", "Qualcosa è andato storto. Riprova", "Condividi il tuo codice QR o il tuo link con clienti e amici: le chat appariranno qui", "Mostra il mio QR", "Modifica", "Quale nome vedranno gli altri?", "Nome (soprannome)", "Continua"],
+  da:["🥟 Chatanmodning via MANDU", "Hvad hedder du?", "Dit navn", "Start chatten 🥟", "Har du allerede en konto?", "Log ind", "Skriv dit navn", "Noget gik galt. Prøv igen", "Del din QR-kode eller dit link med kunder og venner – dine chats vises så her", "Vis min QR", "Rediger", "Hvilket navn skal andre se?", "Navn (kaldenavn)", "Fortsæt"]
+};
+Object.keys(UI_T2).forEach(function(l){if(!UI_T[l])UI_T[l]={};UI_T_KEYS2.forEach(function(k,i){UI_T[l][k]=UI_T2[l][i];});});
+
 let _uiLang='ko';
 function t(key){const T=UI_T[_uiLang]||UI_T.ko;return T[key]||UI_T.ko[key]||key;}
 
@@ -5572,6 +5647,9 @@ function applyUILanguage(lang){
   document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
     const k=el.getAttribute('data-i18n-placeholder');el.placeholder=t(k);
   });
+  // 로그인한 뒤에는 '로그인 후 생성' 대신 실제 내 링크
+  const mld=document.getElementById('my-link-display');
+  if(mld&&currentUser&&!currentUser.isAnonymous)mld.textContent=getMyLink();
   // 국가 드롭다운: 브라우저 내장 Intl.DisplayNames로 현지 언어 국가명 자동 생성
   try{
     const regionLang=(lang==='zh')?'zh-Hans':lang;
@@ -6226,6 +6304,7 @@ function syncInstallBanner(){
   const fab=document.querySelector('#main-screen .fab');
   const navH=nav?nav.offsetHeight:0;
   b.style.bottom=(navH+12)+'px';
+  document.body.style.setProperty('--pwa-pad',visible?(b.offsetHeight+16)+'px':'0px');
   if(fab)fab.style.bottom=(visible&&nav)?(navH+12+b.offsetHeight+14)+'px':'';
 }
 window.addEventListener('beforeinstallprompt',function(e){
