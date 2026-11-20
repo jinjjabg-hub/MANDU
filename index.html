@@ -202,6 +202,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .nav-tab .ms{font-size:24px;font-variation-settings:'FILL' 0,'wght' 300;}
 .nav-tab.active .ms{font-variation-settings:'FILL' 0,'wght' 500;}
 .nav-tab.active::before{content:'';position:absolute;top:-8px;left:50%;width:24px;height:2px;margin-left:-12px;border-radius:2px;background:var(--primary);}
+.nav-tab .nav-ico{width:38px;height:30px;}
+.nav-tab .nav-ico .ms{font-size:19px;}
+:root:not([data-icons]) .nav-tab .nav-ico{background:none;color:inherit;width:auto;height:auto;}
+:root:not([data-icons]) .nav-tab .nav-ico .ms{font-size:24px;}
+:root[data-icons] .nav-tab:not(.active) .nav-ico{opacity:.5;filter:saturate(.7);}
 .panel-hd{padding:16px 20px 4px;}
 .panel-hd-title{font-size:24px;font-weight:800;}
 .panel-hd-sub{font-size:12px;color:var(--on-surface-variant);margin-top:2px;font-weight:500;}
@@ -314,50 +319,35 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 :root[data-icons=duotone] .settings-icon-wrap,.ist-duotone .ist-tile{border-radius:12px;background:var(--primary-fixed);background:color-mix(in srgb,var(--primary) 14%,transparent);color:var(--primary);}
 :root[data-icons=duotone] .settings-icon-wrap .ms,.ist-duotone .ist-tile .ms{font-variation-settings:'FILL' 0,'wght' 500;}
 :root[data-icons=duotone] .empty-emoji .ms,:root[data-icons=duotone] .search-empty-ico .ms{color:var(--primary);font-variation-settings:'FILL' 0,'wght' 400;}
-:root[data-icons=duotone] .nav-tab.active .ms{background:color-mix(in srgb,var(--primary) 14%,transparent);border-radius:10px;padding:2px 12px;}
 /* 글래스: 보라·핑크·하늘 그라데이션 유리 타일 + 흰 채운 아이콘 */
 :root[data-icons=glass] .settings-icon-wrap,.ist-glass .ist-tile{border-radius:12px;color:#fff;background:linear-gradient(135deg,#a78bfa 0%,#e9a8f5 55%,#93c5fd 100%);border:1px solid rgba(255,255,255,.55);box-shadow:0 4px 12px rgba(139,92,246,.30),inset 0 1px 0 rgba(255,255,255,.7),inset 0 -3px 8px rgba(255,255,255,.25);}
 :root[data-icons=glass] .settings-icon-wrap .ms,.ist-glass .ist-tile .ms{font-variation-settings:'FILL' 1,'wght' 400;text-shadow:0 1px 2px rgba(90,50,170,.30);}
-:root[data-icons=glass] .nav-tab.active .ms,:root[data-icons=glass] .empty-emoji .ms,:root[data-icons=glass] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;background:linear-gradient(135deg,#8b5cf6,#e879f9 55%,#60a5fa);-webkit-background-clip:text;background-clip:text;color:transparent;}
+:root[data-icons=glass] .empty-emoji .ms,:root[data-icons=glass] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;background:linear-gradient(135deg,#8b5cf6,#e879f9 55%,#60a5fa);-webkit-background-clip:text;background-clip:text;color:transparent;}
 /* 클레이 3D: 하늘색 말랑 타일 + 그림자 진 흰 아이콘 */
 :root[data-icons=clay] .settings-icon-wrap,.ist-clay .ist-tile{border-radius:14px;color:#fff;background:linear-gradient(145deg,#c6daf6,#93b5e3);box-shadow:3px 4px 10px rgba(70,105,160,.32),-2px -2px 6px rgba(255,255,255,.85),inset 1px 1px 2px rgba(255,255,255,.9),inset -2px -2px 4px rgba(70,105,160,.15);}
 :root[data-icons=clay] .settings-icon-wrap .ms,.ist-clay .ist-tile .ms{font-variation-settings:'FILL' 1,'wght' 400;filter:drop-shadow(1px 2px 1.5px rgba(40,70,130,.55));}
-:root[data-icons=clay] .nav-tab.active .ms,:root[data-icons=clay] .empty-emoji .ms,:root[data-icons=clay] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;color:#7ea3d8;filter:drop-shadow(1px 2px 1.5px rgba(60,95,150,.35));}
+:root[data-icons=clay] .empty-emoji .ms,:root[data-icons=clay] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;color:#7ea3d8;filter:drop-shadow(1px 2px 1.5px rgba(60,95,150,.35));}
 :root[data-theme=dark][data-icons=clay] .settings-icon-wrap,[data-theme=dark] .ist-clay .ist-tile{background:linear-gradient(145deg,#4a5a7c,#34405c);box-shadow:3px 4px 10px rgba(0,0,0,.45),inset 1px 1px 2px rgba(255,255,255,.18),inset -2px -2px 4px rgba(0,0,0,.25);}
 /* 컬러: 칸마다 다른 색의 단색 타일 + 흰 채운 아이콘 */
 :root[data-icons=color] .settings-icon-wrap,.ist-color .ist-tile{border-radius:12px;color:#fff;background:var(--tile,#8b5cf6);box-shadow:inset 0 -3px 0 rgba(0,0,0,.10);}
 :root[data-icons=color] .settings-icon-wrap .ms,.ist-color .ist-tile .ms{font-variation-settings:'FILL' 1,'wght' 400;}
-:root[data-icons=color] .nav-tab.active .ms{font-variation-settings:'FILL' 1,'wght' 400;}
-:root[data-icons=color] .nav-tab.active:nth-child(1){color:#8b5cf6;}
-:root[data-icons=color] .nav-tab.active:nth-child(2){color:#ec4899;}
-:root[data-icons=color] .nav-tab.active:nth-child(3){color:#3b82f6;}
-:root[data-icons=color] .nav-tab.active:nth-child(4){color:#f97316;}
-:root[data-icons=color] .nav-tab.active::before{background:currentColor;}
 /* 페이퍼: 회청색 종이 타일 + 그림자 길게 진 흰 종이 아이콘 */
 :root[data-icons=paper] .settings-icon-wrap,.ist-paper .ist-tile{border-radius:12px;color:#fff;background:linear-gradient(150deg,#d4dee8,#a9bbcc);box-shadow:inset 0 1px 0 rgba(255,255,255,.7);}
 :root[data-icons=paper] .settings-icon-wrap .ms,.ist-paper .ist-tile .ms{font-variation-settings:'FILL' 1,'wght' 400;filter:drop-shadow(2px 3px 2px rgba(70,90,115,.45));}
-:root[data-icons=paper] .nav-tab.active .ms,:root[data-icons=paper] .empty-emoji .ms,:root[data-icons=paper] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;color:#b8c6d4;filter:drop-shadow(2px 3px 2px rgba(70,90,115,.40));}
+:root[data-icons=paper] .empty-emoji .ms,:root[data-icons=paper] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;color:#b8c6d4;filter:drop-shadow(2px 3px 2px rgba(70,90,115,.40));}
 :root[data-theme=dark][data-icons=paper] .settings-icon-wrap,[data-theme=dark] .ist-paper .ist-tile{background:linear-gradient(150deg,#56657a,#3c4757);}
 /* 손그림: 검은 손선 테두리 + 살구색/흰색 번갈아 */
 :root[data-icons=doodle] .settings-icon-wrap,.ist-doodle .ist-tile{border-radius:52% 46% 50% 48% / 48% 52% 46% 54%;background:#fff;color:#1f1f1f;border:2px solid #1f1f1f;box-sizing:border-box;}
 :root[data-icons=doodle] .settings-icon-wrap[data-alt="1"],.ist-doodle .ist-tile[data-alt="1"]{background:#f6c995;}
 :root[data-icons=doodle] .settings-icon-wrap .ms,.ist-doodle .ist-tile .ms{font-variation-settings:'FILL' 0,'wght' 500;transform:rotate(-4deg);}
-:root[data-icons=doodle] .nav-tab.active,:root[data-icons=doodle] .empty-emoji .ms,:root[data-icons=doodle] .search-empty-ico .ms{color:var(--on-surface);}
-:root[data-icons=doodle] .nav-tab.active .ms{font-variation-settings:'FILL' 0,'wght' 600;transform:rotate(-4deg);}
-:root[data-icons=doodle] .nav-tab.active::before{background:var(--on-surface);}
+:root[data-icons=doodle] .empty-emoji .ms,:root[data-icons=doodle] .search-empty-ico .ms{color:var(--on-surface);}
 /* 크롬: 은빛 금속 타일 + 반짝이는 금속 아이콘 */
 :root[data-icons=chrome] .settings-icon-wrap,.ist-chrome .ist-tile{border-radius:12px;background:linear-gradient(160deg,#ffffff,#e4e7eb 55%,#c9ced4);box-shadow:0 2px 6px rgba(0,0,0,.18),inset 0 1px 0 #fff,inset 0 -1px 2px rgba(0,0,0,.12);}
-:root[data-icons=chrome] .settings-icon-wrap .ms,.ist-chrome .ist-tile .ms,:root[data-icons=chrome] .nav-tab.active .ms,:root[data-icons=chrome] .empty-emoji .ms,:root[data-icons=chrome] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 500;background:linear-gradient(180deg,#c9d0d7 0%,#5d6670 40%,#e9edf1 52%,#2f353c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+:root[data-icons=chrome] .settings-icon-wrap .ms,.ist-chrome .ist-tile .ms,:root[data-icons=chrome] .empty-emoji .ms,:root[data-icons=chrome] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 500;background:linear-gradient(180deg,#c9d0d7 0%,#5d6670 40%,#e9edf1 52%,#2f353c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}
 :root[data-theme=dark][data-icons=chrome] .settings-icon-wrap,[data-theme=dark] .ist-chrome .ist-tile{background:linear-gradient(160deg,#5b6370,#3a404a);}
 /* 3D 블록: 두꺼운 옆면이 있는 색 블록 + 크림색 아이콘 */
 :root[data-icons=block] .settings-icon-wrap,.ist-block .ist-tile{border-radius:11px;color:#fff8ec;background:var(--tile,#8b5cf6);box-shadow:0 4px 0 color-mix(in srgb,var(--tile,#8b5cf6) 70%,#000),0 7px 10px rgba(0,0,0,.18);transform:translateY(-2px);}
 :root[data-icons=block] .settings-icon-wrap .ms,.ist-block .ist-tile .ms{font-variation-settings:'FILL' 1,'wght' 500;}
-:root[data-icons=block] .nav-tab.active .ms{font-variation-settings:'FILL' 1,'wght' 500;}
-:root[data-icons=block] .nav-tab.active:nth-child(1){color:#f97316;}
-:root[data-icons=block] .nav-tab.active:nth-child(2){color:#8b5cf6;}
-:root[data-icons=block] .nav-tab.active:nth-child(3){color:#3b82f6;}
-:root[data-icons=block] .nav-tab.active:nth-child(4){color:#ef4444;}
-:root[data-icons=block] .nav-tab.active::before{background:currentColor;}
 :root[data-icons=block] .empty-emoji .ms,:root[data-icons=block] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 500;color:#f97316;}
 .mod-sheet.ist-sheet{max-height:85dvh;overflow-y:auto;}
 :root[data-icons=color] .empty-emoji .ms,:root[data-icons=color] .search-empty-ico .ms{font-variation-settings:'FILL' 1,'wght' 400;color:#8b5cf6;}
@@ -1173,10 +1163,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     </div>
   </div>
   <nav class="bottom-nav">
-    <button class="nav-tab active" id="tab-chats" onclick="switchTab('chats')"><span class="ms">forum</span><span id="tab-chats-label">Chats</span></button>
-    <button class="nav-tab" id="tab-friends" onclick="switchTab('friends')"><span class="ms">group</span><span id="tab-friends-label">Friends</span></button>
-    <button class="nav-tab" id="tab-discover" onclick="switchTab('discover')"><span class="ms">explore</span><span id="tab-discover-label">Discover</span></button>
-    <button class="nav-tab" id="tab-settings" onclick="switchTab('settings')"><span class="ms">settings</span><span id="tab-settings-label">Settings</span></button>
+    <button class="nav-tab active" id="tab-chats" onclick="switchTab('chats')"><span class="settings-icon-wrap nav-ico"><span class="ms">forum</span></span><span id="tab-chats-label">Chats</span></button>
+    <button class="nav-tab" id="tab-friends" onclick="switchTab('friends')"><span class="settings-icon-wrap nav-ico"><span class="ms">group</span></span><span id="tab-friends-label">Friends</span></button>
+    <button class="nav-tab" id="tab-discover" onclick="switchTab('discover')"><span class="settings-icon-wrap nav-ico"><span class="ms">explore</span></span><span id="tab-discover-label">Discover</span></button>
+    <button class="nav-tab" id="tab-settings" onclick="switchTab('settings')"><span class="settings-icon-wrap nav-ico"><span class="ms">settings</span></span><span id="tab-settings-label">Settings</span></button>
   </nav>
 </div>
 
