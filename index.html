@@ -2177,9 +2177,12 @@ auth.onAuthStateChanged(async function(user){
           return;
         }
       }catch(e){}
-      // 최초 가입 → 언어부터 선택하게 함 (선택 후 selectInitialLang에서 ID 자동생성 이어짐)
+      // 최초 가입 → 휴대폰 언어로 자동 설정 (나중에 프로필에서 변경 가능)
+      // 휴대폰 언어가 지원 목록에 없을 때만 언어 선택 화면을 보여줌
       _pendingNewUser=user;
-      show('lang-screen');
+      const devLang=detectBrowserLang(null);
+      if(devLang){await selectInitialLang(devLang);}
+      else{show('lang-screen');}
       return;
     }
 
@@ -2292,14 +2295,15 @@ async function startGuestChat(){
 }
 
 // ── 브라우저 언어 자동 감지 (게스트 입장 시 UX/번역 언어를 자동으로 맞추기 위함) ──
-function detectBrowserLang(){
+// fallback: 지원 언어가 하나도 없을 때 돌려줄 값 (기본 'en' — 미지원 언어 = 외국인일 확률 높음, null이면 '못 찾음')
+function detectBrowserLang(fallback){
   const supported=['ko','en','ja','zh','es','fr','de','vi','th','mn','hi','pt','ar','id','it','da'];
-  const langs=navigator.languages||[navigator.language||'ko'];
+  const langs=navigator.languages||[navigator.language||''];
   for(let i=0;i<langs.length;i++){
-    const code=(langs[i]||'').toLowerCase().split('-')[0];
+    const code=(langs[i]||'').toLowerCase().split(/[-_]/)[0];
     if(supported.indexOf(code)!==-1)return code;
   }
-  return 'ko';
+  return fallback===undefined?'en':fallback;
 }
 
 async function openGuestRoom(){
@@ -2432,7 +2436,9 @@ function updateUIAfterLogin(){
   document.getElementById('settings-manduid').textContent='@'+mid;
   document.getElementById('my-link-display').textContent=getMyLink();
 
-  const lang=localStorage.getItem('mandu_lang_'+currentUser.uid)||'ko';
+  // 저장된 언어가 없으면(새 기기·캐시 삭제) 휴대폰 언어로 초기 설정
+  let lang=localStorage.getItem('mandu_lang_'+currentUser.uid);
+  if(!lang){lang=detectBrowserLang();localStorage.setItem('mandu_lang_'+currentUser.uid,lang);}
   document.getElementById('my-lang').value=lang;
   document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
   const uiLang=localStorage.getItem('mandu_ui_lang_'+currentUser.uid)||lang;
@@ -6093,6 +6099,8 @@ function wakeServer(){
   }catch(e){}
 }
 wakeServer();
+// 로그인 전 화면(온보딩·로그인·게스트)도 휴대폰 언어로 보여줌
+try{applyUILanguage(detectBrowserLang());document.documentElement.lang=_uiLang;}catch(e){}
 initLoginOptions();   // _uiLang 선언 뒤에 실행해야 함
 handleKakaoReturn();
 
