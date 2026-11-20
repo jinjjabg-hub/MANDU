@@ -2,11 +2,20 @@
 <html lang="ko">
 <head>
 <script>
-// 구글 플레이 정책: 앱(TWA)에서는 결제 UI 노출 금지 → 앱 진입(?src=app 또는 android-app:// referrer) 여부를 기억해 둠
+// 구글 플레이 정책: 앱(TWA)에서는 결제 UI 노출 금지.
+// 앱 여부는 '이 탭'에서만 기억한다(sessionStorage). 예전엔 localStorage에 영구 저장했는데,
+// 안드로이드에서 앱(TWA)과 크롬이 저장소를 함께 써서 앱을 한 번 열면 크롬 웹사이트에서도 결제 화면이 영영 숨겨졌다.
+//  - 앱 진입: ?src=app(앱 시작 주소) 또는 android-app:// referrer → 이 탭은 앱
+//  - 안드로이드 전체화면(standalone) 실행 = 플레이스토어 앱(알림을 눌러 바로 열린 경우 포함) → 앱
 (function(){try{
   var app=/[?&]src=app\b/.test(location.search)||(document.referrer||'').indexOf('android-app://')===0;
-  if(app)localStorage.setItem('mandu_in_app','1');
-  if(localStorage.getItem('mandu_in_app')==='1')document.documentElement.classList.add('is-app');
+  if(app)sessionStorage.setItem('mandu_in_app','1');
+  try{localStorage.removeItem('mandu_in_app');}catch(e){} // 예전 영구 표시 정리
+  var standaloneAndroid=/Android/i.test(navigator.userAgent)&&window.matchMedia&&matchMedia('(display-mode: standalone)').matches;
+  if(sessionStorage.getItem('mandu_in_app')==='1'||standaloneAndroid)document.documentElement.classList.add('is-app');
+  // 요금제 페이지의 '구독하기'(/?subscribe=soft) → 로그인 후 바로 결제 화면을 연다
+  var m=location.search.match(/[?&]subscribe=(soft|light|business|pack50k)\b/);
+  if(m)sessionStorage.setItem('mandu_subscribe',m[1]);
 }catch(e){}})();
 </script>
 <meta charset="UTF-8">
@@ -2409,6 +2418,7 @@ function updateUIAfterLogin(){
   if(!currentUser||currentUser.isAnonymous)return;
   initBlocks();initAiTranslate();initStoreLabels();initIdSearch();initReferral();
   setTimeout(syncPublicProfile,1500); // 내 프로필 문서가 구독돼 usersMap에 들어온 뒤
+  setTimeout(_openSubscribeFromLink,800);
   document.getElementById('my-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('hero-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
   document.getElementById('settings-avatar').src=currentUser.photoURL||DEFAULT_AVATAR;
@@ -5817,6 +5827,15 @@ function showPlanSheet(){
   if(cancelBtn)cancelBtn.textContent=T.plan_cancel;
   document.getElementById('plan-backdrop').classList.add('open');
   document.getElementById('plan-sheet').classList.add('open');
+}
+// 요금제 페이지 '구독하기' 링크로 들어온 경우: 로그인 직후 설정 탭 → 플랜 선택 화면, 고른 플랜에 표시
+function _openSubscribeFromLink(){
+  let key=null;try{key=sessionStorage.getItem('mandu_subscribe');sessionStorage.removeItem('mandu_subscribe');}catch(e){}
+  if(!key||isAppMode()||!currentUser||currentUser.isAnonymous)return;
+  try{switchTab('settings');}catch(e){}
+  showPlanSheet();
+  let tries=0;
+  (function pick(){const el=document.getElementById('pc-'+key);if(el){selectPlanCard(key,el);el.scrollIntoView({block:'center'});}else if(++tries<20)setTimeout(pick,150);})();
 }
 function closePlanSheet(){
   document.getElementById('plan-backdrop').classList.remove('open');

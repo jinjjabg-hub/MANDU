@@ -27,6 +27,10 @@
   a{color:var(--accent)}
   .tbl{overflow-x:auto}
   footer{margin-top:44px;color:var(--muted);font-size:13px}
+  .buy{display:inline-block;padding:7px 14px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;font-size:14px;text-decoration:none;white-space:nowrap}
+  .buy:hover{opacity:.9}
+  .howto{background:#fff;border:1.5px solid var(--accent);border-radius:14px;padding:14px 18px;margin-top:14px}
+  .howto ol{margin-top:6px}
 </style>
 </head>
 <body>
@@ -37,12 +41,21 @@
 
   <h2>플랜별 요금과 월 번역 한도</h2>
   <div class="tbl"><table>
-    <tr><th>플랜</th><th>월 요금(VAT 포함)</th><th>월 번역 한도</th><th>추천 대상</th></tr>
-    <tr><td>FREE</td><td>무료</td><td>5,000자</td><td>가볍게 써보는 개인</td></tr>
-    <tr><td>SOFT</td><td>2,900원 / 월</td><td>35,000자 (30,000 + 무료 5,000)</td><td>외국인 친구·가족과 자주 대화</td></tr>
-    <tr><td>LIGHT</td><td>8,400원 / 월</td><td>105,000자 (100,000 + 무료 5,000)</td><td>업무·거래처 연락이 많은 분</td></tr>
-    <tr><td>BUSINESS</td><td>29,000원 / 월</td><td>505,000자 (500,000 + 무료 5,000)</td><td>매장·사업장 단위 사용</td></tr>
+    <tr><th>플랜</th><th>월 요금(VAT 포함)</th><th>월 번역 한도</th><th>추천 대상</th><th>결제</th></tr>
+    <tr><td>FREE</td><td>무료</td><td>5,000자</td><td>가볍게 써보는 개인</td><td><a class="buy" href="/">무료로 시작</a></td></tr>
+    <tr><td>SOFT</td><td>2,900원 / 월</td><td>35,000자 (30,000 + 무료 5,000)</td><td>외국인 친구·가족과 자주 대화</td><td><a class="buy" href="/?subscribe=soft">구독하기</a></td></tr>
+    <tr><td>LIGHT</td><td>8,400원 / 월</td><td>105,000자 (100,000 + 무료 5,000)</td><td>업무·거래처 연락이 많은 분</td><td><a class="buy" href="/?subscribe=light">구독하기</a></td></tr>
+    <tr><td>BUSINESS</td><td>29,000원 / 월</td><td>505,000자 (500,000 + 무료 5,000)</td><td>매장·사업장 단위 사용</td><td><a class="buy" href="/?subscribe=business">구독하기</a></td></tr>
   </table></div>
+  <div class="howto">
+    <b>결제 방법</b>
+    <ol>
+      <li>위 표에서 <b>구독하기</b>를 누르고 로그인합니다 (구글·카카오·이메일).</li>
+      <li>플랜 선택 화면에서 금액과 정기결제 안내를 확인한 뒤 <b>결제하기</b>를 누릅니다.</li>
+      <li>NHN KCP 카드 결제창에서 카드를 등록하면 첫 달 요금이 결제되고, 이후 매월 같은 날 자동 결제됩니다. 설정 &gt; 사용량에서 언제든 해지할 수 있습니다.</li>
+    </ol>
+    <p style="margin-top:6px;color:var(--muted);font-size:14px">로그인 후 언제든 <b>설정 &gt; 사용량 &gt; 업그레이드</b>에서도 결제할 수 있습니다. (안드로이드 플레이스토어 앱에서는 결제가 제공되지 않으며 웹사이트에서 이용할 수 있습니다.)</p>
+  </div>
   <ul style="margin-top:12px">
     <li>번역 한도는 매월 다시 채워지며, 쓰지 않은 한도는 다음 달로 넘어가지 않습니다.</li>
     <li>BUSINESS 플랜의 한도 초과분에는 1만 자당 315원의 추가 요금이 부과될 수 있으며, 시행 전에 서비스 화면과 이메일로 미리 알립니다.</li>
@@ -51,8 +64,8 @@
   <h2>충전 상품 (단건 결제 · 자동결제 없음)</h2>
   <p>매달 정기결제 대신, 필요할 때만 글자를 한 번 결제로 충전할 수 있습니다.</p>
   <div class="tbl"><table>
-    <tr><th>상품</th><th>가격(VAT 포함)</th><th>충전 글자</th><th>유효기간</th></tr>
-    <tr><td>번역 50,000자 충전</td><td>5,500원 / 1회</td><td>50,000자</td><td>구매일부터 1년</td></tr>
+    <tr><th>상품</th><th>가격(VAT 포함)</th><th>충전 글자</th><th>유효기간</th><th>결제</th></tr>
+    <tr><td>번역 50,000자 충전</td><td>5,500원 / 1회</td><td>50,000자</td><td>구매일부터 1년</td><td><a class="buy" href="/?subscribe=pack50k">구매하기</a></td></tr>
   </table></div>
   <ul style="margin-top:12px">
     <li>FREE·유료 플랜 누구나 살 수 있고, 그달의 월 한도를 다 쓴 뒤에 충전 글자가 사용됩니다.</li>
