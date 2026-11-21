@@ -27,6 +27,10 @@ console.log('== public_profiles');
 await ok('누구나 공개 프로필 읽기', getDoc(doc(env.unauthenticatedContext().firestore(), 'public_profiles/H')));
 await ok('앱의 공개 프로필 저장 모양', setDoc(doc(db('A'), 'public_profiles/A'), { displayName:'Alice', photoURL:'', manduid:'alice', isGuest:false,
   store:{ greetOn:false, greeting:'', awayOn:false, awayMsg:'', quick:['네'], staff:[] }, updatedAt: serverTimestamp() }));
+await ok('손님 첫 화면 안내 저장', setDoc(doc(db('A'), 'public_profiles/A'), { displayName:'Alice', photoURL:'', manduid:'alice', isGuest:false,
+  store:{ greetOn:false, greeting:'', awayOn:false, awayMsg:'', quick:[], staff:[], welcomeOn:true, welcome:'MANDU 앱을 받아 보세요', welcomeBtn:'앱 받기', welcomeUrl:'https://play.google.com/store/apps/details?id=com.tm.mandu' }, updatedAt: serverTimestamp() }));
+await no('첫 화면 링크에 javascript: 넣기', setDoc(doc(db('A'), 'public_profiles/A'), { displayName:'Alice', photoURL:'', manduid:'alice',
+  store:{ welcomeOn:true, welcome:'x', welcomeUrl:'javascript:alert(1)' }, updatedAt: serverTimestamp() }));
 await ok('예전 앱 모양(3칸)도 허용', setDoc(doc(db('A'), 'public_profiles/A'), { displayName:'Alice', photoURL:'', manduid:'alice', updatedAt: serverTimestamp() }));
 await no('공개 프로필에 이메일 넣기', setDoc(doc(db('A'), 'public_profiles/A'), { displayName:'A', photoURL:'', manduid:'', email:'a@x.com' }));
 await no('남의 공개 프로필 쓰기', setDoc(doc(db('B'), 'public_profiles/A'), { displayName:'X', photoURL:'', manduid:'' }));

@@ -137,12 +137,18 @@ service cloud.firestore {
     // 쓰기는 본인만, 정해진 칸만(전화번호·이메일·알림 토큰 등은 절대 들어가지 않게).
     function publicStoreOk(st) {
       return st is map
-        && st.keys().hasOnly(['greetOn', 'greeting', 'awayOn', 'awayMsg', 'quick', 'staff'])
+        && st.keys().hasOnly(['greetOn', 'greeting', 'awayOn', 'awayMsg', 'quick', 'staff', 'welcomeOn', 'welcome', 'welcomeBtn', 'welcomeUrl'])
         && st.get('greetOn', false) is bool && st.get('awayOn', false) is bool
         && st.get('greeting', '') is string && st.get('greeting', '').size() <= 300
         && st.get('awayMsg', '') is string && st.get('awayMsg', '').size() <= 300
         && st.get('quick', []) is list && st.get('quick', []).size() <= 20
-        && st.get('staff', []) is list && st.get('staff', []).size() <= 10;
+        && st.get('staff', []) is list && st.get('staff', []).size() <= 10
+        // 손님 첫 화면 안내 (QR·링크로 들어온 손님이 이름을 적기 전에 보는 글 + 링크 버튼)
+        && st.get('welcomeOn', false) is bool
+        && st.get('welcome', '') is string && st.get('welcome', '').size() <= 300
+        && st.get('welcomeBtn', '') is string && st.get('welcomeBtn', '').size() <= 30
+        && st.get('welcomeUrl', '') is string && st.get('welcomeUrl', '').size() <= 300
+        && (st.get('welcomeUrl', '') == '' || st.get('welcomeUrl', '').matches('https://[^ ]+'));
     }
     match /public_profiles/{uid} {
       allow get: if true;
