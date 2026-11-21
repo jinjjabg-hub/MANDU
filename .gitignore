@@ -13,3 +13,8 @@ twa/output/
 # 환경 설정
 .env
 *.local
+
+# 규칙 테스트 실행 부산물
+tests/node_modules/
+tests/package-lock.json
+tests/*-debug.log

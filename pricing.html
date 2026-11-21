@@ -31,6 +31,14 @@
   .buy:hover{opacity:.9}
   .howto{background:#fff;border:1.5px solid var(--accent);border-radius:14px;padding:14px 18px;margin-top:14px}
   .howto ol{margin-top:6px}
+ .ent{background:#fff;border:1.5px solid var(--accent);border-radius:16px;padding:20px 20px 18px;margin-top:10px}
+ .ent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0 14px}
+ .ent-item{background:var(--bg);border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.6}
+ .ent-item b{display:block;font-size:15px;margin-bottom:2px}
+ .ent-cta{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+ .ent-cta a{flex:1 1 180px;text-align:center;padding:12px 14px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px}
+ .ent-cta .pri{background:var(--accent);color:#fff}
+ .ent-cta .sec{border:1.5px solid var(--accent);color:var(--accent);background:#fff}
 </style>
 </head>
 <body>
@@ -46,6 +54,7 @@
     <tr><td>SOFT</td><td>2,900원 / 월</td><td>35,000자 (30,000 + 무료 5,000)</td><td>외국인 친구·가족과 자주 대화</td><td><a class="buy" href="/?subscribe=soft">구독하기</a></td></tr>
     <tr><td>LIGHT</td><td>8,400원 / 월</td><td>105,000자 (100,000 + 무료 5,000)</td><td>업무·거래처 연락이 많은 분</td><td><a class="buy" href="/?subscribe=light">구독하기</a></td></tr>
     <tr><td>BUSINESS</td><td>29,000원 / 월</td><td>505,000자 (500,000 + 무료 5,000)</td><td>매장·사업장 단위 사용</td><td><a class="buy" href="/?subscribe=business">구독하기</a></td></tr>
+    <tr><td>기업·단체</td><td>맞춤 견적</td><td>필요한 만큼 협의</td><td>여러 지점·많은 직원, 병원·호텔·공장·기관</td><td><a class="buy" href="#enterprise">문의하기</a></td></tr>
   </table></div>
   <div class="howto">
     <b>결제 방법</b>
@@ -72,6 +81,23 @@
     <li>충전 글자는 매월 사라지지 않고 1년 동안 남습니다. 다시 사면 남은 글자와 합쳐지고 유효기간도 다시 1년이 됩니다.</li>
     <li>한 번만 결제되며 카드 정보를 저장하지 않고, 자동으로 다시 결제되지 않습니다.</li>
   </ul>
+
+  <h2 id="enterprise">기업·단체 문의</h2>
+  <p>직원이 많거나 지점이 여러 곳인 사업장, 외국인 환자·투숙객·근로자 응대가 많은 병원·호텔·공장·기관이라면 사용 규모에 맞춰 따로 안내해 드립니다.</p>
+  <div class="ent">
+    <div class="ent-grid">
+      <div class="ent-item"><b>맞춤 번역 한도</b>월 사용량에 맞춰 한도를 정하고, 많이 쓸수록 글자당 단가를 낮춰 드립니다.</div>
+      <div class="ent-item"><b>세금계산서 · 계좌이체</b>카드 정기결제 대신 세금계산서 발행과 계좌이체로 결제할 수 있습니다.</div>
+      <div class="ent-item"><b>연간 계약 할인</b>1년 단위로 계약하면 월 결제보다 저렴하게 이용할 수 있습니다.</div>
+      <div class="ent-item"><b>여러 직원 · 지점 응대</b>매장 QR·링크로 들어온 손님을 여러 직원이 함께 응대하도록 설정을 도와드립니다.</div>
+      <div class="ent-item"><b>도입 안내</b>QR 비치 방법, 자동 인사말·안내 문구 설정 등 처음 시작을 함께 준비해 드립니다.</div>
+    </div>
+    <p style="font-size:14px;color:var(--muted)">문의하실 때 <b>회사(기관)명, 담당자 연락처, 사용할 인원, 예상 사용량(하루 대화 손님 수 등), 주로 쓰는 외국어</b>를 알려 주시면 더 빠르게 견적을 드릴 수 있습니다. 보통 영업일 기준 1~2일 안에 답변드립니다.</p>
+    <div class="ent-cta">
+      <a class="pri" href="mailto:jinjjabg@gmail.com?subject=%5BMANDU%20%EA%B8%B0%EC%97%85%20%EB%AC%B8%EC%9D%98%5D&amp;body=%ED%9A%8C%EC%82%AC(%EA%B8%B0%EA%B4%80)%EB%AA%85%3A%20%0A%EB%8B%B4%EB%8B%B9%EC%9E%90%20%EC%97%B0%EB%9D%BD%EC%B2%98%3A%20%0A%EC%82%AC%EC%9A%A9%ED%95%A0%20%EC%9D%B8%EC%9B%90%3A%20%0A%EC%98%88%EC%83%81%20%EC%82%AC%EC%9A%A9%EB%9F%89(%ED%95%98%EB%A3%A8%20%EC%86%90%EB%8B%98%20%EC%88%98%20%EB%93%B1)%3A%20%0A%EC%A3%BC%EB%A1%9C%20%EC%93%B0%EB%8A%94%20%EC%99%B8%EA%B5%AD%EC%96%B4%3A%20%0A%EB%AC%B8%EC%9D%98%20%EB%82%B4%EC%9A%A9%3A%20%0A">이메일로 문의하기</a>
+      <a class="sec" href="tel:010-5334-2544">전화 문의 010-5334-2544</a>
+    </div>
+  </div>
 
   <h2>번역 글자 수는 이렇게 계산됩니다</h2>
   <ul>
