@@ -173,6 +173,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .guest-start-btn{width:100%;max-width:320px;padding:15px;background:var(--primary);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
 .guest-welcome{display:none;width:100%;max-width:320px;background:var(--surface);border:1px solid var(--outline-variant);border-radius:18px;padding:16px 18px;color:var(--on-surface);font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
 .guest-welcome-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:11px 14px;border-radius:12px;background:var(--primary);color:#fff;font-weight:700;font-size:14px;text-decoration:none;white-space:normal;}
+.guest-ref-hint{width:100%;max-width:320px;background:var(--surface-container,#f1f2fa);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.55;color:var(--on-surface);text-align:center;}
+.guest-ref-hint b{color:var(--primary);}
 .guest-login-hint{font-size:12px;color:var(--outline);text-align:center;}
 .guest-login-hint span{color:var(--primary);cursor:pointer;font-weight:600;}
 .is-app #usage-upgrade-btn,.is-app #plan-sheet,.is-app #plan-backdrop{display:none !important;}
@@ -838,6 +840,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     <input class="guest-input" id="guest-name-input" type="text" placeholder="홍길동">
   </div>
   <button class="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기</button>
+  <div class="guest-ref-hint" id="guest-ref-hint"></div>
   <div class="guest-login-hint">이미 계정이 있으신가요? <span onclick="showLoginFromGuest()" id="guest-login-lnk">로그인</span></div>
 </div>
 
@@ -2402,6 +2405,17 @@ function _setGuestHost(d){
   if(n)n.textContent=(d&&d.displayName)||'—';
   if(ph)ph.src=(d&&d.photoURL)||DEFAULT_AVATAR;
   _renderGuestWelcome(d&&d.store);
+  _renderGuestRefHint(d&&d.manduid);
+}
+// 손님 → 가입 유도: 가입 후 7일 안에 추천인을 넣으면 무료 5천 자 + 보너스 5천 자 (서버 REFERRAL_SIGNUP_BONUS·REFERRAL_CLAIM_DAYS·BONUS_DAYS)
+function _guestRefText(storeId){
+  const id=/^[a-z0-9_]{3,20}$/.test(String(storeId||''))?String(storeId):'';
+  return _L('🎁 가입하고 7일 안에 추천인 만두 ID를 넣으면 무료 5천 자에 <b>5천 자를 더</b> 드려요 (30일 사용).','🎁 Sign up and enter a referrer\'s Mandu ID within 7 days to get <b>5,000 extra characters</b> on top of the free 5,000 (valid 30 days).')+
+    (id?'<br>'+_L('추천인을 잘 모르시나요? 이 가게 ID ','Not sure who? Use this store\'s ID ')+'<b>@'+id+'</b>'+_L(' 를 넣으면 돼요.','.'):'');
+}
+function _renderGuestRefHint(storeId){
+  const el=document.getElementById('guest-ref-hint');if(!el)return;
+  el.innerHTML=_guestRefText(storeId);el.style.display='block';
 }
 // 손님 첫 화면 안내 문구 — 사장님이 매장 설정에서 정한 글 + (선택) 링크 버튼. 이름을 적기 전에 보인다.
 function _safeHttpsUrl(u){
@@ -2525,6 +2539,8 @@ function upgradeToGoogle(){
     .then(function(result){
       currentUser=result.user;isGuest=false;
       showToast('가입 완료! 환영해요');hideBanner();
+      // 손님 → 회원 전환: 새 토큰(익명 아님)을 받은 뒤 추천인 자동 기록/입력 안내
+      currentUser.getIdToken(true).then(function(){setTimeout(afterNewAccountReferral,1200);}).catch(function(){});
       db.collection('users').doc(currentUser.uid).set({
         uid:currentUser.uid,displayName:currentUser.displayName,
         photoURL:currentUser.photoURL,email:currentUser.email,
@@ -2547,7 +2563,11 @@ function hideBanner(){document.getElementById('upgrade-banner').style.display='n
 function checkGuestUpgrade(){
   if(!isGuest)return;
   guestMsgCount++;
-  if(guestMsgCount===3)document.getElementById('upgrade-banner').style.display='block';
+  if(guestMsgCount===3){
+    const sub=document.querySelector('#upgrade-banner .upgrade-sub');
+    if(sub){let ref=null;try{ref=JSON.parse(localStorage.getItem('mandu_ref')||'null');}catch(e){}sub.innerHTML=_guestRefText(ref&&ref.id);}
+    document.getElementById('upgrade-banner').style.display='block';
+  }
 }
 
 // ── 카드북 연결 동의 ─────────────────────────────────────
@@ -3885,6 +3905,7 @@ async function loadInviteInfo(){
   if(sub)sub.textContent=_L('그룹 대화에 초대받았어요','You are invited to a group chat');
   if(photo)photo.src=DEFAULT_AVATAR;
   _renderGuestWelcome(null);
+  _renderGuestRefHint('');
   const r=await _serverPost('/api/rooms/invite-info',{code:joinCode},false);
   if(r.ok){
     if(nameEl)nameEl.textContent=r.data.name||_L('그룹 대화','Group chat');
@@ -4822,8 +4843,10 @@ function askReferralCode(method){
     '<button class="mod-sheet-btn cancel" id="ref-skip-btn" style="width:100%;margin-top:6px;"></button></div>';
   document.body.appendChild(bd);document.body.appendChild(sh);
   sh.querySelector('.mod-sheet-title').textContent=_L('추천해 준 분이 있나요?','Did someone refer you?');
-  document.getElementById('ref-ask-desc').textContent=_L('추천인의 만두 ID를 입력하면 이번 달 번역 5천 자를 더 드려요 (30일).','Enter their Mandu ID and get 5,000 extra characters (30 days).');
+  document.getElementById('ref-ask-desc').textContent=_L('추천인의 만두 ID를 입력하면 무료 5천 자에 번역 5천 자를 더 드려요 (30일 사용). 가입 후 7일 안에만 입력할 수 있어요.','Enter their Mandu ID and get 5,000 extra characters on top of the free 5,000 (valid 30 days). Available within 7 days of signing up.');
   const inp=document.getElementById('ref-code-input');inp.placeholder='@'+_L('만두ID','ManduID');
+  // 링크·QR로 들어왔던 가게(추천인) ID를 미리 채워 둔다 — 손님은 누구를 넣어야 할지 몰라도 바로 입력 가능
+  try{const sv=JSON.parse(localStorage.getItem('mandu_ref')||'null');if(sv&&sv.id&&sv.id!==currentManduid)inp.value=sv.id;}catch(e){}
   const btn=document.getElementById('ref-code-btn');btn.textContent=_L('입력하기','Submit');
   btn.onclick=async function(){
     const v=inp.value.trim().replace(/^@/,'').toLowerCase();
