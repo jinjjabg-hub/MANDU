@@ -408,6 +408,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .chat-hd-cnt{display:none;align-items:center;gap:2px;color:var(--on-surface-variant);font-weight:600;}
 .chat-hd-cnt.show{display:inline-flex;}
 .chat-hd-cnt .ms{color:var(--on-surface-variant) !important;}
+.rn-box{margin:0 20px 8px;padding:12px 14px;background:var(--surface-container);border-radius:14px;}
+.rn-view{display:flex;align-items:center;gap:8px;}
+.rn-label{font-size:11px;font-weight:600;color:var(--outline);margin-bottom:4px;}
+.rn-cur{flex:1;min-width:0;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rn-btn{border:none;background:var(--primary);color:var(--on-primary,#fff);border-radius:18px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;gap:4px;font-family:inherit;}
+.rn-btn.ghost{background:transparent;color:var(--on-surface-variant);}
+.rn-btn:disabled{opacity:.4;}
+.rn-edit{display:none;align-items:center;gap:6px;}
+.rn-box.editing .rn-view{display:none;}
+.rn-box.editing .rn-edit{display:flex;}
+.rn-input{flex:1;min-width:0;border:1.5px solid var(--primary);border-radius:10px;padding:8px 10px;font-size:15px;background:var(--surface);color:var(--on-surface);font-family:inherit;outline:none;}
 .rm-row{display:flex;align-items:center;gap:12px;padding:10px 20px;}
 .rm-av{width:40px;height:40px;border-radius:50%;background:var(--surface-container);overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px solid var(--outline-variant);}
 .rm-av img{width:100%;height:100%;object-fit:cover;}
@@ -1620,6 +1631,18 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   <div class="sheet-hd">
     <span class="sheet-title" id="roommembers-title"></span>
     <button class="sheet-close" onclick="closeRoomMembers()"><span class="ms">close</span></button>
+  </div>
+  <div class="rn-box" id="roomname-box" style="display:none;">
+    <div class="rn-label" id="roomname-label"></div>
+    <div class="rn-view">
+      <div class="rn-cur" id="roomname-cur"></div>
+      <button class="rn-btn" onclick="startRoomRename()"><span class="ms" style="font-size:16px !important;">edit</span><span id="roomname-edit-txt"></span></button>
+    </div>
+    <div class="rn-edit">
+      <input class="rn-input" id="roomname-input" maxlength="30" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();saveRoomRename();}if(event.key==='Escape')cancelRoomRename();">
+      <button class="rn-btn ghost" onclick="cancelRoomRename()" id="roomname-cancel-txt"></button>
+      <button class="rn-btn" id="roomname-save" onclick="saveRoomRename()"></button>
+    </div>
   </div>
   <div class="scroll-area" id="roommembers-list" style="padding-bottom:24px;"></div>
 </div>
@@ -4208,10 +4231,55 @@ function showRoomMembers(){
       +'<div class="rm-name">'+_esc(mn[u]||_L('알 수 없음','Unknown'))+'</div>'
       +(u===currentUser.uid?'<span class="rm-me">'+_L('나','Me')+'</span>':'')+'</div>';
   }).join('');
+  // 방 이름 바꾸기: 일반 그룹방만 (매장 방은 매장 이름이 제목이라 제외)
+  const box=document.getElementById('roomname-box');
+  const canRename=data.type==='group'&&!data.storeUid&&!currentUser.isAnonymous;
+  box.style.display=canRename?'':'none';box.classList.remove('editing');
+  if(canRename){
+    document.getElementById('roomname-label').textContent=_L('방 이름','Chat name');
+    document.getElementById('roomname-cur').textContent=_isAutoGroupName(data.name)?_L('(이름 없음) ','(No name) ')+document.getElementById('chat-title').textContent:(data.name||'');
+    document.getElementById('roomname-edit-txt').textContent=_L('이름 바꾸기','Rename');
+    document.getElementById('roomname-cancel-txt').textContent=_L('취소','Cancel');
+    document.getElementById('roomname-save').textContent=_L('저장','Save');
+  }
   document.getElementById('roommembers-backdrop').classList.add('open');
   document.getElementById('roommembers-sheet').classList.add('open');
 }
+function startRoomRename(){
+  const d=_currentRoomData||{};
+  const inp=document.getElementById('roomname-input');
+  inp.value=_isAutoGroupName(d.name)?'':(d.name||'');
+  inp.placeholder=_L('예: BNI 파이오니어 챕터','e.g. Project team');
+  document.getElementById('roomname-box').classList.add('editing');
+  setTimeout(function(){inp.focus();},50);
+}
+function cancelRoomRename(){document.getElementById('roomname-box').classList.remove('editing');}
+let _renaming=false;
+async function saveRoomRename(){
+  if(_renaming||!currentRoomId||!currentUser)return;
+  const name=document.getElementById('roomname-input').value.replace(/\s+/g,' ').trim().slice(0,30);
+  if(!name){showToast(_L('방 이름을 입력해주세요','Please enter a name'));return;}
+  const old=(_currentRoomData&&_currentRoomData.name)||'';
+  if(name===old){cancelRoomRename();return;}
+  _renaming=true;const btn=document.getElementById('roomname-save');btn.disabled=true;
+  try{
+    const roomRef=db.collection('rooms').doc(currentRoomId);
+    const sysText=_L((currentUser.displayName||'')+'님이 방 이름을 \''+name+'\'(으)로 바꿨어요',(currentUser.displayName||'Someone')+' renamed the chat to "'+name+'"').slice(0,300);
+    await roomRef.update({name:name,lastMessage:sysText,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()});
+    await roomRef.collection('messages').add({type:'system',text:sysText,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    _chatRawName=name;
+    if(_currentRoomData)_currentRoomData.name=name;
+    _renderChatHeader(_currentRoomData);
+    document.getElementById('roomname-cur').textContent=name;
+    cancelRoomRename();
+    showToast(_L('방 이름을 바꿨어요','Chat renamed'));
+  }catch(e){
+    console.error('방 이름 변경 실패:',e);
+    showToast(_L('이름을 바꾸지 못했어요. 다시 시도해주세요','Could not rename. Please try again'));
+  }finally{_renaming=false;btn.disabled=false;}
+}
 function closeRoomMembers(){
+  cancelRoomRename();
   document.getElementById('roommembers-backdrop').classList.remove('open');
   document.getElementById('roommembers-sheet').classList.remove('open');
 }
