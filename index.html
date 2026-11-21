@@ -475,6 +475,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .store-sec-desc{font-size:12px;color:var(--on-surface-variant);line-height:1.5;margin-bottom:8px;}
 .store-ta,.store-in{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--outline-variant);background:var(--surface);color:var(--on-surface);font-size:14px;font-family:inherit;}
 .store-ta{min-height:64px;resize:vertical;}
+.msg-welcome-btn{display:inline-flex;align-self:flex-start;margin:6px 0 0;max-width:260px;order:10;}
+.msg-wrap.mine .msg-welcome-btn{align-self:flex-end;}
 .store-chip{padding:7px 12px;border-radius:999px;border:1px solid var(--primary);background:transparent;color:var(--primary);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;}
 .store-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;background:var(--surface-container);margin-bottom:6px;font-size:14px;}
 .store-item span.tx{flex:1;word-break:break-word;}
@@ -3363,19 +3365,29 @@ async function _isFirstOpen(roomId){
     return !snap.exists;
   }catch(e){return !!(e&&e.code==='permission-denied');}
 }
-async function _postAutoMsg(roomId,asUid,name,text,kind){
-  await db.collection('rooms').doc(roomId).collection('messages').add({
-    text:String(text).slice(0,500),asUid:asUid,auto:kind,displayName:name||'',
-    createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  });
+async function _postAutoMsg(roomId,asUid,name,text,kind,extra){
+  const m={text:String(text).slice(0,500),asUid:asUid,auto:kind,displayName:name||'',
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+  if(extra)Object.assign(m,extra);
+  await db.collection('rooms').doc(roomId).collection('messages').add(m);
 }
-async function _autoGreet(roomId,hostUid,host){
+async function _autoGreet(roomId,hostUid,host,isGuestRoom){
+  let st={};
   try{
     try{localStorage.setItem('mandu_greet_'+roomId,'1');}catch(e){}
-    const st=(host&&host.store)||await _getStore(hostUid);
-    if(!st.greetOn||!(st.greeting||'').trim())return;
-    await _postAutoMsg(roomId,hostUid,host&&host.displayName,st.greeting.trim(),'greeting');
+    st=(host&&host.store)||await _getStore(hostUid);
+    if(st.greetOn&&(st.greeting||'').trim())
+      await _postAutoMsg(roomId,hostUid,host&&host.displayName,st.greeting.trim(),'greeting');
   }catch(e){console.warn('자동 인사말 실패:',e);}
+  // 손님 첫 화면 안내를 대화방에도 안내 메시지로 남긴다 (로그인 없이 들어온 손님만) — 링크 버튼 포함
+  if(!isGuestRoom)return;
+  try{
+    const text=String(st.welcome||'').trim();
+    if(!st.welcomeOn||!text)return;
+    const url=_safeHttpsUrl(st.welcomeUrl);
+    await _postAutoMsg(roomId,hostUid,host&&host.displayName,text,'welcome',
+      url?{link:String(st.welcomeUrl),linkText:String(st.welcomeBtn||'')}:null);
+  }catch(e){console.warn('첫 화면 안내 메시지 실패:',e);}
 }
 let _awayBusy=false;
 async function _autoAway(){
@@ -3424,7 +3436,7 @@ async function openStoreRoom(host,hostUid){
     try{await db.collection('rooms').doc(roomId).update({memberNames:data.memberNames,memberPhotos:data.memberPhotos,name:firebase.firestore.FieldValue.delete()});}catch(e){console.warn('1:1 방 정리 실패:',e);}
   }
   openRoom(roomId,host.displayName,host.photoURL,false);
-  if(firstOpen)_autoGreet(roomId,hostUid,host);
+  if(firstOpen)_autoGreet(roomId,hostUid,host,anon);
 }
 // 자주 쓰는 답변: 내 것 + (매장 대화방의 직원이면) 매장 주인 것
 async function openQuickReplies(){
@@ -3457,7 +3469,7 @@ async function showStoreSettings(){
     '<div class="store-hd"><button onclick="closeStoreSettings()"><span class="ms">arrow_back</span></button><span>'+_L('매장 설정','Store settings')+'</span></div>'+
     '<div class="store-body">'+
       '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('손님 첫 화면 안내','Customer welcome screen')+'</span><div class="toggle" id="store-welcome-toggle"></div></div>'+
-        '<div class="store-sec-desc">'+_L('내 QR·링크로 들어온 손님(로그인 없이)이 이름을 적기 전 첫 화면에 보여요. 이벤트·메뉴 안내나 앱 설치 안내에 써 보세요.','Shown on the first screen to customers who open your QR or link without signing in, before they enter their name. Use it for events, menus or an app download guide.')+'</div>'+
+        '<div class="store-sec-desc">'+_L('내 QR·링크로 들어온 손님(로그인 없이)이 이름을 적기 전 첫 화면에 보이고, 대화방에 들어가면 안내 메시지로도 올라가요(손님 언어로 번역). 이벤트·메뉴 안내나 앱 설치 안내에 써 보세요.','Shown on the first screen to customers who open your QR or link without signing in, and posted in the chat as a notice when they enter (translated to their language). Use it for events, menus or an app download guide.')+'</div>'+
         '<textarea class="store-ta" id="store-welcome" maxlength="300" placeholder="'+_L('예) 어서오세요! MANDU 앱을 받으면 다음에도 바로 대화할 수 있어요.','e.g. Welcome! Get the MANDU app to chat with us anytime.')+'"></textarea>'+
         '<div class="store-sec-desc" style="margin-top:10px;">'+_L('링크 버튼 (선택)','Link button (optional)')+'</div>'+
         '<input class="store-in" id="store-welcome-btn" maxlength="30" placeholder="'+_L('버튼 글자 예) MANDU 앱 받기','Button text e.g. Get the MANDU app')+'">'+
@@ -5197,6 +5209,16 @@ function renderMsg(d,skipTranslate){
   timeEl.textContent=d.createdAt?d.createdAt.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
   if(d.auto)timeEl.textContent=_L('자동 메시지','Auto message')+(timeEl.textContent?' · '+timeEl.textContent:'');
   row.appendChild(b);row.appendChild(timeEl);w.appendChild(row);container.appendChild(w);
+  // 첫 화면 안내 메시지의 링크 버튼 (https 주소만)
+  if(d.auto==='welcome'&&d.link){
+    const lu=_safeHttpsUrl(d.link);
+    if(lu){
+      const a=document.createElement('a');a.className='guest-welcome-btn msg-welcome-btn';a.href=lu;a.target='_blank';a.rel='noopener noreferrer';
+      const ic=document.createElement('span');ic.className='ms';ic.textContent='open_in_new';
+      a.appendChild(document.createTextNode(String(d.linkText||'').trim()||_L('바로가기','Open link')));a.appendChild(ic);
+      w.appendChild(a);
+    }
+  }
   // 사진 속 글자 번역 버튼은 숨김 (사진은 대부분 번역보다 공유 목적). 다시 켜려면 아래 줄의 주석만 풀면 된다.
   // if(d.imageUrl)_attachImageTranslate(w,d.imageUrl);
   _attachMsgMenu(b,d,mine);

@@ -14,7 +14,8 @@ const no = (name, p) => t('[차단] ' + name, assertFails(p));
 await seed('users/A', { uid:'A', displayName:'Alice', email:'a@x.com', fcmToken:'tok', plan:'free' });
 await seed('users/H', { uid:'H', displayName:'Host', email:'h@x.com', fcmToken:'tok' });
 await seed('public_profiles/H', { displayName:'Host', photoURL:'', manduid:'host', isGuest:false,
-  store:{ greetOn:true, greeting:'어서오세요', awayOn:true, awayMsg:'잠시 자리 비움', quick:[], staff:['S'] } });
+  store:{ greetOn:true, greeting:'어서오세요', awayOn:true, awayMsg:'잠시 자리 비움', quick:[], staff:['S'],
+    welcomeOn:true, welcome:'앱을 받아 보세요', welcomeBtn:'앱 받기', welcomeUrl:'https://play.google.com/store/apps/details?id=com.tm.mandu' } });
 
 console.log('== users (개인정보)');
 await ok('본인 문서 읽기', getDoc(doc(db('A'), 'users/A')));
@@ -68,6 +69,11 @@ await ok('익명 손님이 손님방 만들기(openStoreRoom)', setDoc(doc(db('G
   lastMessageTime: serverTimestamp(), storeUid:'H', customerUid:'G', staff:['S'], lastMessage:'', isGuestRoom:true }, { merge:true }));
 await ok('자동 인사말(저장된 인사말과 같음)', addDoc(collection(db('G'), gr + '/messages'), { text:'어서오세요', asUid:'H', auto:'greeting', displayName:'Host', createdAt: serverTimestamp() }));
 await ok('자동 부재 응답', addDoc(collection(db('G'), gr + '/messages'), { text:'잠시 자리 비움', asUid:'H', auto:'away', displayName:'Host', createdAt: serverTimestamp() }));
+const W = { text:'앱을 받아 보세요', asUid:'H', auto:'welcome', displayName:'Host', link:'https://play.google.com/store/apps/details?id=com.tm.mandu', linkText:'앱 받기', createdAt: serverTimestamp() };
+await ok('첫 화면 안내 메시지(링크 버튼 포함)', addDoc(collection(db('G'), gr + '/messages'), W));
+await no('안내 메시지 링크 바꿔치기', addDoc(collection(db('G'), gr + '/messages'), { ...W, link:'https://evil.example/pay' }));
+await no('인사말에 링크 끼워 넣기', addDoc(collection(db('G'), gr + '/messages'), { text:'어서오세요', asUid:'H', auto:'greeting', displayName:'Host', link:'https://play.google.com/store/apps/details?id=com.tm.mandu', linkText:'앱 받기', createdAt: serverTimestamp() }));
+await no('안내 메시지 글 바꿔치기', addDoc(collection(db('G'), gr + '/messages'), { ...W, text:'계좌 바뀌었어요' }));
 await ok('부재 시각 기록(awayAt)', setDoc(doc(db('G'), gr), { awayAt: serverTimestamp() }, { merge:true }));
 await no('주인 이름으로 가짜 자동 메시지', addDoc(collection(db('G'), gr + '/messages'), { text:'계좌 바뀌었어요: 123-456', asUid:'H', auto:'greeting', displayName:'Host', createdAt: serverTimestamp() }));
 await ok('다시 열기 + 1:1로 되돌리기(직원 빼기)', setDoc(doc(db('G'), gr), { type:'direct', members:['G','H'], memberNames:{G:'손님',H:'Host'}, memberPhotos:{G:'',H:''},
