@@ -832,16 +832,16 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   <div class="guest-host-card">
     <div class="guest-host-avatar"><img id="guest-host-photo" src="" alt=""></div>
     <div class="guest-host-name" id="guest-host-name">—</div>
-    <div class="guest-host-sub"><svg class="mlogo" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg> MANDU로 대화 요청</div>
+    <div class="guest-host-sub"><svg class="mlogo" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg> <span id="guest-req-txt">MANDU로 대화 요청</span></div>
   </div>
   <div class="guest-welcome" id="guest-welcome"></div>
   <div class="guest-input-wrap">
-    <label class="guest-input-label">이름을 알려주세요</label>
+    <label class="guest-input-label" id="guest-name-label">이름을 알려주세요</label>
     <input class="guest-input" id="guest-name-input" type="text" placeholder="홍길동">
   </div>
-  <button class="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기</button>
+  <button class="guest-start-btn" id="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기</button>
   <div class="guest-ref-hint" id="guest-ref-hint"></div>
-  <div class="guest-login-hint">이미 계정이 있으신가요? <span onclick="showLoginFromGuest()" id="guest-login-lnk">로그인</span></div>
+  <div class="guest-login-hint"><span id="guest-have-acc">이미 계정이 있으신가요?</span> <span onclick="showLoginFromGuest()" id="guest-login-lnk">로그인</span></div>
 </div>
 
 <div id="main-screen">
@@ -2410,12 +2410,11 @@ function _setGuestHost(d){
 // 손님 → 가입 유도: 가입 후 7일 안에 추천인을 넣으면 무료 5천 자 + 보너스 5천 자 (서버 REFERRAL_SIGNUP_BONUS·REFERRAL_CLAIM_DAYS·BONUS_DAYS)
 function _guestRefText(storeId){
   const id=/^[a-z0-9_]{3,20}$/.test(String(storeId||''))?String(storeId):'';
-  return _L('🎁 가입하고 7일 안에 추천인 만두 ID를 넣으면 무료 5천 자에 <b>5천 자를 더</b> 드려요 (30일 사용).','🎁 Sign up and enter a referrer\'s Mandu ID within 7 days to get <b>5,000 extra characters</b> on top of the free 5,000 (valid 30 days).')+
-    (id?'<br>'+_L('추천인을 잘 모르시나요? 이 가게 ID ','Not sure who? Use this store\'s ID ')+'<b>@'+id+'</b>'+_L(' 를 넣으면 돼요.','.'):'');
+  return _G('ref1')+(id?'<br>'+_G('ref2').replace('{id}','<b>@'+id+'</b>'):'');
 }
 function _renderGuestRefHint(storeId){
   const el=document.getElementById('guest-ref-hint');if(!el)return;
-  el.innerHTML=_guestRefText(storeId);el.style.display='block';
+  el.dataset.id=String(storeId||'');el.innerHTML=_guestRefText(storeId);el.style.display='block';
 }
 // 손님 첫 화면 안내 문구 — 사장님이 매장 설정에서 정한 글 + (선택) 링크 버튼. 이름을 적기 전에 보인다.
 function _safeHttpsUrl(u){
@@ -2433,7 +2432,7 @@ function _renderGuestWelcome(st){
   if(url){
     const a=document.createElement('a');a.className='guest-welcome-btn';a.href=url;a.target='_blank';a.rel='noopener noreferrer';
     const ic=document.createElement('span');ic.className='ms';ic.textContent='open_in_new';
-    a.appendChild(document.createTextNode(String(st.welcomeBtn||'').trim()||_L('바로가기','Open link')));a.appendChild(ic);
+    a.appendChild(document.createTextNode(String(st.welcomeBtn||'').trim()||_G('link')));a.appendChild(ic);
     box.appendChild(a);
   }
   box.style.display='block';
@@ -2486,7 +2485,7 @@ async function loadGuestHostInfo(){
 
 async function startGuestChat(){
   const name=document.getElementById('guest-name-input').value.trim();
-  if(!name){showToast('이름을 입력해주세요');return;}
+  if(!name){showToast(_G('name_req'));return;}
   try{
     // 로그인 직후 바로 대화방이 만들어지므로, 이름을 먼저 저장해 둬야 방에 손님 이름이 들어간다
     localStorage.setItem('mandu_guest_name',name);
@@ -2496,7 +2495,7 @@ async function startGuestChat(){
       isGuest:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
     localStorage.setItem('mandu_guest_name',name);
-  }catch(e){showToast('오류가 발생했어요.');}
+  }catch(e){showToast(_G('error'));}
 }
 
 // ── 브라우저 언어 자동 감지 (게스트 입장 시 UX/번역 언어를 자동으로 맞추기 위함) ──
@@ -2553,7 +2552,7 @@ function upgradeToGoogle(){
 function showLoginFromGuest(){
   show('login-screen');
   const b=document.getElementById('login-back-guest');
-  if(b){b.style.display='block';b.textContent='← '+_L('로그인 없이 바로 대화하기','Chat without signing in');}
+  if(b){b.style.display='block';b.textContent='← '+_G('back_guest');}
 }
 function backToGuest(){
   const b=document.getElementById('login-back-guest');if(b)b.style.display='none';
@@ -3677,7 +3676,7 @@ function initLoginOptions(cfg){
   set('extra-logins',on('kakao')||on('apple')||on('phone'));
   const txt=function(id,v){const el=document.getElementById(id);if(el)el.textContent=v;};
   txt('kakao-login-lbl',_L('카카오로 시작하기','Continue with Kakao'));
-  txt('guest-login-lnk',_L('로그인','Sign in'));
+  txt('guest-login-lnk',_G('login'));
   if(window.MANDU_INAPP)txt('google-login-lbl',_L('Google로 시작하기 (Chrome·Safari에서 열림)','Continue with Google (opens in Chrome/Safari)'));
   txt('inapp-google-hint',_L('카카오톡·네이버 앱 안에서는 Google 로그인이 막혀 있어서, 버튼을 누르면 Chrome·Safari로 열려요. ','Google sign-in is blocked inside this app, so the button opens Chrome/Safari. '));
   txt('inapp-open-lnk',_L('Chrome·Safari로 열기','Open in Chrome/Safari'));
@@ -3902,16 +3901,16 @@ async function showRoomInvite(reset){
 async function loadInviteInfo(){
   const nameEl=document.getElementById('guest-host-name'),photo=document.getElementById('guest-host-photo');
   const sub=document.querySelector('#guest-screen .guest-host-sub');
-  if(sub)sub.textContent=_L('그룹 대화에 초대받았어요','You are invited to a group chat');
+  if(sub)sub.textContent=_G('grp');
   if(photo)photo.src=DEFAULT_AVATAR;
   _renderGuestWelcome(null);
   _renderGuestRefHint('');
   const r=await _serverPost('/api/rooms/invite-info',{code:joinCode},false);
   if(r.ok){
-    if(nameEl)nameEl.textContent=r.data.name||_L('그룹 대화','Group chat');
-    if(sub)sub.textContent=_L('그룹 대화에 초대받았어요 · {n}명','Group chat invite · {n} people').replace('{n}',r.data.memberCount);
+    if(nameEl)nameEl.textContent=r.data.name||_G('grp_chat');
+    if(sub)sub.textContent=_G('grp_n').replace('{n}',r.data.memberCount);
   }else if(r.status===404){
-    if(nameEl)nameEl.textContent=_L('만료된 초대 링크예요','This invite link has expired');
+    if(nameEl)nameEl.textContent=_G('expired');
   }
 }
 let _joining=false;
@@ -4814,13 +4813,15 @@ async function claimReferral(code,method){
   const r=await _serverPost('/api/referral/claim',{code:code,method:method},true);
   if(r.ok&&r.data&&r.data.ok){
     try{localStorage.removeItem('mandu_ref');}catch(e){}
-    showToast(_L('추천인이 기록됐어요 · 보너스 5천 자 (30일)','Referrer saved · 5,000-character bonus (30 days)'));
+    showToast(_G('r_saved'));
     initReferral();renderUsageUI&&renderUsageUI();
     return true;
   }
   if(r.ok&&r.data&&r.data.code==='NOT_NEW_ACCOUNT')return false;
-  const msg=r.data&&r.data.detail&&r.data.detail.message;
-  showToast(msg||_L('추천인을 저장하지 못했어요. 다시 시도해주세요','Could not save the referrer. Please try again.'));
+  // 서버 안내문은 한국어라, 오류 코드로 휴대폰 언어 문구를 고른다
+  const errCode=r.data&&r.data.detail&&r.data.detail.code;
+  const ek={REFERRER_NOT_FOUND:'e_notfound',SELF_REFERRAL:'e_self',REFERRAL_CYCLE:'e_cycle',CLAIM_EXPIRED:'e_expired',ALREADY_REFERRED:'e_already'}[errCode];
+  showToast(_G(ek||'r_fail'));
   return false;
 }
 // 가입 직후: 링크·QR로 들어왔으면 자동 기록, 아니면 "추천해 준 분이 있나요?" 물어보기
@@ -4842,21 +4843,21 @@ function askReferralCode(method){
     '<button class="primary" id="ref-code-btn"></button>'+
     '<button class="mod-sheet-btn cancel" id="ref-skip-btn" style="width:100%;margin-top:6px;"></button></div>';
   document.body.appendChild(bd);document.body.appendChild(sh);
-  sh.querySelector('.mod-sheet-title').textContent=_L('추천해 준 분이 있나요?','Did someone refer you?');
-  document.getElementById('ref-ask-desc').textContent=_L('추천인의 만두 ID를 입력하면 무료 5천 자에 번역 5천 자를 더 드려요 (30일 사용). 가입 후 7일 안에만 입력할 수 있어요.','Enter their Mandu ID and get 5,000 extra characters on top of the free 5,000 (valid 30 days). Available within 7 days of signing up.');
+  sh.querySelector('.mod-sheet-title').textContent=_G('r_title');
+  document.getElementById('ref-ask-desc').textContent=_G('r_desc');
   const inp=document.getElementById('ref-code-input');inp.placeholder='@'+_L('만두ID','ManduID');
   // 링크·QR로 들어왔던 가게(추천인) ID를 미리 채워 둔다 — 손님은 누구를 넣어야 할지 몰라도 바로 입력 가능
   try{const sv=JSON.parse(localStorage.getItem('mandu_ref')||'null');if(sv&&sv.id&&sv.id!==currentManduid)inp.value=sv.id;}catch(e){}
-  const btn=document.getElementById('ref-code-btn');btn.textContent=_L('입력하기','Submit');
+  const btn=document.getElementById('ref-code-btn');btn.textContent=_G('r_submit');
   btn.onclick=async function(){
     const v=inp.value.trim().replace(/^@/,'').toLowerCase();
-    if(!/^[a-z0-9_]{3,20}$/.test(v)){showToast(_L('만두 ID를 확인해주세요','Please check the Mandu ID'));return;}
+    if(!/^[a-z0-9_]{3,20}$/.test(v)){showToast(_G('r_check'));return;}
     btn.disabled=true;
     if(await claimReferral(v,method))closeModSheet();
     btn.disabled=false;
   };
   const skip=document.getElementById('ref-skip-btn');
-  skip.textContent=method==='signup'?_L('없어요 (나중에 설정에서 입력할 수 있어요)','No one (you can add it later in Settings)'):_L('취소','Cancel');
+  skip.textContent=method==='signup'?_G('r_skip'):_G('r_cancel');
   skip.onclick=closeModSheet;
   setTimeout(function(){inp.focus();},60);
 }
@@ -5079,7 +5080,7 @@ async function translateEx(text,targetLang,opts){
       }
       if(res.status===429){
         // 손님 하루 번역 한도(서버) — 다시 시도해도 같은 결과라 바로 멈춘다
-        if(!_guestDailyWarnShown){_guestDailyWarnShown=true;showToast(isGuest?_L('오늘 이 가게에서 번역할 수 있는 양을 다 썼어요. 내일 다시 이용해 주세요','You have reached today\'s translation limit for this store. Please try again tomorrow.'):_L('잠시 후 다시 시도해주세요','Please try again later'));}
+        if(!_guestDailyWarnShown){_guestDailyWarnShown=true;showToast(isGuest?_G('daily'):_L('잠시 후 다시 시도해주세요','Please try again later'));}
         return none;
       }
       if(!res.ok){
@@ -5238,7 +5239,7 @@ function renderMsg(d,skipTranslate){
     if(lu){
       const a=document.createElement('a');a.className='guest-welcome-btn msg-welcome-btn';a.href=lu;a.target='_blank';a.rel='noopener noreferrer';
       const ic=document.createElement('span');ic.className='ms';ic.textContent='open_in_new';
-      a.appendChild(document.createTextNode(String(d.linkText||'').trim()||_L('바로가기','Open link')));a.appendChild(ic);
+      a.appendChild(document.createTextNode(String(d.linkText||'').trim()||_G('link')));a.appendChild(ic);
       w.appendChild(a);
     }
   }
@@ -5893,6 +5894,17 @@ const UI_T={
 };
 
 let _uiLang='ko';
+// 손님(게스트)이 보는 문구 — 휴대폰 언어(_uiLang, 16개 언어)로. 없는 언어는 영어.
+const GUEST_T={"ko":{"request":"MANDU로 대화 요청","name_label":"이름을 알려주세요","name_ph":"홍길동","start":"바로 대화 시작하기","have_acc":"이미 계정이 있으신가요?","login":"로그인","ref1":"🎁 가입하고 7일 안에 추천인 만두 ID를 넣으면 무료 5천 자에 <b>5천 자를 더</b> 드려요 (30일 사용).","ref2":"추천인을 잘 모르시나요? 이 가게 ID {id} 를 넣으면 돼요.","name_req":"이름을 입력해주세요","error":"오류가 발생했어요.","link":"바로가기","back_guest":"로그인 없이 바로 대화하기","r_title":"추천해 준 분이 있나요?","r_desc":"추천인의 만두 ID를 입력하면 무료 5천 자에 번역 5천 자를 더 드려요 (30일 사용). 가입 후 7일 안에만 입력할 수 있어요.","r_submit":"입력하기","r_skip":"없어요 (나중에 설정에서 입력할 수 있어요)","r_cancel":"취소","r_check":"만두 ID를 확인해주세요","r_saved":"추천인이 기록됐어요 · 보너스 5천 자 (30일)","r_fail":"추천인을 저장하지 못했어요. 다시 시도해주세요","daily":"오늘 이 가게에서 번역할 수 있는 양을 다 썼어요. 내일 다시 이용해 주세요","e_notfound":"그 만두 ID를 찾을 수 없어요. 다시 확인해 주세요.","e_self":"본인은 추천인으로 입력할 수 없어요.","e_cycle":"서로를 추천인으로 입력할 수는 없어요.","e_expired":"추천인은 가입 후 7일 안에만 입력할 수 있어요.","e_already":"이미 추천인을 입력했어요.","grp":"그룹 대화에 초대받았어요","grp_n":"그룹 대화에 초대받았어요 · {n}명","grp_chat":"그룹 대화","expired":"만료된 초대 링크예요"},"en":{"request":"Chat request via MANDU","name_label":"What is your name?","name_ph":"John Smith","start":"Start chatting now","have_acc":"Already have an account?","login":"Sign in","ref1":"🎁 Sign up and enter a referrer's Mandu ID within 7 days to get <b>5,000 extra characters</b> on top of the free 5,000 (valid 30 days).","ref2":"Not sure who referred you? Just enter this store's ID {id}.","name_req":"Please enter your name","error":"Something went wrong.","link":"Open link","back_guest":"Chat without signing in","r_title":"Did someone refer you?","r_desc":"Enter your referrer's Mandu ID to get 5,000 extra translation characters on top of the free 5,000 (valid 30 days). Available only within 7 days of signing up.","r_submit":"Submit","r_skip":"No one (you can add it later in Settings)","r_cancel":"Cancel","r_check":"Please check the Mandu ID","r_saved":"Referrer saved · 5,000-character bonus (30 days)","r_fail":"Could not save the referrer. Please try again.","daily":"You have reached today's translation limit for this store. Please try again tomorrow.","e_notfound":"That Mandu ID was not found. Please check it again.","e_self":"You cannot enter yourself as the referrer.","e_cycle":"You cannot refer each other.","e_expired":"A referrer can only be entered within 7 days of signing up.","e_already":"You have already entered a referrer.","grp":"You are invited to a group chat","grp_n":"Group chat invite · {n} people","grp_chat":"Group chat","expired":"This invite link has expired"},"ja":{"request":"MANDUでチャットのリクエスト","name_label":"お名前を教えてください","name_ph":"山田太郎","start":"今すぐチャットを始める","have_acc":"すでにアカウントをお持ちですか？","login":"ログイン","ref1":"🎁 登録後7日以内に紹介者のMandu IDを入力すると、無料の5,000文字に<b>さらに5,000文字</b>プレゼント（30日間有効）。","ref2":"紹介者がわからない場合は、このお店のID {id} を入力してください。","name_req":"お名前を入力してください","error":"エラーが発生しました。","link":"リンクを開く","back_guest":"ログインせずにチャットする","r_title":"紹介してくれた方はいますか？","r_desc":"紹介者のMandu IDを入力すると、無料の5,000文字に翻訳5,000文字を追加でプレゼントします（30日間有効）。登録後7日以内のみ入力できます。","r_submit":"入力する","r_skip":"いません（後で設定から入力できます）","r_cancel":"キャンセル","r_check":"Mandu IDを確認してください","r_saved":"紹介者を登録しました · ボーナス5,000文字（30日間）","r_fail":"紹介者を保存できませんでした。もう一度お試しください","daily":"本日このお店で翻訳できる量を使い切りました。明日またご利用ください","e_notfound":"そのMandu IDが見つかりません。もう一度確認してください。","e_self":"ご自身を紹介者として入力することはできません。","e_cycle":"お互いを紹介者として入力することはできません。","e_expired":"紹介者は登録後7日以内のみ入力できます。","e_already":"すでに紹介者を入力しています。","grp":"グループチャットに招待されました","grp_n":"グループチャットへの招待 · {n}人","grp_chat":"グループチャット","expired":"この招待リンクは期限切れです"},"zh":{"request":"通过MANDU发起聊天","name_label":"请告诉我们您的名字","name_ph":"张伟","start":"立即开始聊天","have_acc":"已有账号？","login":"登录","ref1":"🎁 注册后7天内输入推荐人的Mandu ID，在免费5,000字的基础上<b>再送5,000字</b>（30天内有效）。","ref2":"不知道推荐人？输入本店ID {id} 即可。","name_req":"请输入您的名字","error":"出错了。","link":"打开链接","back_guest":"无需登录直接聊天","r_title":"有人推荐您吗？","r_desc":"输入推荐人的Mandu ID，即可在免费5,000字的基础上再获得5,000字翻译额度（30天内有效）。仅限注册后7天内输入。","r_submit":"提交","r_skip":"没有（之后可在设置中输入）","r_cancel":"取消","r_check":"请检查Mandu ID","r_saved":"已记录推荐人 · 奖励5,000字（30天）","r_fail":"无法保存推荐人，请重试","daily":"今天在本店可翻译的额度已用完，请明天再试","e_notfound":"找不到该Mandu ID，请再次确认。","e_self":"不能将自己设为推荐人。","e_cycle":"不能互相设为推荐人。","e_expired":"推荐人仅可在注册后7天内输入。","e_already":"您已经输入过推荐人。","grp":"您被邀请加入群聊","grp_n":"群聊邀请 · {n}人","grp_chat":"群聊","expired":"此邀请链接已过期"},"es":{"request":"Solicitud de chat por MANDU","name_label":"¿Cómo te llamas?","name_ph":"María García","start":"Empezar a chatear","have_acc":"¿Ya tienes una cuenta?","login":"Iniciar sesión","ref1":"🎁 Regístrate e introduce en un plazo de 7 días el ID de Mandu de quien te recomendó y recibe <b>5.000 caracteres más</b> además de los 5.000 gratis (válidos 30 días).","ref2":"¿No sabes quién te recomendó? Introduce el ID de esta tienda: {id}.","name_req":"Introduce tu nombre","error":"Se produjo un error.","link":"Abrir enlace","back_guest":"Chatear sin iniciar sesión","r_title":"¿Alguien te recomendó?","r_desc":"Introduce el ID de Mandu de quien te recomendó y recibe 5.000 caracteres de traducción más además de los 5.000 gratis (válidos 30 días). Solo disponible en los 7 días posteriores al registro.","r_submit":"Enviar","r_skip":"Nadie (puedes añadirlo después en Ajustes)","r_cancel":"Cancelar","r_check":"Revisa el ID de Mandu","r_saved":"Recomendador guardado · Bono de 5.000 caracteres (30 días)","r_fail":"No se pudo guardar. Inténtalo de nuevo.","daily":"Has alcanzado el límite de traducción de hoy para esta tienda. Vuelve a intentarlo mañana.","e_notfound":"No se encontró ese ID de Mandu. Revísalo de nuevo.","e_self":"No puedes ponerte a ti mismo como recomendador.","e_cycle":"No podéis recomendaros mutuamente.","e_expired":"Solo puedes introducir un recomendador en los 7 días posteriores al registro.","e_already":"Ya has introducido un recomendador.","grp":"Te han invitado a un chat grupal","grp_n":"Invitación a chat grupal · {n} personas","grp_chat":"Chat grupal","expired":"Este enlace de invitación ha caducado"},"fr":{"request":"Demande de discussion via MANDU","name_label":"Quel est votre nom ?","name_ph":"Marie Dupont","start":"Commencer à discuter","have_acc":"Vous avez déjà un compte ?","login":"Se connecter","ref1":"🎁 Inscrivez-vous et saisissez l’ID Mandu de votre parrain dans les 7 jours pour obtenir <b>5 000 caractères de plus</b> en plus des 5 000 gratuits (valables 30 jours).","ref2":"Vous ne savez pas qui ? Saisissez l’ID de ce commerce : {id}.","name_req":"Veuillez saisir votre nom","error":"Une erreur est survenue.","link":"Ouvrir le lien","back_guest":"Discuter sans se connecter","r_title":"Quelqu’un vous a-t-il recommandé ?","r_desc":"Saisissez l’ID Mandu de votre parrain pour obtenir 5 000 caractères de traduction en plus des 5 000 gratuits (valables 30 jours). Possible uniquement dans les 7 jours suivant l’inscription.","r_submit":"Valider","r_skip":"Personne (vous pourrez l’ajouter plus tard dans les Paramètres)","r_cancel":"Annuler","r_check":"Vérifiez l’ID Mandu","r_saved":"Parrain enregistré · Bonus de 5 000 caractères (30 jours)","r_fail":"Impossible d’enregistrer. Veuillez réessayer.","daily":"Vous avez atteint la limite de traduction du jour pour ce commerce. Réessayez demain.","e_notfound":"Cet ID Mandu est introuvable. Veuillez le vérifier.","e_self":"Vous ne pouvez pas vous indiquer vous-même comme parrain.","e_cycle":"Vous ne pouvez pas vous parrainer mutuellement.","e_expired":"Le parrain ne peut être saisi que dans les 7 jours suivant l’inscription.","e_already":"Vous avez déjà saisi un parrain.","grp":"Vous êtes invité à une discussion de groupe","grp_n":"Invitation à un groupe · {n} personnes","grp_chat":"Discussion de groupe","expired":"Ce lien d’invitation a expiré"},"de":{"request":"Chat-Anfrage über MANDU","name_label":"Wie heißen Sie?","name_ph":"Max Mustermann","start":"Jetzt chatten","have_acc":"Schon ein Konto?","login":"Anmelden","ref1":"🎁 Registrieren Sie sich und geben Sie innerhalb von 7 Tagen die Mandu-ID Ihres Empfehlers ein – Sie erhalten <b>5.000 zusätzliche Zeichen</b> zu den kostenlosen 5.000 (30 Tage gültig).","ref2":"Sie wissen nicht, wer? Geben Sie einfach die ID dieses Geschäfts ein: {id}.","name_req":"Bitte geben Sie Ihren Namen ein","error":"Ein Fehler ist aufgetreten.","link":"Link öffnen","back_guest":"Ohne Anmeldung chatten","r_title":"Hat Sie jemand empfohlen?","r_desc":"Geben Sie die Mandu-ID Ihres Empfehlers ein und erhalten Sie 5.000 zusätzliche Übersetzungszeichen zu den kostenlosen 5.000 (30 Tage gültig). Nur innerhalb von 7 Tagen nach der Registrierung möglich.","r_submit":"Eingeben","r_skip":"Niemand (später in den Einstellungen möglich)","r_cancel":"Abbrechen","r_check":"Bitte prüfen Sie die Mandu-ID","r_saved":"Empfehler gespeichert · 5.000 Zeichen Bonus (30 Tage)","r_fail":"Speichern fehlgeschlagen. Bitte erneut versuchen.","daily":"Das heutige Übersetzungslimit für dieses Geschäft ist erreicht. Bitte morgen erneut versuchen.","e_notfound":"Diese Mandu-ID wurde nicht gefunden. Bitte erneut prüfen.","e_self":"Sie können sich nicht selbst als Empfehler eintragen.","e_cycle":"Sie können sich nicht gegenseitig empfehlen.","e_expired":"Ein Empfehler kann nur innerhalb von 7 Tagen nach der Registrierung eingegeben werden.","e_already":"Sie haben bereits einen Empfehler eingegeben.","grp":"Sie wurden zu einem Gruppenchat eingeladen","grp_n":"Gruppenchat-Einladung · {n} Personen","grp_chat":"Gruppenchat","expired":"Dieser Einladungslink ist abgelaufen"},"vi":{"request":"Yêu cầu trò chuyện qua MANDU","name_label":"Bạn tên là gì?","name_ph":"Nguyễn Văn An","start":"Bắt đầu trò chuyện ngay","have_acc":"Đã có tài khoản?","login":"Đăng nhập","ref1":"🎁 Đăng ký và nhập Mandu ID của người giới thiệu trong vòng 7 ngày để nhận <b>thêm 5.000 ký tự</b> ngoài 5.000 ký tự miễn phí (dùng trong 30 ngày).","ref2":"Không biết người giới thiệu? Hãy nhập ID của cửa hàng này: {id}.","name_req":"Vui lòng nhập tên của bạn","error":"Đã xảy ra lỗi.","link":"Mở liên kết","back_guest":"Trò chuyện không cần đăng nhập","r_title":"Có ai giới thiệu bạn không?","r_desc":"Nhập Mandu ID của người giới thiệu để nhận thêm 5.000 ký tự dịch ngoài 5.000 ký tự miễn phí (dùng trong 30 ngày). Chỉ nhập được trong vòng 7 ngày sau khi đăng ký.","r_submit":"Nhập","r_skip":"Không có (có thể nhập sau trong Cài đặt)","r_cancel":"Hủy","r_check":"Vui lòng kiểm tra Mandu ID","r_saved":"Đã lưu người giới thiệu · Thưởng 5.000 ký tự (30 ngày)","r_fail":"Không thể lưu. Vui lòng thử lại.","daily":"Bạn đã dùng hết lượt dịch hôm nay tại cửa hàng này. Vui lòng thử lại vào ngày mai.","e_notfound":"Không tìm thấy Mandu ID này. Vui lòng kiểm tra lại.","e_self":"Bạn không thể nhập chính mình làm người giới thiệu.","e_cycle":"Hai người không thể giới thiệu lẫn nhau.","e_expired":"Chỉ có thể nhập người giới thiệu trong vòng 7 ngày sau khi đăng ký.","e_already":"Bạn đã nhập người giới thiệu rồi.","grp":"Bạn được mời vào nhóm trò chuyện","grp_n":"Lời mời nhóm · {n} người","grp_chat":"Nhóm trò chuyện","expired":"Liên kết mời này đã hết hạn"},"th":{"request":"คำขอแชทผ่าน MANDU","name_label":"กรุณาบอกชื่อของคุณ","name_ph":"สมชาย ใจดี","start":"เริ่มแชทเลย","have_acc":"มีบัญชีอยู่แล้ว?","login":"เข้าสู่ระบบ","ref1":"🎁 สมัครสมาชิกและใส่ Mandu ID ของผู้แนะนำภายใน 7 วัน รับ<b>เพิ่มอีก 5,000 ตัวอักษร</b> นอกเหนือจาก 5,000 ตัวอักษรฟรี (ใช้ได้ 30 วัน)","ref2":"ไม่แน่ใจว่าใครแนะนำ? ใส่ ID ของร้านนี้ {id} ได้เลย","name_req":"กรุณาใส่ชื่อของคุณ","error":"เกิดข้อผิดพลาด","link":"เปิดลิงก์","back_guest":"แชทโดยไม่ต้องเข้าสู่ระบบ","r_title":"มีคนแนะนำคุณไหม?","r_desc":"ใส่ Mandu ID ของผู้แนะนำเพื่อรับตัวอักษรแปลเพิ่มอีก 5,000 ตัว นอกเหนือจาก 5,000 ตัวฟรี (ใช้ได้ 30 วัน) ใส่ได้ภายใน 7 วันหลังสมัครเท่านั้น","r_submit":"ยืนยัน","r_skip":"ไม่มี (ใส่ภายหลังได้ในการตั้งค่า)","r_cancel":"ยกเลิก","r_check":"กรุณาตรวจสอบ Mandu ID","r_saved":"บันทึกผู้แนะนำแล้ว · โบนัส 5,000 ตัวอักษร (30 วัน)","r_fail":"บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง","daily":"คุณใช้ปริมาณการแปลของร้านนี้สำหรับวันนี้หมดแล้ว กรุณาลองใหม่พรุ่งนี้","e_notfound":"ไม่พบ Mandu ID นี้ กรุณาตรวจสอบอีกครั้ง","e_self":"ไม่สามารถใส่ตัวเองเป็นผู้แนะนำได้","e_cycle":"ไม่สามารถแนะนำซึ่งกันและกันได้","e_expired":"ใส่ผู้แนะนำได้ภายใน 7 วันหลังสมัครเท่านั้น","e_already":"คุณใส่ผู้แนะนำไปแล้ว","grp":"คุณได้รับเชิญเข้ากลุ่มแชท","grp_n":"คำเชิญกลุ่มแชท · {n} คน","grp_chat":"กลุ่มแชท","expired":"ลิงก์เชิญนี้หมดอายุแล้ว"},"mn":{"request":"MANDU-аар чатлах хүсэлт","name_label":"Таны нэрийг хэлнэ үү","name_ph":"Бат-Эрдэнэ","start":"Одоо чатлаж эхлэх","have_acc":"Бүртгэлтэй юу?","login":"Нэвтрэх","ref1":"🎁 Бүртгүүлээд 7 хоногийн дотор санал болгогчийн Mandu ID-г оруулбал үнэгүй 5,000 тэмдэгт дээр <b>нэмэлт 5,000 тэмдэгт</b> авна (30 хоног хүчинтэй).","ref2":"Санал болгогчоо мэдэхгүй байна уу? Энэ дэлгүүрийн ID {id}-г оруулаарай.","name_req":"Нэрээ оруулна уу","error":"Алдаа гарлаа.","link":"Холбоос нээх","back_guest":"Нэвтрэхгүйгээр чатлах","r_title":"Танд хэн нэгэн санал болгосон уу?","r_desc":"Санал болгогчийн Mandu ID-г оруулбал үнэгүй 5,000 тэмдэгт дээр 5,000 орчуулгын тэмдэгт нэмж авна (30 хоног хүчинтэй). Зөвхөн бүртгүүлснээс хойш 7 хоногийн дотор оруулах боломжтой.","r_submit":"Оруулах","r_skip":"Байхгүй (дараа Тохиргооноос оруулж болно)","r_cancel":"Цуцлах","r_check":"Mandu ID-г шалгана уу","r_saved":"Санал болгогч хадгалагдлаа · 5,000 тэмдэгтийн урамшуулал (30 хоног)","r_fail":"Хадгалж чадсангүй. Дахин оролдоно уу.","daily":"Өнөөдөр энэ дэлгүүрт орчуулах хэмжээ дууслаа. Маргааш дахин оролдоно уу.","e_notfound":"Ийм Mandu ID олдсонгүй. Дахин шалгана уу.","e_self":"Өөрийгөө санал болгогчоор оруулах боломжгүй.","e_cycle":"Бие биенээ санал болгогчоор оруулах боломжгүй.","e_expired":"Санал болгогчийг зөвхөн бүртгүүлснээс хойш 7 хоногийн дотор оруулна.","e_already":"Та санал болгогчоо аль хэдийн оруулсан.","grp":"Таныг группийн чатад урьсан байна","grp_n":"Группийн чатын урилга · {n} хүн","grp_chat":"Группийн чат","expired":"Энэ урилгын холбоосын хугацаа дууссан"},"hi":{"request":"MANDU से चैट अनुरोध","name_label":"अपना नाम बताइए","name_ph":"राहुल शर्मा","start":"अभी चैट शुरू करें","have_acc":"क्या पहले से खाता है?","login":"साइन इन","ref1":"🎁 साइन अप करें और 7 दिनों के भीतर रेफ़र करने वाले की Mandu ID डालें — मुफ़्त 5,000 के अलावा <b>5,000 अतिरिक्त अक्षर</b> पाएँ (30 दिन तक मान्य)।","ref2":"पता नहीं किसने रेफ़र किया? इस दुकान की ID {id} डाल दें।","name_req":"कृपया अपना नाम दर्ज करें","error":"कोई त्रुटि हुई।","link":"लिंक खोलें","back_guest":"बिना साइन इन किए चैट करें","r_title":"क्या किसी ने आपको रेफ़र किया?","r_desc":"रेफ़र करने वाले की Mandu ID डालें और मुफ़्त 5,000 के अलावा 5,000 अतिरिक्त अनुवाद अक्षर पाएँ (30 दिन तक मान्य)। साइन अप के 7 दिनों के भीतर ही डाल सकते हैं।","r_submit":"सबमिट करें","r_skip":"कोई नहीं (बाद में सेटिंग्स में डाल सकते हैं)","r_cancel":"रद्द करें","r_check":"कृपया Mandu ID जाँचें","r_saved":"रेफ़रर सहेजा गया · 5,000 अक्षर बोनस (30 दिन)","r_fail":"सहेजा नहीं जा सका। कृपया फिर से प्रयास करें।","daily":"आज इस दुकान की अनुवाद सीमा पूरी हो गई है। कृपया कल फिर प्रयास करें।","e_notfound":"यह Mandu ID नहीं मिली। कृपया फिर से जाँचें।","e_self":"आप स्वयं को रेफ़रर नहीं बना सकते।","e_cycle":"आप एक-दूसरे को रेफ़र नहीं कर सकते।","e_expired":"रेफ़रर केवल साइन अप के 7 दिनों के भीतर डाला जा सकता है।","e_already":"आप पहले ही रेफ़रर डाल चुके हैं।","grp":"आपको एक ग्रुप चैट में आमंत्रित किया गया है","grp_n":"ग्रुप चैट आमंत्रण · {n} लोग","grp_chat":"ग्रुप चैट","expired":"यह आमंत्रण लिंक समाप्त हो गया है"},"pt":{"request":"Pedido de conversa pelo MANDU","name_label":"Qual é o seu nome?","name_ph":"Ana Souza","start":"Começar a conversar","have_acc":"Já tem uma conta?","login":"Entrar","ref1":"🎁 Cadastre-se e insira em até 7 dias o ID Mandu de quem indicou você para ganhar <b>mais 5.000 caracteres</b> além dos 5.000 grátis (válidos por 30 dias).","ref2":"Não sabe quem indicou? Insira o ID desta loja: {id}.","name_req":"Insira seu nome","error":"Ocorreu um erro.","link":"Abrir link","back_guest":"Conversar sem entrar","r_title":"Alguém indicou você?","r_desc":"Insira o ID Mandu de quem indicou você e ganhe mais 5.000 caracteres de tradução além dos 5.000 grátis (válidos por 30 dias). Disponível apenas até 7 dias após o cadastro.","r_submit":"Enviar","r_skip":"Ninguém (você pode inserir depois em Configurações)","r_cancel":"Cancelar","r_check":"Verifique o ID Mandu","r_saved":"Indicação salva · Bônus de 5.000 caracteres (30 dias)","r_fail":"Não foi possível salvar. Tente novamente.","daily":"Você atingiu o limite de tradução de hoje nesta loja. Tente novamente amanhã.","e_notfound":"Esse ID Mandu não foi encontrado. Verifique novamente.","e_self":"Você não pode indicar a si mesmo.","e_cycle":"Vocês não podem indicar um ao outro.","e_expired":"A indicação só pode ser inserida até 7 dias após o cadastro.","e_already":"Você já inseriu uma indicação.","grp":"Você foi convidado para um chat em grupo","grp_n":"Convite para chat em grupo · {n} pessoas","grp_chat":"Chat em grupo","expired":"Este link de convite expirou"},"ar":{"request":"طلب محادثة عبر MANDU","name_label":"ما اسمك؟","name_ph":"محمد أحمد","start":"ابدأ المحادثة الآن","have_acc":"هل لديك حساب بالفعل؟","login":"تسجيل الدخول","ref1":"🎁 سجّل وأدخل معرّف Mandu الخاص بمن أوصى بك خلال 7 أيام لتحصل على <b>5,000 حرف إضافي</b> فوق الـ 5,000 المجانية (صالحة لمدة 30 يومًا).","ref2":"لا تعرف من أوصى بك؟ أدخل معرّف هذا المتجر {id}.","name_req":"يرجى إدخال اسمك","error":"حدث خطأ.","link":"فتح الرابط","back_guest":"الدردشة بدون تسجيل الدخول","r_title":"هل أوصى بك أحد؟","r_desc":"أدخل معرّف Mandu الخاص بمن أوصى بك لتحصل على 5,000 حرف ترجمة إضافي فوق الـ 5,000 المجانية (صالحة لمدة 30 يومًا). متاح فقط خلال 7 أيام من التسجيل.","r_submit":"إرسال","r_skip":"لا أحد (يمكنك إضافته لاحقًا من الإعدادات)","r_cancel":"إلغاء","r_check":"يرجى التحقق من معرّف Mandu","r_saved":"تم حفظ من أوصى بك · مكافأة 5,000 حرف (30 يومًا)","r_fail":"تعذّر الحفظ. يرجى المحاولة مرة أخرى.","daily":"لقد بلغت حد الترجمة اليومي لهذا المتجر. يرجى المحاولة غدًا.","e_notfound":"لم يتم العثور على معرّف Mandu هذا. يرجى التحقق مرة أخرى.","e_self":"لا يمكنك إدخال نفسك كموصٍ.","e_cycle":"لا يمكنكما التوصية ببعضكما البعض.","e_expired":"يمكن إدخال من أوصى بك فقط خلال 7 أيام من التسجيل.","e_already":"لقد أدخلت من أوصى بك بالفعل.","grp":"تمت دعوتك إلى محادثة جماعية","grp_n":"دعوة إلى محادثة جماعية · {n} أشخاص","grp_chat":"محادثة جماعية","expired":"انتهت صلاحية رابط الدعوة هذا"},"id":{"request":"Permintaan chat lewat MANDU","name_label":"Siapa nama Anda?","name_ph":"Budi Santoso","start":"Mulai chat sekarang","have_acc":"Sudah punya akun?","login":"Masuk","ref1":"🎁 Daftar dan masukkan Mandu ID pemberi referensi dalam 7 hari untuk mendapatkan <b>tambahan 5.000 karakter</b> di atas 5.000 karakter gratis (berlaku 30 hari).","ref2":"Tidak tahu siapa? Masukkan ID toko ini: {id}.","name_req":"Silakan masukkan nama Anda","error":"Terjadi kesalahan.","link":"Buka tautan","back_guest":"Chat tanpa masuk","r_title":"Apakah ada yang mereferensikan Anda?","r_desc":"Masukkan Mandu ID pemberi referensi untuk mendapatkan tambahan 5.000 karakter terjemahan di atas 5.000 karakter gratis (berlaku 30 hari). Hanya bisa dalam 7 hari setelah mendaftar.","r_submit":"Kirim","r_skip":"Tidak ada (bisa ditambahkan nanti di Pengaturan)","r_cancel":"Batal","r_check":"Silakan periksa Mandu ID","r_saved":"Referensi tersimpan · Bonus 5.000 karakter (30 hari)","r_fail":"Gagal menyimpan. Silakan coba lagi.","daily":"Batas terjemahan hari ini untuk toko ini sudah habis. Silakan coba lagi besok.","e_notfound":"Mandu ID tersebut tidak ditemukan. Silakan periksa lagi.","e_self":"Anda tidak bisa memasukkan diri sendiri sebagai pemberi referensi.","e_cycle":"Kalian tidak bisa saling mereferensikan.","e_expired":"Pemberi referensi hanya bisa dimasukkan dalam 7 hari setelah mendaftar.","e_already":"Anda sudah memasukkan pemberi referensi.","grp":"Anda diundang ke chat grup","grp_n":"Undangan chat grup · {n} orang","grp_chat":"Chat grup","expired":"Tautan undangan ini sudah kedaluwarsa"},"it":{"request":"Richiesta di chat tramite MANDU","name_label":"Come ti chiami?","name_ph":"Mario Rossi","start":"Inizia a chattare","have_acc":"Hai già un account?","login":"Accedi","ref1":"🎁 Registrati e inserisci entro 7 giorni l’ID Mandu di chi ti ha invitato per ricevere <b>5.000 caratteri in più</b> oltre ai 5.000 gratuiti (validi 30 giorni).","ref2":"Non sai chi? Inserisci l’ID di questo negozio: {id}.","name_req":"Inserisci il tuo nome","error":"Si è verificato un errore.","link":"Apri link","back_guest":"Chatta senza accedere","r_title":"Qualcuno ti ha consigliato MANDU?","r_desc":"Inserisci l’ID Mandu di chi ti ha invitato e ricevi 5.000 caratteri di traduzione in più oltre ai 5.000 gratuiti (validi 30 giorni). Disponibile solo entro 7 giorni dalla registrazione.","r_submit":"Invia","r_skip":"Nessuno (puoi aggiungerlo più tardi nelle Impostazioni)","r_cancel":"Annulla","r_check":"Controlla l’ID Mandu","r_saved":"Referente salvato · Bonus di 5.000 caratteri (30 giorni)","r_fail":"Impossibile salvare. Riprova.","daily":"Hai raggiunto il limite di traduzione di oggi per questo negozio. Riprova domani.","e_notfound":"ID Mandu non trovato. Controllalo di nuovo.","e_self":"Non puoi indicare te stesso come referente.","e_cycle":"Non potete indicarvi a vicenda.","e_expired":"Il referente può essere inserito solo entro 7 giorni dalla registrazione.","e_already":"Hai già inserito un referente.","grp":"Sei stato invitato a una chat di gruppo","grp_n":"Invito a una chat di gruppo · {n} persone","grp_chat":"Chat di gruppo","expired":"Questo link di invito è scaduto"},"da":{"request":"Chatanmodning via MANDU","name_label":"Hvad hedder du?","name_ph":"Mette Jensen","start":"Start chatten nu","have_acc":"Har du allerede en konto?","login":"Log ind","ref1":"🎁 Tilmeld dig og indtast Mandu-ID’et på den, der anbefalede dig, inden for 7 dage, og få <b>5.000 ekstra tegn</b> oven i de 5.000 gratis (gyldige i 30 dage).","ref2":"Ved du ikke hvem? Indtast denne butiks ID: {id}.","name_req":"Indtast dit navn","error":"Der opstod en fejl.","link":"Åbn link","back_guest":"Chat uden at logge ind","r_title":"Har nogen anbefalet dig?","r_desc":"Indtast Mandu-ID’et på den, der anbefalede dig, og få 5.000 ekstra oversættelsestegn oven i de 5.000 gratis (gyldige i 30 dage). Kun muligt inden for 7 dage efter tilmelding.","r_submit":"Indsend","r_skip":"Ingen (du kan tilføje det senere under Indstillinger)","r_cancel":"Annuller","r_check":"Tjek venligst Mandu-ID’et","r_saved":"Anbefaler gemt · 5.000 tegn i bonus (30 dage)","r_fail":"Kunne ikke gemme. Prøv igen.","daily":"Du har nået dagens oversættelsesgrænse for denne butik. Prøv igen i morgen.","e_notfound":"Det Mandu-ID blev ikke fundet. Tjek det igen.","e_self":"Du kan ikke angive dig selv som anbefaler.","e_cycle":"I kan ikke anbefale hinanden.","e_expired":"En anbefaler kan kun indtastes inden for 7 dage efter tilmelding.","e_already":"Du har allerede indtastet en anbefaler.","grp":"Du er inviteret til en gruppechat","grp_n":"Invitation til gruppechat · {n} personer","grp_chat":"Gruppechat","expired":"Dette invitationslink er udløbet"}};
+function _G(k){const T=GUEST_T[typeof _uiLang==='undefined'?'ko':_uiLang]||GUEST_T.en;return T[k]||GUEST_T.en[k]||k;}
+function renderGuestLabels(){
+  const set=function(id,v){const el=document.getElementById(id);if(el)el.textContent=v;};
+  if(!joinCode)set('guest-req-txt',_G('request'));
+  set('guest-name-label',_G('name_label'));set('guest-start-btn',_G('start'));
+  set('guest-have-acc',_G('have_acc'));set('guest-login-lnk',_G('login'));
+  const ni=document.getElementById('guest-name-input');if(ni)ni.placeholder=_G('name_ph');
+  const rh=document.getElementById('guest-ref-hint');if(rh&&rh.dataset.id!==undefined)rh.innerHTML=_guestRefText(rh.dataset.id);
+}
 function t(key){const T=UI_T[_uiLang]||UI_T.ko;return T[key]||UI_T.ko[key]||key;}
 
 function applyUILanguage(lang){
@@ -5901,6 +5913,7 @@ function applyUILanguage(lang){
   document.documentElement.dir=(lang==='ar')?'rtl':'ltr';
   const T=UI_T[_uiLang]||UI_T.ko;
   try{renderLegalLabels();}catch(e){}
+  try{renderGuestLabels();}catch(e){}
   // Plan sheet
   const pst=document.getElementById('plan-sheet-title');if(pst)pst.textContent=T.plan_title;
   const pcb=document.getElementById('plan-cancel-btn');if(pcb)pcb.textContent=T.plan_cancel;
