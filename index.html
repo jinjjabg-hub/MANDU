@@ -1126,6 +1126,19 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           <div class="settings-chevron"><span class="ms">chevron_right</span></div>
         </div>
       </div>
+      <div id="tester-section" style="display:none;">
+        <div class="settings-section-label" id="tester-section-label">테스트</div>
+        <div class="settings-card">
+          <div class="settings-row" onclick="openTesterPicker()">
+            <div class="settings-icon-wrap"><span class="ms">smart_toy</span></div>
+            <div class="settings-row-info">
+              <div class="settings-row-label" id="tester-row-label">AI 테스터와 대화</div>
+              <div class="settings-row-sub" id="tester-row-sub">언어를 고르면 그 나라 사람처럼 대화해요</div>
+            </div>
+            <div class="settings-chevron"><span class="ms">chevron_right</span></div>
+          </div>
+        </div>
+      </div>
       <div class="settings-section-label" data-i18n="settings_section_invite">초대</div>
       <div class="settings-card">
         <div class="settings-row" onclick="copyInviteLink()">
@@ -2629,6 +2642,7 @@ async function toggleIdSearch(){
 // 프로필 사진이 없는 계정(이메일 가입 등)용 기본 아바타 — 빈 src로 깨진 이미지 아이콘이 보이는 것 방지
 const DEFAULT_AVATAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#e9ddff"/><circle cx="32" cy="25" r="11" fill="#6b38d4"/><path d="M12 56c2-11 10-17 20-17s18 6 20 17z" fill="#6b38d4"/></svg>');
 function updateUIAfterLogin(){
+  setTimeout(function(){try{checkTesterEnabled();}catch(e){}},1500);
   if(!currentUser||currentUser.isAnonymous)return;
   initBlocks();initAiTranslate();initStoreLabels();initIdSearch();initReferral();
   setTimeout(syncPublicProfile,1500); // 내 프로필 문서가 구독돼 usersMap에 들어온 뒤
@@ -5381,6 +5395,7 @@ async function sendImage(input){
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('이미지 전송 완료!');
     sendPushNotification(others,'[사진]');
+    requestTesterReply(currentRoomId);
   }catch(e){showToast('업로드 실패. 다시 시도해요');}
   input.value='';
 }
@@ -5409,6 +5424,51 @@ async function sendMessage(){
   sendPushNotification(others,text);
   if(isGuest)checkGuestUpgrade();
   _autoAway();
+  requestTesterReply(currentRoomId);
+}
+
+
+// ── AI 테스터 ─────────────────────────────────────────────
+// 고른 언어로만 말하는 AI 대화 상대. 서버(/api/tester/*)가 방(tester_{uid})을 만들고 답을 쓴다.
+// 사용 권한은 서버가 정한다(기본: 관리자만). 권한이 없으면 설정에 메뉴가 보이지 않는다.
+const TESTER_LANG_OPTS=[['ko','🇰🇷','한국어'],['en','🇺🇸','English'],['ja','🇯🇵','日本語'],['zh','🇨🇳','中文'],['es','🇪🇸','Español'],['fr','🇫🇷','Français'],['de','🇩🇪','Deutsch'],['vi','🇻🇳','Tiếng Việt'],['th','🇹🇭','ไทย'],['mn','🇲🇳','Монгол'],['hi','🇮🇳','हिन्दी'],['pt','🇧🇷','Português'],['ar','🇸🇦','العربية'],['id','🇮🇩','Bahasa Indonesia'],['it','🇮🇹','Italiano'],['da','🇩🇰','Dansk']];
+function _isTesterRoom(roomId){return !!(roomId&&currentUser&&roomId==='tester_'+currentUser.uid);}
+async function checkTesterEnabled(){
+  const sec=document.getElementById('tester-section');if(!sec||!currentUser||currentUser.isAnonymous)return;
+  const r=await _serverGet('/api/tester/enabled');
+  sec.style.display=(r.ok&&r.data&&r.data.enabled)?'':'none';
+  const lb=document.getElementById('tester-row-label');if(lb)lb.textContent=_L('AI 테스터와 대화','Chat with AI tester');
+  const sb=document.getElementById('tester-row-sub');if(sb)sb.textContent=_L('언어를 고르면 그 나라 사람처럼 대화해요','Pick a language and it chats like a native speaker');
+  const sl=document.getElementById('tester-section-label');if(sl)sl.textContent=_L('테스트','Testing');
+}
+function openTesterPicker(){
+  const items=TESTER_LANG_OPTS.map(function(o){
+    return {icon:'translate',label:o[1]+'  '+o[2],fn:function(){openTesterRoom(o[0]);}};
+  });
+  _modSheet(_L('AI 테스터 언어 선택','Choose the tester\'s language'),items);
+}
+async function openTesterRoom(lang){
+  showToast(_L('AI 테스터를 부르는 중…','Calling the AI tester…'));
+  const r=await _serverPost('/api/tester/open',{lang:lang},true);
+  if(!r.ok){showToast(r.status===403?_L('이 계정에서는 AI 테스터를 쓸 수 없어요','The AI tester is not available for this account'):_L('AI 테스터를 열지 못했어요. 잠시 후 다시 시도해주세요','Could not open the AI tester. Please try again.'));return;}
+  openRoom(r.data.roomId,r.data.name,'icon-192.png',false);
+}
+let _testerBusy=false,_testerAgain=false;
+async function requestTesterReply(roomId){
+  if(!_isTesterRoom(roomId))return;
+  if(_testerBusy){_testerAgain=true;return;}  // 답을 기다리는 중에 또 보내면, 끝난 뒤 한 번 더 묻는다
+  _testerBusy=true;
+  const sub=document.querySelector('#chat-screen .chat-hd-sub span[data-i18n="chat_autotranslate_on"]');
+  const prev=sub?sub.textContent:'';
+  if(sub)sub.textContent=_L('입력 중…','Typing…');
+  try{
+    const r=await _serverPost('/api/tester/reply',{roomId:roomId},true);
+    if(!r.ok)showToast(r.status===429?_L('잠시 쉬었다가 다시 말을 걸어주세요 (사용 한도)','Please wait a little before sending more (limit reached)'):_L('AI 테스터가 답하지 못했어요','The AI tester could not reply'));
+  }finally{
+    if(sub)sub.textContent=prev||t('chat_autotranslate_on');
+    _testerBusy=false;
+    if(_testerAgain){_testerAgain=false;requestTesterReply(roomId);}
+  }
 }
 
 // ── 만두 스티커 ───────────────────────────────────────────
@@ -5446,6 +5506,7 @@ async function sendSticker(id){
     sendPushNotification(others,label);
     if(isGuest)checkGuestUpgrade();
     _autoAway();
+    requestTesterReply(currentRoomId);
   }catch(e){showToast(_L('스티커를 보내지 못했어요. 다시 시도해요','Could not send the sticker. Please try again'));}
   _stickerSending=false;
 }
@@ -5537,6 +5598,7 @@ async function sendFile(input){
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('파일 전송 완료!');
     sendPushNotification(others,'[파일] '+file.name);
+    requestTesterReply(currentRoomId);
   }catch(e){showToast('업로드 실패. 다시 시도해요');}
   input.value='';
 }
