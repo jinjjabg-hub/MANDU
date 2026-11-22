@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>만두 클래스 · 교수님</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="../icon-192.png">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#f4f5f7;--card:#fff;--ink:#16181d;--sub:#5d6470;--line:#e3e6eb;
+  --brand:#1f8a5b;--brand-ink:#fff;--live:#e0312b;--pause:#7b818c;--warn:#b26a00;--warn-bg:#fff4e0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.top h1{font-size:20px;margin:0;flex:1}
+.top .who{font-size:13px;color:var(--sub)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.hidden{display:none!important}
+.btn{border:0;border-radius:12px;padding:14px 20px;font-size:17px;font-weight:700;background:var(--brand);color:var(--brand-ink)}
+.btn.ghost{background:#eef0f3;color:var(--ink)}
+.btn:disabled{opacity:.35;cursor:default}
+.notice{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:14px 16px;font-size:15px;line-height:1.5;margin-bottom:16px}
+input{font:inherit;font-size:16px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;width:100%}
+.col{display:flex;flex-direction:column;gap:10px}
+.center{max-width:420px;margin:40px auto}
+.muted{color:var(--sub);font-size:14px;line-height:1.5}
+/* 송출 상태 */
+#banner{border-radius:16px;padding:18px 22px;font-size:28px;font-weight:800;display:flex;align-items:center;gap:14px;margin-bottom:16px;color:#fff;background:var(--pause)}
+#banner.live{background:var(--live)}
+#banner.ready{background:#3a4150}
+#banner.ended{background:#3a4150}
+#banner .dot{width:18px;height:18px;border-radius:50%;background:#fff;flex:none}
+#banner.live .dot{animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+#banner .mic{margin-left:auto;font-size:15px;font-weight:600;opacity:.9}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:16px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.codebox{text-align:center}
+.code{font-size:56px;font-weight:900;letter-spacing:6px;margin:4px 0 12px;font-variant-numeric:tabular-nums}
+#qr{display:inline-block;background:#fff;padding:12px;border-radius:12px}
+#qr img,#qr canvas{display:block;width:240px!important;height:240px!important}
+.link{font-size:12px;color:var(--sub);word-break:break-all;margin-top:8px}
+.controls{display:flex;gap:10px;margin-bottom:16px}
+.controls .btn{flex:1;padding:20px;font-size:22px}
+#btnStart{background:var(--live)}
+#btnPause{background:#4a505b}
+#btnEnd{background:#eef0f3;color:var(--ink)}
+.viewers{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.chip{background:#eef0f3;border-radius:999px;padding:6px 12px;font-size:14px}
+.lines{max-height:52vh;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.line{border-bottom:1px solid var(--line);padding:8px 2px;font-size:18px;line-height:1.5}
+.line .st{font-size:12px;color:var(--sub);margin-top:2px}
+.line .st.err{color:var(--live)}
+#interim{color:var(--sub);font-size:18px;min-height:28px;padding:8px 2px;font-style:italic}
+.stats{font-size:13px;color:var(--sub);margin-top:12px;line-height:1.6}
+h3{margin:0 0 10px;font-size:16px}
+#qrFull{position:fixed;inset:0;background:#fff;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#qrFull .code{font-size:min(16vw,120px)}
+#qrFullBox img,#qrFullBox canvas{width:min(70vh,80vw)!important;height:min(70vh,80vw)!important}
+.small-btn{border:0;background:#eef0f3;border-radius:8px;padding:8px 12px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>🥟 만두 클래스 <span class="muted">교수님 화면</span></h1>
+    <span class="who" id="who"></span>
+    <button class="small-btn hidden" id="btnLogout">로그아웃</button>
+  </div>
+
+  <div id="browserWarn" class="notice hidden"></div>
+
+  <!-- 로그인 -->
+  <div id="vLogin" class="card center hidden">
+    <h3>만두 계정으로 로그인</h3>
+    <div class="col">
+      <button class="btn" id="btnGoogle">Google로 로그인</button>
+      <div class="muted" style="text-align:center">또는 이메일</div>
+      <input id="email" type="email" placeholder="이메일" autocomplete="username">
+      <input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password">
+      <button class="btn ghost" id="btnEmail">이메일로 로그인</button>
+      <div class="muted">카카오·전화번호로 가입하셨다면 <a href="../">만두 메신저</a>에서 먼저 로그인한 뒤 이 페이지를 다시 열어 주세요. (같은 브라우저면 자동 로그인)</div>
+      <div class="muted" id="loginErr" style="color:var(--live)"></div>
+    </div>
+  </div>
+
+  <!-- 수업 만들기 -->
+  <div id="vHome" class="card center hidden">
+    <h3>새 수업</h3>
+    <div class="col">
+      <input id="title" maxlength="60" placeholder="수업 이름 (예: 운영체제 3주차) — 비워도 됩니다">
+      <button class="btn" id="btnCreate">수업 만들기</button>
+      <div id="resumeBox" class="hidden">
+        <div class="muted" style="margin:8px 0 6px">진행 중인 수업이 있어요</div>
+        <button class="btn ghost" id="btnResume" style="width:100%"></button>
+      </div>
+      <div class="muted">수업을 만들면 학생용 QR 코드가 나옵니다. 수업 중에는 <b>[시작]·[일시정지]·[종료]</b>만 누르시면 됩니다. 말씀하시면 문장 단위로 자동으로 끊겨 학생들 언어로 번역됩니다.</div>
+    </div>
+  </div>
+
+  <!-- 수업 화면 -->
+  <div id="vRoom" class="hidden">
+    <div id="banner" class="ready"><span id="bannerText">대기 중</span><span class="mic" id="micText"></span></div>
+    <div class="controls">
+      <button class="btn" id="btnStart">▶ 시작</button>
+      <button class="btn" id="btnPause">⏸ 일시정지</button>
+      <button class="btn" id="btnEnd">■ 종료</button>
+    </div>
+    <div class="grid">
+      <div class="card codebox">
+        <div class="muted" id="classTitle"></div>
+        <div class="code" id="codeText"></div>
+        <div id="qr"></div>
+        <div class="link" id="joinLink"></div>
+        <div style="margin-top:10px"><button class="small-btn" id="btnQrFull">QR 크게 보기 (화면에 띄우기)</button></div>
+        <h3 style="margin-top:18px;text-align:left">접속한 학생</h3>
+        <div class="viewers" id="viewers"><span class="muted">아직 없음 — 학생이 없으면 번역하지 않습니다</span></div>
+        <div class="stats" id="stats"></div>
+      </div>
+      <div class="card">
+        <h3>최근 자막 (한국어) <span class="muted" style="font-weight:400">— 인식이 제대로 되는지 확인하세요</span></h3>
+        <div class="lines" id="lines"></div>
+        <div id="interim"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="qrFull" class="hidden">
+  <div style="font-size:22px;font-weight:700">휴대폰 카메라로 찍어 입장하세요 · Scan to join</div>
+  <div id="qrFullBox"></div>
+  <div class="code" id="qrFullCode"></div>
+  <button class="btn ghost" id="btnQrClose">닫기</button>
+</div>
+
+<script>
+// ── 설정 ─────────────────────────────────────────────
+const SERVER = 'https://mandu-server.onrender.com';
+// 같은 프로젝트·같은 기본 앱 → mandu.bizmy.net 에서 만두 메신저에 로그인돼 있으면 여기서도 그대로 로그인
+firebase.initializeApp({
+  apiKey:"AIzaSyAmebb0FQ4MxywQlMGgm8zrL2Ta97eskbo",
+  authDomain:"mandutok.firebaseapp.com",
+  projectId:"mandutok",
+  storageBucket:"mandutok.firebasestorage.app",
+  messagingSenderId:"1035686595939",
+  appId:"1:1035686595939:web:bea62dd7797325cff41756"
+});
+const auth = firebase.auth();
+const db = firebase.firestore();
+const FV = firebase.firestore.FieldValue;
+const LANG_NAMES = {en:'English',ja:'日本語',zh:'中文',es:'Español',fr:'Français',de:'Deutsch',vi:'Tiếng Việt',th:'ภาษาไทย',mn:'Монгол',hi:'हिन्दी',pt:'Português',ar:'العربية',id:'Indonesia',it:'Italiano',da:'Dansk'};
+// 원가 추정 단가 (서버 기본 모델 claude-haiku-5-5: 입력 $0.10 / 출력 $0.50 per 1M 토큰, 구글 번역 $20 per 1M 글자)
+const PRICE = {aiIn:0.10/1e6, aiOut:0.50/1e6, google:20/1e6, krw:1400};
+const SHORT_MIN = 5;        // 5자 미만 조각은 다음 조각과 합친다
+const SHORT_WAIT = 1500;    // 1.5초 안에 다음 조각이 없으면 그냥 보낸다
+const LIVE_EVERY = 1000;    // 말하는 중 자막 전송 간격 (1초 — Firestore 문서당 권장 쓰기 속도 이내, 읽기 비용 절반)
+const FORCE_SPLIT = 220;    // 쉬지 않고 이만큼 말하면 강제로 문장을 끊는다 (학생 자막이 너무 늦지 않게)
+
+const $ = id => document.getElementById(id);
+const show = (id, on) => $(id).classList.toggle('hidden', !on);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ── 브라우저 확인 ───────────────────────────────────────
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const UA = navigator.userAgent;
+const isIOS = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isChrome = /Chrome\//.test(UA) && !/Edg\/|OPR\/|SamsungBrowser|Whale/.test(UA) && !isIOS;
+let speechBlocked = false;
+if (!SR || isIOS) {
+  speechBlocked = true;
+  $('browserWarn').innerHTML = '⚠ <b>교수님 화면은 Chrome에서 열어주세요.</b><br>이 브라우저(특히 아이폰·아이패드)는 연속 음성 인식을 지원하지 않습니다. 노트북 Chrome을 권장합니다.';
+  show('browserWarn', true);
+} else if (!isChrome) {
+  $('browserWarn').innerHTML = '⚠ 교수님 화면은 <b>Chrome</b>에서 가장 안정적입니다. 지금 브라우저에서는 음성 인식이 끊길 수 있어요.';
+  show('browserWarn', true);
+}
+
+// 서버 깨우기 (Render 무료 서버는 쉬면 잠들어 첫 응답이 30초 이상 걸릴 수 있다)
+fetch(SERVER + '/api/ping', {cache:'no-store'}).catch(()=>{});
+
+// ── 로그인 ─────────────────────────────────────────────
+let me = null;
+auth.onAuthStateChanged(u => {
+  me = (u && !u.isAnonymous) ? u : null;
+  $('who').textContent = me ? (me.displayName || me.email || '') : '';
+  show('btnLogout', !!me);
+  if (!me) { showView('vLogin'); return; }
+  if (!classCode) goHome();
+});
+$('btnGoogle').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => $('loginErr').textContent = '로그인 실패: ' + (e.code || e.message));
+$('btnEmail').onclick = () => auth.signInWithEmailAndPassword($('email').value.trim(), $('pw').value).catch(e => $('loginErr').textContent = '로그인 실패: ' + (e.code || e.message));
+$('btnLogout').onclick = () => { if (mode === 'live' && !confirm('송출 중입니다. 로그아웃할까요?')) return; stopRec(); auth.signOut(); location.reload(); };
+
+function showView(v) { ['vLogin','vHome','vRoom'].forEach(x => show(x, x === v)); }
+
+// ── 수업 만들기 / 이어하기 ────────────────────────────────
+let classCode = null, classRef = null, mode = 'ready', unsubs = [];
+const LAST_KEY = 'mandu_class_last';
+
+async function goHome() {
+  showView('vHome');
+  show('resumeBox', false);
+  let last = null;
+  try { last = localStorage.getItem(LAST_KEY); } catch (e) {}
+  if (!last) return;
+  try {
+    const s = await db.collection('classes').doc(last).get();
+    const d = s.data();
+    if (s.exists && d.owner === me.uid && d.status !== 'ended') {
+      $('btnResume').textContent = `이어서 하기 · ${last}${d.title ? ' · ' + d.title : ''}`;
+      $('btnResume').onclick = () => openClass(last);
+      show('resumeBox', true);
+    }
+  } catch (e) {}
+}
+
+function randomCode() {
+  const a = new Uint32Array(1); crypto.getRandomValues(a);
+  return String(100000 + (a[0] % 900000));
+}
+
+$('btnCreate').onclick = async () => {
+  $('btnCreate').disabled = true;
+  const title = $('title').value.trim().slice(0, 60);
+  try {
+    for (let i = 0; i < 10; i++) {
+      const code = randomCode();
+      const ref = db.collection('classes').doc(code);
+      try { if ((await ref.get()).exists) continue; } catch (e) {}
+      try {
+        await ref.set({
+          owner: me.uid, ownerName: (me.displayName || '').slice(0, 60), title, status: 'ready',
+          createdAt: FV.serverTimestamp(), updatedAt: FV.serverTimestamp(),
+          expireAt: firebase.firestore.Timestamp.fromMillis(Date.now() + 30 * 864e5)
+        });
+        await openClass(code);
+        return;
+      } catch (e) { console.warn('create failed', code, e); }
+    }
+    alert('수업을 만들지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.');
+  } finally { $('btnCreate').disabled = false; }
+};
+
+async function openClass(code) {
+  classCode = code;
+  classRef = db.collection('classes').doc(code);
+  try { localStorage.setItem(LAST_KEY, code); } catch (e) {}
+  const d = (await classRef.get()).data() || {};
+  mode = d.status === 'live' ? 'paused' : (d.status || 'ready');   // 새로 열면 송출은 멈춘 상태로 시작
+  if (d.status === 'live') classRef.update({status: 'paused', updatedAt: FV.serverTimestamp()}).catch(()=>{});
+  $('classTitle').textContent = d.title || '';
+  $('codeText').textContent = code;
+  const url = location.origin + location.pathname.replace(/teacher\.html.*$/, '') + 'student.html?room=' + code;
+  $('joinLink').textContent = url;
+  $('qr').innerHTML = '';
+  new QRCode($('qr'), {text: url, width: 480, height: 480, correctLevel: QRCode.CorrectLevel.M});
+  $('qrFullBox').innerHTML = '';
+  new QRCode($('qrFullBox'), {text: url, width: 900, height: 900, correctLevel: QRCode.CorrectLevel.M});
+  $('qrFullCode').textContent = code;
+  showView('vRoom');
+  render();
+  watchViewers();
+  watchStats();
+}
+$('btnQrFull').onclick = () => show('qrFull', true);
+$('btnQrClose').onclick = () => show('qrFull', false);
+
+// ── 접속 학생(언어별) · 사용량 ────────────────────────────
+let viewerDocs = {};
+function watchViewers() {
+  unsubs.push(classRef.collection('languages').onSnapshot(snap => {
+    snap.docChanges().forEach(ch => { viewerDocs[ch.doc.id] = ch.doc.data({serverTimestamps:'estimate'}).u || {}; });
+    renderViewers();
+  }));
+  setInterval(renderViewers, 30000);
+}
+function renderViewers() {
+  const cutoff = Date.now() - 300000;   // 서버와 같은 5분 기준
+  const chips = [];
+  Object.keys(viewerDocs).sort().forEach(lang => {
+    const n = Object.values(viewerDocs[lang]).filter(ts => ts && ts.toMillis && ts.toMillis() > cutoff).length;
+    if (n) chips.push(`<span class="chip">${LANG_NAMES[lang] || lang} ${n}명</span>`);
+  });
+  $('viewers').innerHTML = chips.length ? chips.join('') : '<span class="muted">아직 없음 — 학생이 없으면 번역하지 않습니다</span>';
+}
+function watchStats() {
+  unsubs.push(classRef.collection('stats').doc('usage').onSnapshot(s => {
+    const d = s.data(); if (!d) return;
+    const usd = (d.aiInTokens || 0) * PRICE.aiIn + (d.aiOutTokens || 0) * PRICE.aiOut + (d.googleChars || 0) * PRICE.google;
+    const per = d.segments ? usd / d.segments : 0;
+    $('stats').innerHTML = `문장 ${d.segments || 0}개 · 한국어 ${d.srcChars || 0}자 · 번역 ${d.trChars || 0}자<br>`
+      + `번역 원가(추정) 약 ${Math.round(usd * PRICE.krw * 10) / 10}원 · 문장당 약 ${(per * PRICE.krw).toFixed(2)}원`
+      + `<br><span style="opacity:.7">AI 토큰 입력 ${d.aiInTokens || 0} / 출력 ${d.aiOutTokens || 0} · 구글 ${d.googleChars || 0}자</span>`;
+  }, () => {}));
+}
+
+// ── 화면 상태 ──────────────────────────────────────────
+function render() {
+  const b = $('banner');
+  b.className = mode;
+  $('bannerText').textContent = {live:'🔴 송출 중', paused:'⏸ 일시정지', ready:'대기 중 — [시작]을 누르세요', ended:'수업 종료'}[mode];
+  $('btnStart').disabled = speechBlocked || !(mode === 'ready' || mode === 'paused');
+  $('btnPause').disabled = mode !== 'live';
+  $('btnEnd').disabled = mode === 'ended';
+  $('btnStart').textContent = mode === 'paused' ? '▶ 다시 시작' : '▶ 시작';
+  if (mode !== 'live') $('micText').textContent = '';
+  if (mode === 'ended') {
+    $('btnEnd').textContent = '새 수업 만들기';
+    $('btnEnd').disabled = false;
+  } else $('btnEnd').textContent = '■ 종료';
+}
+function setMic(t) { if (mode === 'live') $('micText').textContent = t; }
+
+async function setStatus(s) {
+  try { await classRef.update({status: s, updatedAt: FV.serverTimestamp()}); }
+  catch (e) { console.warn('status', e); }
+}
+
+$('btnStart').onclick = async () => {
+  mode = 'live'; render();
+  await setStatus('live');
+  await wakeOn();
+  startRec(true);
+};
+$('btnPause').onclick = async () => {
+  mode = 'paused';
+  stopRec();               // 듣던 중인 말은 버린다 → 일시정지 이후 말은 학생에게 가지 않는다
+  flushShort();            // 일시정지 전에 말한 짧은 조각은 보낸다
+  clearLive();
+  render();
+  await setStatus('paused');
+};
+$('btnEnd').onclick = async () => {
+  if (mode === 'ended') { location.reload(); return; }
+  if (!confirm('수업을 종료할까요? 학생 화면에 "수업이 끝났습니다"가 표시됩니다.')) return;
+  mode = 'ended';
+  stopRec(); flushShort(); clearLive(); render();
+  await setStatus('ended');
+  wakeOff();
+  try { localStorage.removeItem(LAST_KEY); } catch (e) {}
+};
+window.addEventListener('beforeunload', e => { if (mode === 'live') { e.preventDefault(); e.returnValue = ''; } });
+
+// ── 화면 꺼짐 방지 ──────────────────────────────────────
+let wakeLock = null;
+async function wakeOn() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+function wakeOff() { try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null; }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && mode === 'live') wakeOn(); });
+
+// ── 음성 인식 (끊기면 자동 재시작) ─────────────────────────
+let rec = null, recOn = false, lastErr = '', lastAttempt = 0, lastResultAt = 0, restartTimer = null;
+let interim = '';
+
+function startRec(fresh) {
+  if (mode !== 'live' || recOn) return;
+  clearTimeout(restartTimer);
+  lastAttempt = Date.now();
+  const r = new SR();
+  r.lang = 'ko-KR'; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
+  r.onstart = () => { if (r !== rec) return; recOn = true; lastResultAt = Date.now(); setMic('🎤 듣는 중'); };
+  r.onresult = ev => { if (r === rec) onResult(ev); };
+  r.onerror = ev => {
+    if (r !== rec) return;
+    lastErr = ev.error;
+    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+      mode = 'paused'; render(); setStatus('paused');
+      alert('마이크 사용이 허용되지 않았어요. 주소창 왼쪽 자물쇠 → 마이크 → 허용 후 [시작]을 다시 눌러 주세요.');
+    }
+  };
+  r.onend = () => {
+    if (r !== rec) return;
+    recOn = false; interim = ''; renderInterim();
+    if (mode === 'live') {
+      setMic('🔄 다시 연결 중…');
+      restartTimer = setTimeout(startRec, lastErr === 'network' ? 1000 : 150);   // 자동 재시작 — 교수님은 아무것도 안 눌러도 된다
+    }
+    lastErr = '';
+  };
+  rec = r;
+  try { r.start(); } catch (e) { recOn = false; restartTimer = setTimeout(startRec, 600); }
+}
+function stopRec() {
+  clearTimeout(restartTimer);
+  const r = rec; rec = null; recOn = false; interim = ''; renderInterim();
+  try { r && r.abort(); } catch (e) {}
+}
+// 감시: 재시작이 어떤 이유로 안 됐거나, 인식이 멈춘 채 응답이 없으면 다시 켠다
+setInterval(() => {
+  if (mode !== 'live') return;
+  if (!recOn && Date.now() - lastAttempt > 3000) startRec();
+  else if (recOn && Date.now() - lastResultAt > 60000) { try { rec.stop(); } catch (e) {} lastResultAt = Date.now(); }
+}, 2000);
+
+let lastFinal = '', lastFinalAt = 0;
+function onResult(ev) {
+  if (mode !== 'live') return;
+  lastResultAt = Date.now();
+  let txt = '';
+  for (let i = ev.resultIndex; i < ev.results.length; i++) {
+    const res = ev.results[i], t = res[0].transcript;
+    if (res.isFinal) onFinal(t); else txt += t;
+  }
+  interim = txt.trim();
+  renderInterim();
+  if (interim.length > FORCE_SPLIT) { try { rec.stop(); } catch (e) {} }   // 확정 결과를 받고 onend에서 바로 재시작
+}
+
+// 짧은 조각 합치기
+let shortBuf = '', shortTimer = null;
+function onFinal(t) {
+  t = (t || '').trim();
+  if (!t) return;
+  // 안드로이드 Chrome은 같은 문장을 반복해서 확정으로 보내는 경우가 있다 → 중복 제거
+  const now = Date.now();
+  if (now - lastFinalAt < 3000) {
+    if (t === lastFinal) return;
+    if (lastFinal && t.startsWith(lastFinal)) { t = t.slice(lastFinal.length).trim(); if (!t) return; }
+  }
+  lastFinal = t; lastFinalAt = now;
+  const text = shortBuf ? shortBuf + ' ' + t : t;
+  shortBuf = ''; clearTimeout(shortTimer);
+  if (text.replace(/\s/g, '').length < SHORT_MIN) {
+    shortBuf = text;
+    shortTimer = setTimeout(flushShort, SHORT_WAIT);
+    return;
+  }
+  sendSegment(text);
+}
+function flushShort() { clearTimeout(shortTimer); if (shortBuf) { const t = shortBuf; shortBuf = ''; sendSegment(t); } }
+
+// ── 말하는 중 자막 (1초마다만 전송) ───────────────────────
+let liveSent = '', liveBusy = false;
+function renderInterim() { $('interim').textContent = interim ? '🎤 ' + interim : ''; }
+setInterval(() => {
+  if (mode !== 'live' || !classRef || liveBusy) return;
+  const t = interim.slice(-300);
+  if (t === liveSent) return;
+  liveBusy = true; liveSent = t;
+  classRef.collection('live').doc('now').set({text: t, t: FV.serverTimestamp()})
+    .catch(() => { liveSent = null; }).finally(() => { liveBusy = false; });
+}, LIVE_EVERY);
+function clearLive() {
+  liveSent = '';
+  if (classRef) classRef.collection('live').doc('now').set({text: '', t: FV.serverTimestamp()}).catch(()=>{});
+}
+
+// ── 문장 보내기 (서버가 번역 + 저장) ───────────────────────
+let lastT = 0, recent = [], notTeacherShown = false;
+async function sendSegment(text) {
+  let t = Date.now(); if (t <= lastT) t = lastT + 1; lastT = t;
+  const id = String(t);
+  const context = recent.slice(-2);
+  recent.push(text); if (recent.length > 5) recent.shift();
+  const line = addLine(text);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const tok = await me.getIdToken();
+      const res = await fetch(SERVER + '/api/class/translate', {
+        method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok},
+        body: JSON.stringify({room: classCode, id, text, context})
+      });
+      if (res.ok) { markLine(line, await res.json()); return; }
+      if (res.status === 403) {
+        const j = await res.json().catch(() => ({}));
+        if ((j.detail || {}).code === 'NOT_TEACHER' && !notTeacherShown) { notTeacherShown = true; alert('이 계정은 아직 수업 번역이 허용되지 않았어요. 관리자에게 문의해 주세요. (한국어 자막만 나갑니다)'); }
+        break;
+      }
+      if (res.status === 400 || res.status === 409 || res.status === 413) break;
+    } catch (e) {}
+    await sleep(1200 * (attempt + 1));
+  }
+  // 서버가 안 될 때: 한국어만이라도 학생에게 보낸다
+  try {
+    await classRef.collection('segments').doc(id).set({ko: text, t, err: 1}, {merge: true});
+    markLine(line, {fallback: true});
+  } catch (e) { markLine(line, {failed: true}); }
+}
+function addLine(text) {
+  const el = document.createElement('div');
+  el.className = 'line';
+  el.innerHTML = '<div></div><div class="st">번역 중…</div>';
+  el.firstChild.textContent = text;
+  const box = $('lines');
+  box.appendChild(el);
+  while (box.children.length > 40) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+function markLine(el, d) {
+  const st = el.querySelector('.st');
+  if (d.failed) { st.textContent = '⚠ 전송 실패 (인터넷 확인)'; st.classList.add('err'); return; }
+  if (d.fallback) { st.textContent = '⚠ 번역 서버 응답 없음 — 한국어만 전송'; st.classList.add('err'); return; }
+  if (!d.targets || !d.targets.length) { st.textContent = d.capped ? '⚠ 오늘 번역 한도 초과 — 한국어만 전송' : '✓ 전송 (학생 없음 → 번역 안 함)'; return; }
+  st.textContent = '✓ ' + d.targets.map(l => (d.tr && d.tr[l] ? '' : '⚠') + (LANG_NAMES[l] || l)).join(' · ');
+  if (d.missing && d.missing.length) st.classList.add('err');
+}
+</script>
+</body>
+</html>
