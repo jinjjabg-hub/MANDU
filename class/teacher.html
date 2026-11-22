@@ -161,7 +161,7 @@ const LANG_NAMES = {en:'English',ja:'日本語',zh:'中文',es:'Español',fr:'Fr
 const PRICE = {aiIn:0.10/1e6, aiOut:0.50/1e6, google:20/1e6, krw:1400};
 const SHORT_MIN = 5;        // 5자 미만 조각은 다음 조각과 합친다
 const SHORT_WAIT = 1500;    // 1.5초 안에 다음 조각이 없으면 그냥 보낸다
-const LIVE_EVERY = 500;     // 말하는 중 자막 전송 간격
+const LIVE_EVERY = 1000;    // 말하는 중 자막 전송 간격 (1초 — Firestore 문서당 권장 쓰기 속도 이내, 읽기 비용 절반)
 const FORCE_SPLIT = 220;    // 쉬지 않고 이만큼 말하면 강제로 문장을 끊는다 (학생 자막이 너무 늦지 않게)
 
 const $ = id => document.getElementById(id);
@@ -436,7 +436,7 @@ function onFinal(t) {
 }
 function flushShort() { clearTimeout(shortTimer); if (shortBuf) { const t = shortBuf; shortBuf = ''; sendSegment(t); } }
 
-// ── 말하는 중 자막 (0.5초마다만 전송) ───────────────────────
+// ── 말하는 중 자막 (1초마다만 전송) ───────────────────────
 let liveSent = '', liveBusy = false;
 function renderInterim() { $('interim').textContent = interim ? '🎤 ' + interim : ''; }
 setInterval(() => {
