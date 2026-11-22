@@ -447,6 +447,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .msg-bubble{padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;}
 .mine .msg-bubble{background:var(--primary);color:#fff;border-bottom-right-radius:4px;}
 .theirs .msg-bubble{background:var(--surface);color:var(--on-surface);border:1.5px solid var(--outline-variant);border-bottom-left-radius:4px;}
+.tester-seen{display:flex;align-items:flex-start;justify-content:flex-end;gap:4px;font-size:11px;color:var(--outline);margin:4px 4px 0 auto;max-width:80%;text-align:right;line-height:1.4;}
+.tester-seen .ms{font-size:14px !important;flex-shrink:0;margin-top:1px;}
 .msg-translated{cursor:pointer;display:flex;align-items:center;gap:3px;font-size:11px;color:var(--outline);margin-top:4px;padding:0 4px;font-style:italic;}
 .msg-translated .ms{font-size:13px !important;color:var(--primary);}
 .msg-time{font-size:10px;color:var(--outline);flex-shrink:0;padding-bottom:2px;font-weight:500;}
@@ -3230,6 +3232,14 @@ function toggleRoomMute(){
 
 function openChatSafetyMenu(){
   if(!currentUser||!currentRoomId)return;
+  if(_isTesterRoom(currentRoomId)){ // AI 테스터 방: 신고·차단 대신 테스트용 메뉴
+    _modSheet(_L('AI 테스터','AI tester'),[
+      {icon:'restart_alt',label:_L('대화 새로 시작 (앞 대화 잊기)','Start over (forget earlier chat)'),fn:resetTesterChat},
+      {icon:'translate',label:_L('테스터 언어 바꾸기','Change tester language'),fn:openTesterPicker},
+      {icon:'delete',label:_L('대화방 삭제','Delete chat'),danger:true,fn:function(){deleteRoom(currentRoomId,document.getElementById('chat-title').textContent);}}
+    ]);
+    return;
+  }
   const p=_dmPartnerUid();const items=[];
   items.push(isRoomMuted(currentRoomId)
     ?{icon:'notifications_active',label:_L('이 방 알림 켜기','Turn on notifications'),fn:toggleRoomMute}
@@ -4435,6 +4445,12 @@ function loadMessages(keepLimit){
     .collection('messages').orderBy('createdAt','asc').limitToLast(msgLimit)
     .onSnapshot(function(snap){
       const changes=snap.docChanges().filter(function(c){return c.type==='added';});
+      // AI 테스터 방: 서버가 내 메시지에 '테스터가 받은 번역'을 나중에 붙이면 그 자리에 표시
+      if(_isTesterRoom(currentRoomId))snap.docChanges().forEach(function(c){
+        if(c.type!=='modified')return;
+        const el=container.querySelector('[data-mid="'+c.doc.id.replace(/"/g,'')+'"]');
+        if(el)_showTesterSeen(el,c.doc.data());
+      });
       if(firstLoad){
         const total=changes.length;
         if(total>=msgLimit){
@@ -4446,7 +4462,7 @@ function loadMessages(keepLimit){
         }
         const pendingOldMsgs=[];
         changes.forEach(function(c,idx){
-          const md=c.doc.data();
+          const md=Object.assign(c.doc.data(),{_id:c.doc.id});
           const skip=(total-idx)>AUTO_TRANSLATE_RECENT;
           const result=renderMsg(md,skip);
           if(skip&&result)pendingOldMsgs.push(result);
@@ -4472,7 +4488,7 @@ function loadMessages(keepLimit){
         }
       }else{
         changes.forEach(function(c){
-          const md=c.doc.data();
+          const md=Object.assign(c.doc.data(),{_id:c.doc.id});
           renderMsg(md);
           if(md.uid&&md.uid!==currentUser.uid&&!isRoomMuted(currentRoomId))playNotificationSound(currentRoomId);
         });
@@ -5227,6 +5243,7 @@ function renderMsg(d,skipTranslate){
   if(d.text&&!d.imageUrl&&!d.fileUrl){_recentCtx.push(String(d.text).slice(0,300));if(_recentCtx.length>20)_recentCtx.shift();}
   const w=document.createElement('div');
   w.className='msg-wrap '+(mine?'mine':'theirs');
+  if(d._id)w.dataset.mid=d._id;
   if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}
   const row=document.createElement('div');row.className='msg-row';
   const b=document.createElement('div');b.className='msg-bubble';
@@ -5280,6 +5297,7 @@ function renderMsg(d,skipTranslate){
     if(lastMyMsgWrap){const p=lastMyMsgWrap.querySelector('.read-receipt');if(p)p.remove();}
     lastMyMsgWrap=w;
     const r=document.createElement('div');r.className='read-receipt';w.appendChild(r);
+    _showTesterSeen(w,d);
   }
   if(stickerSrc&&!skipTranslate)return; // 스티커는 번역할 글자가 없다
   if(!mine&&myLang){
@@ -5472,6 +5490,24 @@ async function openTesterRoom(lang){
   const r=await _serverPost('/api/tester/open',{lang:lang},true);
   if(!r.ok){showToast(r.status===403?_L('이 계정에서는 AI 테스터를 쓸 수 없어요','The AI tester is not available for this account'):_L('AI 테스터를 열지 못했어요. 잠시 후 다시 시도해주세요','Could not open the AI tester. Please try again.'));return;}
   openRoom(r.data.roomId,r.data.name,'icon-192.png',false);
+}
+// 테스터 방: 내 메시지 밑에 '테스터가 실제로 받은 번역문'을 작게 보여준다 (번역이 맞게 전달됐는지 바로 확인)
+function _showTesterSeen(w,d){
+  if(!w||!d||!_isTesterRoom(currentRoomId))return;
+  const lang=(_currentRoomData&&_currentRoomData.testerLang)||'';
+  let txt=lang?d['testerTr_'+lang]:'';
+  if(!txt){const k=Object.keys(d).find(function(x){return x.indexOf('testerTr_')===0;});txt=k?d[k]:'';}
+  if(!txt||typeof txt!=='string')return;
+  let el=w.querySelector('.tester-seen');
+  if(!el){el=document.createElement('div');el.className='tester-seen';const rr=w.querySelector('.read-receipt');w.insertBefore(el,rr||null);}
+  el.innerHTML='<span class="ms">visibility</span><span></span>';
+  el.title=_L('테스터가 받은 번역','What the tester received');
+  el.lastChild.textContent=txt;
+}
+async function resetTesterChat(){
+  if(!_isTesterRoom(currentRoomId))return;
+  const r=await _serverPost('/api/tester/reset',{roomId:currentRoomId},true);
+  if(!r.ok)showToast(r.status===429?_L('잠시 후 다시 시도해주세요 (사용 한도)','Please try again later (limit reached)'):_L('새 대화를 시작하지 못했어요','Could not start a new chat'));
 }
 let _testerBusy=false,_testerAgain=false;
 async function requestTesterReply(roomId){
