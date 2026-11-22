@@ -212,6 +212,66 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // ── 만두 클래스 (대학 수업 실시간 자막, class/teacher.html · class/student.html) ──
+    // 수업 코드(6자리) = 문서 id. 만든 교수님(owner)만 수업 상태·말하는 중 자막(live)·자막(segments)을 쓴다.
+    // 학생(익명 로그인 포함)은 읽기만, 단 자기 언어 접속 표시(languages/{언어}.u.{내uid})만 쓸 수 있다.
+    // 번역된 자막과 사용량(stats)은 서버(Admin SDK)가 기록한다. 다른 경로의 규칙은 그대로다.
+    function classOwner(code) {
+      return request.auth != null
+        && get(/databases/$(database)/documents/classes/$(code)).data.owner == request.auth.uid;
+    }
+    match /classes/{code} {
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && code.matches('^[0-9]{6}$')
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.keys().hasOnly(['owner', 'ownerName', 'title', 'status', 'createdAt', 'updatedAt', 'expireAt'])
+        && request.resource.data.status == 'ready'
+        && request.resource.data.get('title', '') is string && request.resource.data.get('title', '').size() <= 60
+        && request.resource.data.get('ownerName', '') is string && request.resource.data.get('ownerName', '').size() <= 60;
+      allow update: if request.auth != null && resource.data.owner == request.auth.uid
+        && request.resource.data.owner == resource.data.owner
+        && request.resource.data.keys().hasOnly(['owner', 'ownerName', 'title', 'status', 'createdAt', 'updatedAt', 'expireAt'])
+        && request.resource.data.status in ['ready', 'live', 'paused', 'ended']
+        && request.resource.data.get('title', '') is string && request.resource.data.get('title', '').size() <= 60;
+      allow delete: if false;
+
+      // 교수님이 지금 말하는 중인 한국어 (0.5초마다 갱신)
+      match /live/{docId} {
+        allow read: if request.auth != null;
+        allow write: if docId == 'now' && classOwner(code)
+          && request.resource.data.keys().hasOnly(['text', 't'])
+          && request.resource.data.text is string && request.resource.data.text.size() <= 1000;
+      }
+      // 확정된 자막 — 보통 서버가 번역과 함께 쓰고, 서버가 안 될 때만 교수님 화면이 한국어만 쓴다
+      match /segments/{segId} {
+        allow read: if request.auth != null;
+        allow create, update: if classOwner(code)
+          && request.resource.data.keys().hasOnly(['ko', 'tr', 't', 'engine', 'at', 'err'])
+          && request.resource.data.ko is string && request.resource.data.ko.size() <= 1000;
+        allow delete: if false;
+      }
+      // 접속 언어 — 문서 id = 언어 코드, u = {학생uid: 마지막 신호 시각}. 자기 uid 칸만 넣고 뺄 수 있다.
+      match /languages/{lang} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && lang in ['en', 'ja', 'zh', 'es', 'fr', 'de', 'vi', 'th', 'mn', 'hi', 'pt', 'ar', 'id', 'it', 'da']
+          && request.resource.data.keys().hasOnly(['u'])
+          && request.resource.data.u.keys().hasOnly([request.auth.uid]);
+        allow update: if request.auth != null
+          && request.resource.data.keys().hasOnly(['u'])
+          && request.resource.data.u.diff(resource.data.get('u', {})).affectedKeys().hasOnly([request.auth.uid]);
+        allow delete: if false;
+      }
+      // 사용량(번역 글자·AI 토큰) — 서버만 기록, 교수님만 읽는다
+      match /stats/{docId} {
+        allow read: if classOwner(code);
+        allow write: if false;
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
