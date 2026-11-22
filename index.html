@@ -4971,8 +4971,11 @@ let _trCacheSaveTimer=null;
 function getCachedTranslation(text,targetLang){
   if(!text||!targetLang)return null;
   const v=_trCache[targetLang+'|'+text];
-  return v&&v.t?{text:v.t,engine:v.e||'google'}:null;
+  return v&&v.t?{text:v.t,engine:v.e||'google',aiTried:!!v.a}:null;
 }
+// AI 번역이 켜져 있는데 예전에 구글로 번역해 저장된 결과면, 한 번만 AI로 다시 번역한다.
+// (AI로 시도했는데도 구글로 나온 결과 — 태국어 등 AI가 약한 언어, AI 실패 — 는 aiTried 표시가 있어 다시 부르지 않는다 → 사용량이 계속 새지 않음)
+function _trNeedsAiUpgrade(c){return !!(c&&c.engine==='google'&&!c.aiTried&&isAiTranslateOn());}
 function _saveTrCacheNow(){
   clearTimeout(_trCacheSaveTimer);_trCacheSaveTimer=null;
   try{localStorage.setItem(TR_CACHE_KEY,JSON.stringify(_trCache));}
@@ -4988,6 +4991,7 @@ function setCachedTranslation(text,targetLang,r,skipCloud){
   if(!text||!targetLang||!r||!r.text||r.text===text)return;
   const k=targetLang+'|'+text;
   delete _trCache[k];_trCache[k]={t:r.text,e:r.engine||'google'}; // 맨 뒤로 → 오래 안 쓴 것부터 정리
+  if(r.aiTried)_trCache[k].a=1;
   const keys=Object.keys(_trCache);
   if(keys.length>TR_CACHE_MAX)keys.slice(0,keys.length-TR_CACHE_MAX).forEach(function(x){delete _trCache[x];});
   clearTimeout(_trCacheSaveTimer);
@@ -5010,7 +5014,7 @@ function _trCloudRef(text,targetLang){
   return db.collection('users').doc(currentUser.uid).collection('trcache').doc(_trHash(targetLang+'|'+text));
 }
 function _cloudTrSave(text,targetLang,r){
-  try{const ref=_trCloudRef(text,targetLang);if(ref)ref.set({t:r.text,e:r.engine||'google',l:targetLang}).catch(function(){});}catch(e){}
+  try{const ref=_trCloudRef(text,targetLang);if(ref)ref.set(Object.assign({t:r.text,e:r.engine||'google',l:targetLang},r.aiTried?{a:1}:{})).catch(function(){});}catch(e){}
 }
 function _cloudTrGet(text,targetLang){
   let ref=null;try{ref=_trCloudRef(text,targetLang);}catch(e){}
@@ -5019,7 +5023,7 @@ function _cloudTrGet(text,targetLang){
   const read=ref.get().then(function(snap){
     const v=snap.exists?snap.data():null;
     if(!v||!v.t||v.l!==targetLang)return null;
-    const out={text:v.t,engine:v.e||'google'};
+    const out={text:v.t,engine:v.e||'google',aiTried:!!v.a};
     setCachedTranslation(text,targetLang,out,true); // 이 기기에도 다시 저장
     return out;
   }).catch(function(){return null;});
@@ -5054,7 +5058,7 @@ async function translateEx(text,targetLang,opts){
     if(dictResult)return {text:dictResult,engine:'dict'};
     // 2.7단계: 전에 번역해 둔 결과 (고정)
     const cached=getCachedTranslation(text,targetLang);
-    if(cached)return cached;
+    if(cached&&!(useAi&&_trNeedsAiUpgrade(cached)))return cached;
   }
 
   if(!currentUser)return none;
@@ -5062,7 +5066,7 @@ async function translateEx(text,targetLang,opts){
   // 2.8단계: 내 계정에 백업해 둔 번역 (다른 기기·앱 재설치 후에도 같은 번역, 글자 차감 없음)
   if(opts.engine!=='ai'){
     const cloud=await _cloudTrGet(text,targetLang);
-    if(cloud)return cloud;
+    if(cloud&&!(useAi&&_trNeedsAiUpgrade(cloud)))return cloud;
   }
 
   // source·src·room은 '이번 달 사용 내역'용 꼬리표 (원문은 서버 기록에 남지 않는다)
@@ -5106,7 +5110,7 @@ async function translateEx(text,targetLang,opts){
         _usage80WarnShown=true;
         showToast(t('usage_80_warn_toast'));
       }
-      const out={text:data.translated||'',engine:data.engine||'google',googleOnlyLang:!!data.googleOnlyLang};
+      const out={text:data.translated||'',engine:data.engine||'google',googleOnlyLang:!!data.googleOnlyLang,aiTried:useAi};
       setCachedTranslation(text,targetLang,out);
       return out;
     }catch(e){
@@ -5273,6 +5277,11 @@ function renderMsg(d,skipTranslate){
     if(cachedTr){
       const line=document.createElement('div');line.className='msg-translated';w.appendChild(line);
       _showTranslation(w,b,line,d.text,cachedTr,myLang,ctx);
+      if(_trNeedsAiUpgrade(cachedTr)){ // 예전 구글 번역 → 화면은 그대로 두고 뒤에서 AI 번역으로 한 번 교체
+        translateEx(d.text,myLang,{context:ctx,source:'chat'}).then(function(r2){
+          if(r2&&r2.engine==='ai'&&r2.text)_showTranslation(w,b,line,d.text,r2,myLang,ctx);
+        }).catch(function(){});
+      }
       return;
     }
     if(skipTranslate){
