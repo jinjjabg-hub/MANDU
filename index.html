@@ -449,6 +449,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .theirs .msg-bubble{background:var(--surface);color:var(--on-surface);border:1.5px solid var(--outline-variant);border-bottom-left-radius:4px;}
 .tester-seen{display:flex;align-items:flex-start;justify-content:flex-end;gap:4px;font-size:11px;color:var(--outline);margin:4px 4px 0 auto;max-width:80%;text-align:right;line-height:1.4;}
 .tester-seen .ms{font-size:14px !important;flex-shrink:0;margin-top:1px;}
+.tester-seen .ts-tag{flex-shrink:0;font-style:normal;font-weight:700;font-size:10px;padding:0 5px;border-radius:6px;background:var(--surface-container);color:var(--on-surface-variant);margin-top:1px;}
+.tester-seen.fail{color:var(--error);}
 .msg-translated{cursor:pointer;display:flex;align-items:center;gap:3px;font-size:11px;color:var(--outline);margin-top:4px;padding:0 4px;font-style:italic;}
 .msg-translated .ms{font-size:13px !important;color:var(--primary);}
 .msg-time{font-size:10px;color:var(--outline);flex-shrink:0;padding-bottom:2px;font-weight:500;}
@@ -5495,14 +5497,27 @@ async function openTesterRoom(lang){
 function _showTesterSeen(w,d){
   if(!w||!d||!_isTesterRoom(currentRoomId))return;
   const lang=(_currentRoomData&&_currentRoomData.testerLang)||'';
-  let txt=lang?d['testerTr_'+lang]:'';
-  if(!txt){const k=Object.keys(d).find(function(x){return x.indexOf('testerTr_')===0;});txt=k?d[k]:'';}
-  if(!txt||typeof txt!=='string')return;
+  const pick=function(prefix){
+    if(lang&&typeof d[prefix+lang]==='string')return d[prefix+lang];
+    const k=Object.keys(d).find(function(x){return x.indexOf(prefix)===0&&typeof d[x]==='string';});return k?d[k]:'';
+  };
+  const txt=pick('testerTr_'),by=pick('testerTrBy_'),fail=pick('testerTrFail_');
+  if(!txt&&!fail)return;
   let el=w.querySelector('.tester-seen');
   if(!el){el=document.createElement('div');el.className='tester-seen';const rr=w.querySelector('.read-receipt');w.insertBefore(el,rr||null);}
-  el.innerHTML='<span class="ms">visibility</span><span></span>';
-  el.title=_L('테스터가 받은 번역','What the tester received');
-  el.lastChild.textContent=txt;
+  if(txt){ // 테스터가 받은 번역 + 어떤 엔진이 번역했는지
+    el.classList.remove('fail');
+    el.innerHTML='<span class="ms">visibility</span><span class="ts-tag"></span><span></span>';
+    el.title=_L('테스터가 받은 번역','What the tester received');
+    el.children[1].textContent=by==='ai'?'AI':by==='google'?_L('구글','Google'):'';
+    if(!el.children[1].textContent)el.children[1].remove();
+    el.lastChild.textContent=txt;
+  }else{ // 번역 실패 — 원문이 그대로 전달됨 (이유 표시)
+    el.classList.add('fail');
+    el.innerHTML='<span class="ms">warning</span><span></span>';
+    el.title=_L('테스터 번역 실패','Tester translation failed');
+    el.lastChild.textContent=_L('번역 실패 — 원문 그대로 전달됨','Translation failed — sent as is')+' ('+fail+')';
+  }
 }
 async function resetTesterChat(){
   if(!_isTesterRoom(currentRoomId))return;
