@@ -156,6 +156,33 @@ await ok('만두 ID 역방향 조회(내 uid)', getDocs(query(collection(db('K')
 await no('만두 ID 전체 명단 받기', getDocs(collection(db('K'), 'manduid_index')));
 await no('남의 uid로 만두 ID 찾기', getDocs(query(collection(db('K'), 'manduid_index'), where('uid','==','L'))));
 
+console.log('== 게스트(익명)는 들어온 방에서 대화만');
+const gg = anonU('GA');
+await seed('rooms/GRP', { type:'group', name:'팀', members:['A','B','GA'], memberNames:{A:'a',B:'b',GA:'손님'}, memberPhotos:{}, inviteCode:'abc' });
+await ok('게스트: 초대받은 그룹에서 메시지', addDoc(collection(gg, 'rooms/GRP/messages'), { text:'안녕하세요', uid:'GA', displayName:'손님', createdAt: serverTimestamp() }));
+await ok('게스트: 입장 안내 메시지', addDoc(collection(gg, 'rooms/GRP/messages'), { type:'system', text:'손님 님이 들어왔어요', createdAt: serverTimestamp() }));
+await ok('게스트: 마지막 메시지·안 읽음 수', setDoc(doc(gg, 'rooms/GRP'), { lastMessage:'안녕하세요', lastMessageTime: serverTimestamp(), lastMessageUid:'GA', unreadCount:{ A: increment(1), B: increment(1) } }, { merge:true }));
+await ok('게스트: 내 읽음 표시', setDoc(doc(gg, 'rooms/GRP'), { readBy:{ GA: serverTimestamp() }, unreadCount:{ GA:0 } }, { merge:true }));
+await no('게스트: 그룹에 멤버 추가', updateDoc(doc(gg, 'rooms/GRP'), { members: arrayUnion('K'), 'memberNames.K':'k' }));
+await no('게스트: 그룹 이름 바꾸기', updateDoc(doc(gg, 'rooms/GRP'), { name:'광고방' }));
+await no('게스트: 새 그룹 만들기', setDoc(doc(gg, 'rooms/NEWG'), { type:'group', name:'x', members:['GA','A'] }));
+await no('게스트: 1:1 방 만들기', setDoc(doc(gg, 'rooms/A_GA'), { type:'direct', members:['A','GA'] }));
+await ok('게스트: 가게 손님방에서 직원 구성 맞추기', setDoc(doc(gg, 'rooms/guest_GA_H'), { type:'group', name:'손님', members:['GA','H','S'], memberNames:{GA:'손님',H:'Host',S:'직원'}, memberPhotos:{GA:'',H:'',S:''},
+  storeUid:'H', customerUid:'GA', staff:['S'], isGuestRoom:true, lastMessage:'', lastMessageTime: serverTimestamp() }, { merge:true }));
+await ok('게스트: 손님방 부재 시각', setDoc(doc(gg, 'rooms/guest_GA_H'), { awayAt: serverTimestamp() }, { merge:true }));
+await ok('게스트: 내 정보 저장', setDoc(doc(gg, 'users/GA'), { displayName:'손님', isGuest:true }, { merge:true }));
+const offStore = { greetOn:false, greeting:'', awayOn:false, awayMsg:'', quick:[], staff:[], welcomeOn:false, welcome:'', welcomeBtn:'', welcomeUrl:'' };
+await ok('게스트: 공개 명함(매장 기능 모두 꺼짐 — 앱 기본값)', setDoc(doc(gg, 'public_profiles/GA'), { displayName:'손님', photoURL:'', manduid:'', isGuest:true, store: offStore, updatedAt: serverTimestamp() }));
+await no('게스트: 매장 인사말 켜기', setDoc(doc(gg, 'public_profiles/GA'), { displayName:'손님', photoURL:'', manduid:'', isGuest:true, store:{ ...offStore, greetOn:true, greeting:'입금은 여기로' } }));
+await ok('회원: 매장 인사말 켜기', setDoc(doc(db('H2'), 'public_profiles/H2'), { displayName:'Host2', photoURL:'', manduid:'h2', isGuest:false, store:{ ...offStore, greetOn:true, greeting:'어서오세요' } }));
+await no('게스트: 만두 ID 만들기', setDoc(doc(gg, 'manduid_index/guestid'), { uid:'GA' }));
+await no('게스트: 탐색 목록 보기', getDocs(collection(gg, 'discover_profiles')));
+await no('게스트: 탐색에 나를 올리기', setDoc(doc(gg, 'discover_profiles/GA'), { displayName:'x', photoURL:'', manduid:'', company:'', jobTitle:'', industry:'', country:'', lang:'ko', bio:'' }));
+await no('게스트: 친구 추가', setDoc(doc(gg, 'friends/GA'), { added:{ A: 1 } }, { merge:true }));
+await no('게스트: 내 사전 저장', setDoc(doc(gg, 'users/GA/mydict/x'), { trans:'y' }));
+await ok('게스트: 차단은 가능(안전)', setDoc(doc(gg, 'blocks/GA'), { uids:['A'] }));
+await ok('게스트: 신고는 가능(안전)', addDoc(collection(gg, 'reports'), { reporterUid:'GA', type:'message', reason:'spam', roomId:'GRP', targetUid:'A', messageText:'x', messageTime:'', status:'open', createdAt: serverTimestamp() }));
+
 console.log(`\n결과: 통과 ${pass} / 실패 ${fail}`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
