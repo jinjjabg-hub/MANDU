@@ -156,7 +156,7 @@ firebase.initializeApp({
 const auth = firebase.auth();
 const db = firebase.firestore();
 const FV = firebase.firestore.FieldValue;
-const LANG_NAMES = {en:'English',ja:'日本語',zh:'中文',es:'Español',fr:'Français',de:'Deutsch',vi:'Tiếng Việt',th:'ภาษาไทย',mn:'Монгол',hi:'हिन्दी',pt:'Português',ar:'العربية',id:'Indonesia',it:'Italiano',da:'Dansk'};
+const LANG_NAMES = {en:'English',ja:'日本語',zh:'中文',es:'Español',fr:'Français',de:'Deutsch',vi:'Tiếng Việt',th:'ภาษาไทย',mn:'Монгол',hi:'हिन्दी',pt:'Português',ar:'العربية',id:'Indonesia',it:'Italiano',da:'Dansk',ru:'Русский'};
 // 원가 추정 단가 (서버 기본 모델 claude-haiku-5-5: 입력 $0.10 / 출력 $0.50 per 1M 토큰, 구글 번역 $20 per 1M 글자)
 const PRICE = {aiIn:0.10/1e6, aiOut:0.50/1e6, google:20/1e6, krw:1400};
 const SHORT_MIN = 5;        // 5자 미만 조각은 다음 조각과 합친다

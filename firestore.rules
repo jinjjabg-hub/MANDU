@@ -389,7 +389,7 @@ service cloud.firestore {
       match /languages/{lang} {
         allow read: if request.auth != null;
         allow create: if request.auth != null
-          && lang in ['en', 'ja', 'zh', 'es', 'fr', 'de', 'vi', 'th', 'mn', 'hi', 'pt', 'ar', 'id', 'it', 'da']
+          && lang in ['en', 'ja', 'zh', 'es', 'fr', 'de', 'vi', 'th', 'mn', 'hi', 'pt', 'ar', 'id', 'it', 'da', 'ru']
           && request.resource.data.keys().hasOnly(['u'])
           && request.resource.data.u.keys().hasOnly([request.auth.uid]);
         allow update: if request.auth != null
