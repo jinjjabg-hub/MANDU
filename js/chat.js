@@ -604,7 +604,7 @@ function loadMessages(keepLimit){
           btn.onclick=function(){
             btn.disabled=true;btn.textContent=t('translating_loading');
             Promise.all(pendingOldMsgs.map(function(it){
-              return translateEx(it.text,it.myLang,{context:it.ctx,source:'older'}).then(function(r){
+              return translateEx(it.text,it.myLang,{context:it.ctx,source:'older',msg:it.msg}).then(function(r){
                 if(r.text&&r.text!==it.text){
                   const orig=document.createElement('div');orig.className='msg-translated';
                   it.wrap.appendChild(orig);
