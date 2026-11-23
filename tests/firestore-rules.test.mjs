@@ -64,7 +64,7 @@ await ok('상대가 방 읽기', getDoc(doc(db('B'), dm)));
 await no('방 밖 사람이 읽기', getDoc(doc(db('E'), dm)));
 await ok('채팅 목록 쿼리', getDocs(query(collection(db('B'), 'rooms'), where('members','array-contains','B'))));
 await ok('메시지 보내기', addDoc(collection(db('A'), dm + '/messages'), { text:'hi', uid:'A', displayName:'Alice', createdAt: serverTimestamp() }));
-await ok('파일 메시지', addDoc(collection(db('A'), dm + '/messages'), { text:'', fileUrl:'https://res.cloudinary.com/a', fileName:'a.pdf', fileSize:'1KB', uid:'A', displayName:'Alice', createdAt: serverTimestamp() }));
+await ok('파일 메시지', addDoc(collection(db('A'), dm + '/messages'), { text:'', fileUrl:'https://res.cloudinary.com/dei44zkfy/raw/upload/v1/a.pdf', fileName:'a.pdf', fileSize:'1KB', uid:'A', displayName:'Alice', createdAt: serverTimestamp() }));
 await ok('안 읽음 수·마지막 메시지 갱신', setDoc(doc(db('A'), dm), { lastMessage:'hi', lastMessageTime: serverTimestamp(), lastMessageUid:'A', unreadCount:{ B: increment(1) } }, { merge:true }));
 await ok('내 읽음 표시(markRead)', setDoc(doc(db('B'), dm), { readBy:{ B: serverTimestamp() }, unreadCount:{ B:0 } }, { merge:true }));
 await no('남의 읽음 표시 조작', setDoc(doc(db('B'), dm), { readBy:{ A: serverTimestamp() } }, { merge:true }));
@@ -135,6 +135,26 @@ await no('목록에 없는 언어 등록', setDoc(doc(anon('S1'), C + '/language
 await no('학생이 사용량 읽기', getDoc(doc(anon('S1'), C + '/stats/usage')));
 await ok('교수님이 사용량 읽기', getDoc(doc(db('P'), C + '/stats/usage')));
 await no('교수님이 사용량 조작', setDoc(doc(db('P'), C + '/stats/usage'), { trChars:0 }));
+
+console.log('== 감사 지적 보완 (방·메시지·만두 ID)');
+await ok('사진 메시지(만두 업로드 주소)', addDoc(collection(db('A'), dm + '/messages'), { text:'', imageUrl:'https://res.cloudinary.com/dei44zkfy/image/upload/v1/x.jpg', uid:'A', displayName:'Alice', createdAt: serverTimestamp() }));
+await no('남의 서버 사진 주소(IP 수집)', addDoc(collection(db('A'), dm + '/messages'), { text:'', imageUrl:'https://evil.example/track.gif', uid:'A', displayName:'Alice', createdAt: serverTimestamp() }));
+await no('비슷한 가짜 주소', addDoc(collection(db('A'), dm + '/messages'), { text:'', fileUrl:'https://res.cloudinary.com.evil.example/dei44zkfy/a', uid:'A', displayName:'Alice', createdAt: serverTimestamp() }));
+await no('보낸 시각 조작(미래)', addDoc(collection(db('A'), dm + '/messages'), { text:'맨 아래 고정', uid:'A', displayName:'Alice', createdAt: new Date(Date.now() + 86400e3) }));
+await no('보낸 시각 없음', addDoc(collection(db('A'), dm + '/messages'), { text:'x', uid:'A', displayName:'Alice' }));
+await no('남의 1:1 방 ID 선점(A2_B2에 E가 끼기)', setDoc(doc(db('E'), 'rooms/A2_B2'), { type:'direct', members:['A2','B2','E'] }));
+await no('1:1 방 ID를 그룹으로 선점', setDoc(doc(db('A2'), 'rooms/A2_B2'), { type:'group', members:['A2','B2','E'] }));
+await ok('정상 1:1 방(두 사람, 정렬된 ID)', setDoc(doc(db('A2'), 'rooms/A2_B2'), { type:'direct', members:['A2','B2'] }, { merge:true }));
+await ok('1:1 방에 나중에 멤버 추가(그룹으로)', updateDoc(doc(db('A2'), 'rooms/A2_B2'), { type:'group', members: arrayUnion('C2') }));
+const anonU = (uid) => env.authenticatedContext(uid, { firebase:{ sign_in_provider:'anonymous' } }).firestore();
+await ok('익명 손님: 자기 손님방', setDoc(doc(anonU('G5'), 'rooms/guest_G5_H'), { type:'direct', members:['G5','H'], storeUid:'H', customerUid:'G5', isGuestRoom:true, lastMessageTime: serverTimestamp() }, { merge:true }));
+await no('익명 계정: 아무 회원을 넣은 그룹 방', setDoc(doc(anonU('G6'), 'rooms/SPAM1'), { type:'group', members:['G6','A','B','K'] }));
+await no('익명 계정: 1:1 방', setDoc(doc(anonU('G6'), 'rooms/A_G6'), { type:'direct', members:['A','G6'] }));
+await no('익명 계정: 남의 손님방 ID', setDoc(doc(anonU('G6'), 'rooms/guest_G7_H'), { members:['G6','G7','H'], storeUid:'H', customerUid:'G7', isGuestRoom:true }));
+await no('매장 정보 없는 손님방 ID', setDoc(doc(anonU('G8'), 'rooms/guest_G8_A'), { type:'direct', members:['G8','A'] }));
+await ok('만두 ID 역방향 조회(내 uid)', getDocs(query(collection(db('K'), 'manduid_index'), where('uid','==','K'))));
+await no('만두 ID 전체 명단 받기', getDocs(collection(db('K'), 'manduid_index')));
+await no('남의 uid로 만두 ID 찾기', getDocs(query(collection(db('K'), 'manduid_index'), where('uid','==','L'))));
 
 console.log(`\n결과: 통과 ${pass} / 실패 ${fail}`);
 await env.cleanup();
