@@ -376,12 +376,19 @@ async function startDM(partner){
   const ids=[currentUser.uid,partner.uid].sort();
   const roomId=ids.join('_');
   const firstOpen=await _isFirstOpen(roomId);
-  await db.collection('rooms').doc(roomId).set({
+  // 처음 만들 때만 상대 이름·사진까지 적는다. 이미 있는 방에서는 내 칸만 고친다(남의 이름은 본인만 바꿀 수 있음 — firestore.rules)
+  const me=currentUser.uid,ref=db.collection('rooms').doc(roomId);
+  const full={
     type:'direct',members:ids,
-    memberNames:{[currentUser.uid]:currentUser.displayName,[partner.uid]:partner.displayName},
-    memberPhotos:{[currentUser.uid]:currentUser.photoURL||'',[partner.uid]:partner.photoURL||''},
+    memberNames:{[me]:currentUser.displayName,[partner.uid]:partner.displayName},
+    memberPhotos:{[me]:currentUser.photoURL||'',[partner.uid]:partner.photoURL||''},
     lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
-  },{merge:true});
+  };
+  if(firstOpen)await ref.set(full,{merge:true});
+  else{
+    try{await ref.set({memberNames:{[me]:currentUser.displayName||''},memberPhotos:{[me]:currentUser.photoURL||''}},{merge:true});}
+    catch(e){await ref.set(full,{merge:true});} // 방이 아직 없으면(드묾) 새로 만든다
+  }
   openRoom(roomId,partner.displayName,partner.photoURL,false);
   if(firstOpen)_autoGreet(roomId,partner.uid,partner);
 }
@@ -548,10 +555,19 @@ function openRoom(roomId,name,photo,isGroup){
   unsubRoom=db.collection('rooms').doc(roomId).onSnapshot(function(snap){
     const data=snap.data();if(!data)return;
     currentRoomMembers=data.members||[];_currentRoomData=data;
+    _syncMyMemberName(roomId,data);
     if(data.type==='group'){_chatIsGroup=true;if(data.name&&!(data.customerUid===currentUser.uid&&data.storeUid))_chatRawName=data.name;}
     _renderChatHeader(data);
     updateReadReceipt(data.readBy||{});
   },function(err){console.error('room listener 실패:',err);});
+}
+
+// 방에 적힌 내 이름·사진이 지금 프로필과 다르면 내 칸만 고친다 (남의 이름은 그 사람만 바꿀 수 있어서, 각자 자기 것을 맞춘다)
+function _syncMyMemberName(roomId,data){
+  if(!currentUser||currentUser.isAnonymous||!currentUser.displayName)return;
+  const me=currentUser.uid,nm=(data.memberNames||{})[me],ph=(data.memberPhotos||{})[me];
+  if(nm===currentUser.displayName&&(ph||'')===(currentUser.photoURL||''))return;
+  db.collection('rooms').doc(roomId).set({memberNames:{[me]:currentUser.displayName},memberPhotos:{[me]:currentUser.photoURL||''}},{merge:true}).catch(function(){});
 }
 
 // 방을 열 때 최근 MSG_PAGE개만 불러온다 (전체를 매번 읽으면 Firestore 읽기·전송량이 방 크기만큼 늘어남).
