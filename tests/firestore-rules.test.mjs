@@ -109,6 +109,7 @@ await ok('학생 언어 등록(vi)', setDoc(doc(anon('S1'), C + '/languages/vi')
 await ok('다른 학생도 같은 언어 등록', setDoc(doc(anon('S2'), C + '/languages/vi'), { u:{ S2: serverTimestamp() } }, { merge:true }));
 await no('남의 접속 표시 지우기', updateDoc(doc(anon('S2'), C + '/languages/vi'), { 'u.S1': deleteField() }));
 await ok('내 접속 표시 지우기(나가기)', updateDoc(doc(anon('S2'), C + '/languages/vi'), { 'u.S2': deleteField() }));
+await ok('학생 언어 등록(ru)', setDoc(doc(anon('S1'), C + '/languages/ru'), { u:{ S1: serverTimestamp() } }, { merge:true }));
 await no('목록에 없는 언어 등록', setDoc(doc(anon('S1'), C + '/languages/xx'), { u:{ S1: serverTimestamp() } }));
 await no('학생이 사용량 읽기', getDoc(doc(anon('S1'), C + '/stats/usage')));
 await ok('교수님이 사용량 읽기', getDoc(doc(db('P'), C + '/stats/usage')));
