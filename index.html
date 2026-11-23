@@ -131,6 +131,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .search-empty-ico{font-size:44px;margin-bottom:12px;}
 .search-empty-txt{font-size:14px;color:var(--outline);}
 
+#verify-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;background:var(--background);text-align:center;}
 #login-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:40px;background:var(--background);}
 .login-logo{width:140px;height:140px;animation:float 3s ease-in-out infinite;}
 @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
@@ -829,6 +830,22 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
     티엠링크(T.M Link) · 대표 송승훈 · 사업자등록번호 253-63-00948<br>
     통신판매업 제2026-부산사상구-0340호 · 부산광역시 사상구 가야대로378번길 1, 1704호<br>
     010-5334-2544 · jinjjabg@gmail.com · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;">이용약관</a> · <a class="web-only" href="/pricing.html" target="_blank" rel="noopener" style="color:inherit;">요금제</a> · <a class="web-only" href="/refund.html" target="_blank" rel="noopener" style="color:inherit;">환불정책</a>
+  </div>
+</div>
+
+<!-- 이메일 인증 대기 (이메일·비밀번호 가입자는 인증 메일의 링크를 눌러야 앱을 쓸 수 있다) -->
+<div id="verify-screen">
+  <span class="ms" style="font-size:56px !important;color:var(--primary);">mark_email_unread</span>
+  <div style="font-size:20px;font-weight:800;color:var(--on-surface);">이메일 인증이 필요해요</div>
+  <div style="font-size:14px;color:var(--on-surface-variant,var(--outline));line-height:1.6;max-width:300px;">
+    <strong id="verify-email-addr"></strong> 으로 보낸 메일의 인증 링크를 누른 뒤,<br>아래 <strong>인증했어요</strong>를 눌러 주세요.<br>
+    <span style="font-size:12px;">메일이 안 보이면 스팸함도 확인해 주세요.</span>
+  </div>
+  <div id="verify-msg" style="font-size:12px;font-weight:600;min-height:16px;"></div>
+  <div style="width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px;">
+    <button onclick="checkEmailVerified()" style="width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:var(--primary);border:none;color:#fff;">인증했어요</button>
+    <button onclick="resendVerifyEmail()" style="width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:none;border:1.5px solid var(--outline-variant);color:var(--on-surface);">인증 메일 다시 보내기</button>
+    <span onclick="auth.signOut()" style="font-size:12px;color:var(--outline);cursor:pointer;padding:6px;">다른 계정으로 로그인</span>
   </div>
 </div>
 
@@ -2163,6 +2180,7 @@ async function emailSignup(){
     window._pendingDisplayName=name; // 가입 직후 로그인 처리가 먼저 돌아도 이름을 다시 묻지 않도록
     const cred=await auth.createUserWithEmailAndPassword(email,pw);
     await cred.user.updateProfile({displayName:name,photoURL:''});
+    // 인증 메일은 로그인 처리(onAuthStateChanged)가 인증 대기 화면을 띄우면서 한 번 보낸다
   }catch(e){
     const msgs={'auth/email-already-in-use':'이미 사용 중인 이메일이에요',
       'auth/invalid-email':'이메일 형식이 올바르지 않아요','auth/weak-password':'비밀번호가 너무 짧아요'};
@@ -2185,6 +2203,53 @@ function showEmailLogin(){
   document.getElementById('email-signup-form').style.display='none';
   document.getElementById('email-login-form').style.display='flex';
 }
+
+// ── 이메일 인증 ─────────────────────────────────────────────
+// 비밀번호로 가입한 계정은 인증 전까지 인증 대기 화면만 보인다. 구글·애플은 이미 인증된 이메일, 전화·카카오·게스트는 해당 없음.
+function _needsEmailVerify(user){
+  return !!(user&&!user.isAnonymous&&user.email&&!user.emailVerified
+    &&(user.providerData||[]).some(function(p){return p&&p.providerId==='password';}));
+}
+let _verifySentUid=null;
+async function _sendVerifyEmail(user){
+  if(!user||user.emailVerified)return;
+  _verifySentUid=user.uid;
+  await user.sendEmailVerification();
+}
+function showVerifyScreen(user){
+  const a=document.getElementById('verify-email-addr');if(a)a.textContent=user.email||'';
+  setEmailMsg('verify-msg','',false);
+  show('verify-screen');
+  // 인증 기능 이전에 가입한 계정은 메일을 받은 적이 없으므로 처음 한 번 자동으로 보낸다
+  if(_verifySentUid!==user.uid){
+    _sendVerifyEmail(user).then(function(){setEmailMsg('verify-msg','인증 메일을 보냈어요 ✓',false);})
+      .catch(function(e){if(e&&e.code!=='auth/too-many-requests')setEmailMsg('verify-msg','메일 전송 실패. 다시 보내기를 눌러 주세요',true);});
+  }
+}
+async function checkEmailVerified(){
+  const user=auth.currentUser;if(!user){show('login-screen');return;}
+  try{
+    await user.reload();
+    if(auth.currentUser.emailVerified){
+      await auth.currentUser.getIdToken(true);   // 보안 규칙이 보는 토큰에도 인증 표시 반영
+      location.reload();                         // 일반 로그인 흐름으로 다시 시작
+      return;
+    }
+    setEmailMsg('verify-msg','아직 인증되지 않았어요. 메일의 링크를 먼저 눌러 주세요',true);
+  }catch(e){setEmailMsg('verify-msg','확인 실패. 잠시 후 다시 시도해 주세요',true);}
+}
+async function resendVerifyEmail(){
+  const user=auth.currentUser;if(!user)return;
+  try{await _sendVerifyEmail(user);setEmailMsg('verify-msg','인증 메일을 다시 보냈어요 ✓',false);}
+  catch(e){setEmailMsg('verify-msg',e&&e.code==='auth/too-many-requests'?'잠시 후 다시 시도해 주세요':'메일 전송 실패',true);}
+}
+// 메일 앱에서 인증하고 돌아오면 자동으로 확인
+document.addEventListener('visibilitychange',function(){
+  const el=document.getElementById('verify-screen');
+  if(document.visibilityState==='visible'&&el&&el.style.display==='flex'&&auth.currentUser){
+    auth.currentUser.reload().then(function(){if(auth.currentUser&&auth.currentUser.emailVerified)checkEmailVerified();}).catch(function(){});
+  }
+});
 
 // ── 회원 탈퇴 ─────────────────────────────────────────────
 async function confirmDeleteAccount(){
@@ -2323,6 +2388,9 @@ auth.onAuthStateChanged(async function(user){
       return;
     }
     isGuest=false;
+
+    // 이메일·비밀번호 가입자는 이메일 인증을 마쳐야 앱을 쓸 수 있다(남의 이메일로 가입해 그 사람 행세하는 것 방지)
+    if(_needsEmailVerify(user)){showVerifyScreen(user);return;}
 
     // 전화번호·애플·카카오 계정은 이름이 비어 있을 수 있어 먼저 받는다
     if(typeof closePhoneLogin==='function'&&document.getElementById('phone-sheet'))closePhoneLogin();
@@ -2713,7 +2781,7 @@ function saveUILang(){
   showToast(t('ui_lang_changed_toast'));
 }
 
-const SCREENS=['onboarding-screen','login-screen','lang-screen','id-screen','guest-screen','main-screen','chat-screen','create-screen','profile-screen'];
+const SCREENS=['onboarding-screen','login-screen','verify-screen','lang-screen','id-screen','guest-screen','main-screen','chat-screen','create-screen','profile-screen'];
 const _PUSH_SCREENS=['chat-screen','create-screen','profile-screen'];
 let _exitPressTime=0;
 let _historyInited=false;

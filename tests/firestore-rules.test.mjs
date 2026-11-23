@@ -25,7 +25,7 @@ await ok('본인 정보 수정(merge)', setDoc(doc(db('A'), 'users/A'), { fcmTok
 await no('본인 요금제 직접 바꾸기', setDoc(doc(db('A'), 'users/A'), { plan:'business' }, { merge:true }));
 
 console.log('== 카드북 연결 (cardbook_index)');
-const mail = (uid, email) => env.authenticatedContext(uid, { email }).firestore();
+const mail = (uid, email, email_verified = true) => env.authenticatedContext(uid, { email, email_verified }).firestore();
 const guest = env.authenticatedContext('G2', { firebase:{ sign_in_provider:'anonymous' } }).firestore();
 await seed('users/K', { uid:'K', email:'Kim@Example.com', emailLower:'kim@example.com', cardbookConsent:true, fcmToken:'tok', plan:'pro', manduid:'kimmandu' });
 await seed('manduid_index/kimmandu', { uid:'K' });
@@ -34,6 +34,7 @@ await no('동의자 목록을 users에서 통째로 조회(익명)', getDocs(que
 await no('동의자를 이메일로 users에서 조회', getDocs(query(collection(guest, 'users'), where('cardbookConsent','==',true), where('emailLower','in',['kim@example.com']))));
 await no('동의자 문서(이메일·토큰) 직접 읽기', getDoc(doc(guest, 'users/K')));
 await ok('동의 켜기: 내 이메일·내 만두 ID로 등록', setDoc(doc(mail('K','Kim@Example.com'), 'cardbook_index/kim@example.com'), { uid:'K', manduid:'kimmandu', updatedAt: serverTimestamp() }));
+await no('인증 안 된 이메일로 등록(남의 이메일로 가입한 경우)', setDoc(doc(mail('K','Kim@Example.com',false), 'cardbook_index/kim@example.com'), { uid:'K', manduid:'kimmandu' }));
 await no('남의 이메일로 등록', setDoc(doc(mail('K','Kim@Example.com'), 'cardbook_index/lee@example.com'), { uid:'K', manduid:'kimmandu' }));
 await no('남의 만두 ID로 등록', setDoc(doc(mail('K','Kim@Example.com'), 'cardbook_index/kim@example.com'), { uid:'K', manduid:'leemandu' }));
 await no('이메일·토큰 같은 다른 칸 넣기', setDoc(doc(mail('K','Kim@Example.com'), 'cardbook_index/kim@example.com'), { uid:'K', manduid:'kimmandu', email:'Kim@Example.com' }));
