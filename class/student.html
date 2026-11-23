@@ -87,7 +87,7 @@ const LANGS = [
   ['en','🇺🇸','English'],['zh','🇨🇳','中文'],['vi','🇻🇳','Tiếng Việt'],['ja','🇯🇵','日本語'],
   ['mn','🇲🇳','Монгол'],['id','🇮🇩','Bahasa Indonesia'],['th','🇹🇭','ภาษาไทย'],['hi','🇮🇳','हिन्दी'],
   ['ar','🇸🇦','العربية'],['es','🇪🇸','Español'],['fr','🇫🇷','Français'],['de','🇩🇪','Deutsch'],
-  ['pt','🇧🇷','Português'],['it','🇮🇹','Italiano'],['da','🇩🇰','Dansk']
+  ['pt','🇧🇷','Português'],['it','🇮🇹','Italiano'],['da','🇩🇰','Dansk'],['ru','🇷🇺','Русский']
 ];
 // 화면 문구 (짧게) — 없는 언어는 영어
 const T = {
@@ -105,7 +105,8 @@ const T = {
   ar:{wait:'في انتظار بدء المحاضرة',pause:'متوقف مؤقتًا',end:'انتهت المحاضرة',latest:'الأحدث',nf:'لم يتم العثور على المحاضرة. تحقق من الرمز.',notr:'(غير مترجم)'},
   id:{wait:'Menunggu kelas dimulai',pause:'Dijeda',end:'Kelas telah selesai',latest:'Terbaru',nf:'Kelas tidak ditemukan. Periksa kodenya.',notr:'(belum diterjemahkan)'},
   it:{wait:'In attesa che inizi la lezione',pause:'In pausa',end:'La lezione è terminata',latest:'Più recenti',nf:'Lezione non trovata. Controlla il codice.',notr:'(non tradotto)'},
-  da:{wait:'Venter på at undervisningen starter',pause:'På pause',end:'Undervisningen er slut',latest:'Nyeste',nf:'Undervisningen blev ikke fundet. Tjek koden.',notr:'(ikke oversat)'}
+  da:{wait:'Venter på at undervisningen starter',pause:'På pause',end:'Undervisningen er slut',latest:'Nyeste',nf:'Undervisningen blev ikke fundet. Tjek koden.',notr:'(ikke oversat)'},
+  ru:{wait:'Ожидание начала занятия',pause:'Пауза',end:'Занятие окончено',latest:'К последнему',nf:'Занятие не найдено. Проверьте код.',notr:'(не переведено)'}
 };
 const tt = k => (T[lang] || T.en)[k] || T.en[k];
 
