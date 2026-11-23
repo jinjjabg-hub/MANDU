@@ -2519,29 +2519,46 @@ async function startGuestChat(){
 // fallback: 지원 언어가 하나도 없을 때 돌려줄 값 (기본 'en' — 미지원 언어 = 외국인일 확률 높음, null이면 '못 찾음')
 function detectBrowserLang(fallback){
   const supported=['ko','en','ja','zh','es','fr','de','vi','th','mn','hi','pt','ar','id','it','da'];
-  const langs=navigator.languages||[navigator.language||''];
+  // 지원 목록에 없지만 가까운 언어로 보여주는 편이 나은 경우 (노르웨이어 → 덴마크어, 말레이어·옛 인도네시아어 코드 → 인도네시아어 등)
+  const alias={nb:'da',no:'da',nn:'da',in:'id',ms:'id',jv:'id',gl:'es',ca:'es'};
+  let langs=[];
+  try{langs=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||'']).slice();}catch(e){}
   for(let i=0;i<langs.length;i++){
-    const code=(langs[i]||'').toLowerCase().split(/[-_]/)[0];
+    let code=String(langs[i]||'').toLowerCase().split(/[-_]/)[0];
+    if(alias[code])code=alias[code];
     if(supported.indexOf(code)!==-1)return code;
   }
   return fallback===undefined?'en':fallback;
+}
+// 게스트 언어: 이 기기에서 게스트가 대화방에서 직접 고른 언어가 있으면 그것, 없으면 휴대폰 언어
+function _guestLang(){
+  try{const v=localStorage.getItem('mandu_guest_lang');if(v)return v;}catch(e){}
+  return detectBrowserLang();
+}
+// 게스트(익명) 계정의 번역 언어·화면 언어 초기 설정. 이미 정해 둔 값(게스트가 바꾼 언어)은 덮어쓰지 않는다.
+function _initGuestLang(uid){
+  const det=_guestLang();
+  let lang=det,ui=det;
+  try{
+    lang=localStorage.getItem('mandu_lang_'+uid)||det;
+    ui=localStorage.getItem('mandu_ui_lang_'+uid)||lang;
+    localStorage.setItem('mandu_lang_'+uid,lang);
+    localStorage.setItem('mandu_ui_lang_'+uid,ui);
+  }catch(e){}
+  applyUILanguage(ui);
+  const myLangEl=document.getElementById('my-lang');if(myLangEl)myLangEl.value=lang;
+  return lang;
 }
 
 async function openGuestRoom(){
   if(!currentUser||!hostUID)return;
   try{
     const host=await _getProfile(hostUID);
-    if(!host){showToast('잘못된 링크예요');show('login-screen');return;}
-    const guestName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
-    // 브라우저 언어 자동 감지 → UI 화면 언어 + 번역 대상 언어 둘 다 즉시 적용
-    const detectedLang=detectBrowserLang();
-    localStorage.setItem('mandu_lang_'+currentUser.uid,detectedLang);
-    localStorage.setItem('mandu_ui_lang_'+currentUser.uid,detectedLang);
-    applyUILanguage(detectedLang);
-    const myLangEl=document.getElementById('my-lang');
-    if(myLangEl)myLangEl.value=detectedLang;
+    if(!host){showToast(_G('error'));show('login-screen');return;}
+    // 휴대폰 언어 → 화면 언어 + 번역 언어 초기 설정 (게스트가 이미 바꾼 언어는 그대로)
+    _initGuestLang(currentUser.uid);
     await openStoreRoom(host,hostUID);
-  }catch(e){showToast('오류가 발생했어요');}
+  }catch(e){showToast(_G('error'));}
 }
 
 function upgradeToGoogle(){
@@ -2680,6 +2697,7 @@ function saveLang(){
   if(!currentUser)return;
   const lang=document.getElementById('my-lang').value;
   localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
+  if(currentUser.isAnonymous)try{localStorage.setItem('mandu_guest_lang',lang);}catch(e){} // 이 기기의 다음 게스트 입장에도 쓴다
 }
 function saveProfileLang(){
   if(!currentUser)return;
@@ -3944,13 +3962,7 @@ async function joinByInvite(){
   if(!joinCode||!currentUser||_joining)return;
   _joining=true;
   try{
-    if(currentUser.isAnonymous){
-      const lang=detectBrowserLang();
-      localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
-      localStorage.setItem('mandu_ui_lang_'+currentUser.uid,lang);
-      applyUILanguage(lang);
-      const myLangEl=document.getElementById('my-lang');if(myLangEl)myLangEl.value=lang;
-    }
+    if(currentUser.isAnonymous)_initGuestLang(currentUser.uid);
     const r=await _serverPost('/api/rooms/join',{code:joinCode},true);
     if(!r.ok){
       showToast(r.status===404?_L('초대 링크가 만료됐거나 잘못됐어요','This invite link is invalid or expired'):
@@ -6609,7 +6621,7 @@ function wakeServer(){
 }
 wakeServer();
 // 로그인 전 화면(온보딩·로그인·게스트)도 휴대폰 언어로 보여줌
-try{applyUILanguage(detectBrowserLang());document.documentElement.lang=_uiLang;}catch(e){}
+try{applyUILanguage(isGuest?_guestLang():detectBrowserLang());document.documentElement.lang=_uiLang;}catch(e){}
 initLoginOptions();   // _uiLang 선언 뒤에 실행해야 함
 handleKakaoReturn();
 
