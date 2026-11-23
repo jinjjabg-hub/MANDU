@@ -60,6 +60,15 @@
 - 새 파일을 끼워 넣을 위치는 그 파일이 바로 실행하는 코드가 무엇을 쓰는지 보고 정한다. 잘 모르겠으면 `app-start.js` 바로 앞에 둔다.
   `ready.js`는 항상 맨 마지막이다.
 
+## 자동 검사
+
+화면 코드(`index.html`·`js/`·`i18n.js`·`style.css`·`sw.js`)가 바뀐 PR마다 `.github/workflows/frontend-check.yml`이 돈다.
+- 정적 검사 `tests/frontend/check.mjs`: 파일 목록·순서, `sw.js` 캐시 목록, `?v=` 표시, 문법, 없는 함수·변수, 화면 버튼이 부르는 함수, 불러오는 순서 문제
+- 브라우저 검사 `tests/frontend/smoke.mjs`: 첫 화면(온보딩·로그인·손님 링크·영어)이 오류 없이 뜨는지
+
+PR을 올리기 전에 직접 돌려 본다: `cd tests/frontend && npm install && node check.mjs && node smoke.mjs`
+(브라우저가 없으면 `npx playwright install chromium`). 검사가 실패하면 검사를 끄지 말고 코드를 고친다.
+
 ## 배포
 
 - 웹앱(`index.html`·`js/`·`style.css` 등): `main`에 합치면 반영된다.
