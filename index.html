@@ -1124,6 +1124,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
           </div>
           <div class="settings-chevron"><span class="ms">chevron_right</span></div>
         </div>
+        <div class="settings-row" id="trsim-admin-row" onclick="openTranslationSim()" style="display:none;border-top:1px solid var(--outline-variant);">
+          <div class="settings-icon-wrap"><span class="ms">calculate</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">번역 차감 시뮬레이션 (관리자)</div>
+            <div class="settings-row-sub">지난 30일 실제 대화로 차감 방식별 부담·원가 비교</div>
+          </div>
+          <div class="settings-chevron"><span class="ms">chevron_right</span></div>
+        </div>
       </div>
       <div class="settings-section-label" id="idsearch-section-label">친구</div>
       <div class="settings-card">
@@ -4931,6 +4939,7 @@ async function initReferral(){
   show('ref-info-row',info.length>0);
   if(info.length){set('ref-info-label',info[0]);set('ref-info-sub',info.slice(1).join(' · '));}
   show('ref-admin-row',!!_refMe.isAdmin);
+  show('trsim-admin-row',!!_refMe.isAdmin);
 }
 function copyReferralLink(){
   if(!currentManduid)return;
@@ -5006,6 +5015,38 @@ async function openReferralAdmin(){
   if(!r.ok){document.getElementById('ref-admin-list').textContent=_L('불러오지 못했어요 (관리자만 볼 수 있어요)','Could not load (admins only)');return;}
   _refAdmin=r.data;_renderReferralAdmin();
 }
+// 운영자 전용: 번역 차감 방식 시뮬레이션 (서버가 지난 30일 실제 데이터로 계산한 집계 숫자만 받는다)
+async function openTranslationSim(){
+  closeTranslationSim();
+  const ov=document.createElement('div');ov.id='trsim-admin';
+  ov.style.cssText='position:fixed;inset:0;z-index:9000;background:var(--background);display:flex;flex-direction:column;';
+  ov.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--outline-variant);">'+
+    '<button class="back-btn" onclick="closeTranslationSim()"><span class="ms">arrow_back</span></button>'+
+    '<div style="font-size:17px;font-weight:800;flex:1;">번역 차감 시뮬레이션</div></div>'+
+    '<div id="trsim-body" style="flex:1;overflow:auto;padding:12px 16px 32px;font-size:13px;line-height:1.6;"><div class="discover-spinner"></div><div style="text-align:center;color:var(--outline);">계산 중… (1분쯤 걸릴 수 있어요)</div></div>';
+  document.body.appendChild(ov);
+  const r=await _serverGet('/api/admin/translation-sim?days=30');
+  const body=document.getElementById('trsim-body');if(!body)return;
+  if(!r.ok){body.textContent='불러오지 못했어요 (관리자만 볼 수 있어요)';return;}
+  const d=r.data,n=function(v){return Math.round(v||0).toLocaleString();};
+  const td='padding:6px 4px;border-bottom:1px solid var(--outline-variant);text-align:right;white-space:nowrap;';
+  const kv=function(o){return Object.keys(o||{}).sort().map(function(k){return k+': '+o[k]+'개';}).join(' · ')||'—';};
+  let rows='';
+  Object.keys(d.policies||{}).forEach(function(k){const p=d.policies[k];
+    rows+='<tr><td style="'+td+'text-align:left;white-space:normal;">'+_esc(p.label)+'</td><td style="'+td+'">'+n(p.total)+'</td><td style="'+td+'">'+n(p.p50)+'</td><td style="'+td+'">'+n(p.p90)+'</td><td style="'+td+'">'+n(p.max)+'</td><td style="'+td+'">'+p.over_free+'명</td></tr>';});
+  body.innerHTML='<div style="margin-bottom:12px;">지난 '+d.days+'일 · 대화방 '+n(d.rooms)+'개 · 메시지 '+n(d.messages)+'개(평균 '+d.avgMsgChars+'자) · 사람 '+n(d.people)+'명</div>'+
+    '<div style="margin-bottom:4px;">방 인원: '+_esc(kv(d.roomSizes))+'</div>'+
+    '<div style="margin-bottom:4px;">방 안 언어 수: '+_esc(kv(d.roomLangCounts))+'</div>'+
+    '<div style="margin-bottom:12px;color:var(--outline);">번역 언어를 기록으로 확인한 사람 '+Math.round((d.langGuessedShare||0)*100)+'% (나머지는 같은 방 사람들 언어로 추정) · AI 번역 비율 '+Math.round((d.aiShare||0)*100)+'%</div>'+
+    '<div style="font-weight:800;margin:8px 0 4px;">차감 방식별 사용자 부담 (글자)</div>'+
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;"><tr style="color:var(--outline);"><td style="'+td+'text-align:left;">방식</td><td style="'+td+'">전체</td><td style="'+td+'">중간값</td><td style="'+td+'">상위10%</td><td style="'+td+'">최대</td><td style="'+td+'">무료 한도 초과</td></tr>'+rows+'</table></div>'+
+    '<div style="font-weight:800;margin:16px 0 4px;">만두 번역 원가 (추정)</div>'+
+    '<div>지금 구조(받는 사람마다 호출): <b>'+n(d.costWon.now)+'원</b><br>언어별 1번만 호출: <b>'+n(d.costWon.perLanguage)+'원</b></div>'+
+    '<div style="font-weight:800;margin:16px 0 4px;">실제 기록(지금 방식으로 실제 차감된 것)</div>'+
+    '<div>번역 '+n(d.actual.events)+'건 · '+n(d.actual.chars)+'자 (채팅 '+n(d.actual.chat_chars)+'자) · 캐시 적중 '+n(d.actual.cache_hits)+'건</div>'+
+    '<div style="margin-top:12px;color:var(--outline);font-size:12px;">시뮬레이션은 메시지마다 번역한다고 가정해서, 앱 안 사전·캐시로 건너뛴 번역이 있는 실제 기록보다 조금 클 수 있어요. 원가는 구글 100만 자당 $20, AI(Haiku 5.5) 토큰 단가, 환율 1,400원 기준 추정치예요.</div>';
+}
+function closeTranslationSim(){const e=document.getElementById('trsim-admin');if(e)e.remove();}
 function closeReferralAdmin(){const e=document.getElementById('ref-admin');if(e)e.remove();}
 function _renderReferralAdmin(){
   const d=_refAdmin;if(!d)return;
