@@ -43,6 +43,6 @@
   "isMetaQuest": false,
   "fullScopeUrl": "https://mandu.bizmy.net/",
   "minSdkVersion": 24,
-  "orientation": "portrait",
+  "orientation": "any",
   "launchHandlerClientMode": ""
 }

@@ -57,6 +57,7 @@ service cloud.firestore {
     function storeActive(st) {
       return st is map
         && (st.get('active', false) == true || st.get('greetOn', false) == true || st.get('awayOn', false) == true
+            || st.get('welcomeOn', false) == true
             || st.get('quick', []).size() > 0 || st.get('staff', []).size() > 0);
     }
 
@@ -163,7 +164,7 @@ service cloud.firestore {
       // 메시지 — 그 방 멤버만. 세 종류만 허용:
       //  1) 일반 메시지: 보낸 사람(uid)이 본인. 이름(displayName)은 저장하지 않는다(예전 앱 호환: 넣더라도 방의 내 이름과 같아야 함).
       //     화면은 메시지의 이름 대신 방 멤버 정보·공개 명함의 이름을 쓴다.
-      //  2) 시스템 안내(입장·멤버 추가): type 'system' + 정해진 종류(kind)와 멤버 uid 목록만. 문구는 앱이 만들어 표시한다
+      //  2) 시스템 안내(입장·멤버 추가·방 이름 변경): type 'system' + 정해진 종류(kind)와 멤버 uid 목록(+ 바뀐 방 이름)만. 문구는 앱이 만들어 표시한다
       //     (자유 문구를 허용하면 '[MANDU 공지] 결제 정보 재등록' 같은 가짜 공지를 띄울 수 있다).
       //  3) 매장 자동 메시지(인사말·부재 응답): 손님 기기가 주인 이름으로 올리므로,
       //     글 내용이 주인이 공개 프로필에 저장한 인사말/부재 응답과 정확히 같아야 한다(가짜 공지 방지).
@@ -190,18 +191,23 @@ service cloud.firestore {
             && nameMatches(room, d, me))
           || (!('uid' in d)
             && d.get('type', '') == 'system'
-            && d.keys().hasOnly(['type', 'kind', 'uids', 'createdAt'])
+            && d.keys().hasOnly(['type', 'kind', 'uids', 'name', 'createdAt'])
             && d.uids is list && d.uids.size() >= 1 && d.uids.size() <= 50
             && room.members.hasAll(d.uids)
-            && ((d.kind == 'join' && d.uids == [me])
-                || (d.kind == 'added' && !(me in d.uids))))
+            && ((d.kind == 'join' && d.uids == [me] && !('name' in d))
+                || (d.kind == 'added' && !(me in d.uids) && !('name' in d))
+                // 방 이름 바꾸기 안내: 바꾼 사람 본인 + 방에 실제로 저장된 이름만(앱이 먼저 방 이름을 바꾼 뒤 올린다)
+                || (d.kind == 'rename' && d.uids == [me] && d.get('name', null) is string
+                    && d.name == room.get('name', ''))))
           || (!('uid' in d)
-            && d.keys().hasOnly(['text', 'asUid', 'auto', 'displayName', 'createdAt'])
+            && d.keys().hasOnly(['text', 'asUid', 'auto', 'displayName', 'createdAt', 'link', 'linkText'])
             && d.asUid is string
             && d.asUid != me
             && d.asUid in room.members
             && nameMatches(room, d, d.asUid)
             && autoTextOk(d.auto, d.text,
+                 get(/databases/$(database)/documents/public_profiles/$(d.asUid)).data.get('store', {}))
+            && autoLinkOk(d,
                  get(/databases/$(database)/documents/public_profiles/$(d.asUid)).data.get('store', {})))
         );
     }
@@ -209,7 +215,15 @@ service cloud.firestore {
     function autoTextOk(kind, text, st) {
       return text is string
         && ((kind == 'greeting' && st.get('greetOn', false) == true && text == string(st.get('greeting', '')).trim() && text.size() > 0)
-          || (kind == 'away' && st.get('awayOn', false) == true && text == string(st.get('awayMsg', '')).trim() && text.size() > 0));
+          || (kind == 'away' && st.get('awayOn', false) == true && text == string(st.get('awayMsg', '')).trim() && text.size() > 0)
+          || (kind == 'welcome' && st.get('welcomeOn', false) == true && text == string(st.get('welcome', '')).trim() && text.size() > 0));
+    }
+    // 첫 화면 안내 메시지의 링크 버튼 — 주인이 저장한 주소·버튼 글자와 같아야 한다. 다른 자동 메시지엔 링크 금지.
+    function autoLinkOk(d, st) {
+      return (!('link' in d) && !('linkText' in d))
+        || (d.auto == 'welcome'
+          && d.get('link', '') == st.get('welcomeUrl', '') && d.get('link', '') != ''
+          && d.get('linkText', '') == st.get('welcomeBtn', ''));
     }
 
     // 만두 아이디 ↔ uid — 아이디 한 개 조회(get)는 로그인 전에도 허용(손님이 링크를 처음 열 때 가게를 찾기 위해).
@@ -264,13 +278,19 @@ service cloud.firestore {
     // 쓰기는 본인만, 정해진 칸만(전화번호·이메일·알림 토큰 등은 절대 들어가지 않게).
     function publicStoreOk(st) {
       return st is map
-        && st.keys().hasOnly(['active', 'greetOn', 'greeting', 'awayOn', 'awayMsg', 'quick', 'staff'])
+        && st.keys().hasOnly(['active', 'greetOn', 'greeting', 'awayOn', 'awayMsg', 'quick', 'staff', 'welcomeOn', 'welcome', 'welcomeBtn', 'welcomeUrl'])
         && st.get('active', false) is bool
         && st.get('greetOn', false) is bool && st.get('awayOn', false) is bool
         && st.get('greeting', '') is string && st.get('greeting', '').size() <= 300
         && st.get('awayMsg', '') is string && st.get('awayMsg', '').size() <= 300
         && st.get('quick', []) is list && st.get('quick', []).size() <= 20
-        && st.get('staff', []) is list && st.get('staff', []).size() <= 10;
+        && st.get('staff', []) is list && st.get('staff', []).size() <= 10
+        // 손님 첫 화면 안내 (QR·링크로 들어온 손님이 이름을 적기 전에 보는 글 + 링크 버튼)
+        && st.get('welcomeOn', false) is bool
+        && st.get('welcome', '') is string && st.get('welcome', '').size() <= 300
+        && st.get('welcomeBtn', '') is string && st.get('welcomeBtn', '').size() <= 30
+        && st.get('welcomeUrl', '') is string && st.get('welcomeUrl', '').size() <= 300
+        && (st.get('welcomeUrl', '') == '' || st.get('welcomeUrl', '').matches('https://[^ ]+'));
     }
     match /public_profiles/{uid} {
       allow get: if true;
@@ -322,6 +342,66 @@ service cloud.firestore {
         && request.resource.data.messageText is string
         && request.resource.data.messageText.size() <= 1000;
       allow read, update, delete: if false;
+    }
+
+    // ── 만두 클래스 (대학 수업 실시간 자막, class/teacher.html · class/student.html) ──
+    // 수업 코드(6자리) = 문서 id. 만든 교수님(owner)만 수업 상태·말하는 중 자막(live)·자막(segments)을 쓴다.
+    // 학생(익명 로그인 포함)은 읽기만, 단 자기 언어 접속 표시(languages/{언어}.u.{내uid})만 쓸 수 있다.
+    // 번역된 자막과 사용량(stats)은 서버(Admin SDK)가 기록한다. 다른 경로의 규칙은 그대로다.
+    function classOwner(code) {
+      return request.auth != null
+        && get(/databases/$(database)/documents/classes/$(code)).data.owner == request.auth.uid;
+    }
+    match /classes/{code} {
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && code.matches('^[0-9]{6}$')
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.keys().hasOnly(['owner', 'ownerName', 'title', 'status', 'createdAt', 'updatedAt', 'expireAt'])
+        && request.resource.data.status == 'ready'
+        && request.resource.data.get('title', '') is string && request.resource.data.get('title', '').size() <= 60
+        && request.resource.data.get('ownerName', '') is string && request.resource.data.get('ownerName', '').size() <= 60;
+      allow update: if request.auth != null && resource.data.owner == request.auth.uid
+        && request.resource.data.owner == resource.data.owner
+        && request.resource.data.keys().hasOnly(['owner', 'ownerName', 'title', 'status', 'createdAt', 'updatedAt', 'expireAt'])
+        && request.resource.data.status in ['ready', 'live', 'paused', 'ended']
+        && request.resource.data.get('title', '') is string && request.resource.data.get('title', '').size() <= 60;
+      allow delete: if false;
+
+      // 교수님이 지금 말하는 중인 한국어 (1초마다 갱신)
+      match /live/{docId} {
+        allow read: if request.auth != null;
+        allow write: if docId == 'now' && classOwner(code)
+          && request.resource.data.keys().hasOnly(['text', 't'])
+          && request.resource.data.text is string && request.resource.data.text.size() <= 1000;
+      }
+      // 확정된 자막 — 보통 서버가 번역과 함께 쓰고, 서버가 안 될 때만 교수님 화면이 한국어만 쓴다
+      match /segments/{segId} {
+        allow read: if request.auth != null;
+        allow create, update: if classOwner(code)
+          && request.resource.data.keys().hasOnly(['ko', 'tr', 't', 'engine', 'at', 'err'])
+          && request.resource.data.ko is string && request.resource.data.ko.size() <= 1000;
+        allow delete: if false;
+      }
+      // 접속 언어 — 문서 id = 언어 코드, u = {학생uid: 마지막 신호 시각}. 자기 uid 칸만 넣고 뺄 수 있다.
+      match /languages/{lang} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && lang in ['en', 'ja', 'zh', 'es', 'fr', 'de', 'vi', 'th', 'mn', 'hi', 'pt', 'ar', 'id', 'it', 'da']
+          && request.resource.data.keys().hasOnly(['u'])
+          && request.resource.data.u.keys().hasOnly([request.auth.uid]);
+        allow update: if request.auth != null
+          && request.resource.data.keys().hasOnly(['u'])
+          && request.resource.data.u.diff(resource.data.get('u', {})).affectedKeys().hasOnly([request.auth.uid]);
+        allow delete: if false;
+      }
+      // 사용량(번역 글자·AI 토큰) — 서버만 기록, 교수님만 읽는다
+      match /stats/{docId} {
+        allow read: if classOwner(code);
+        allow write: if false;
+      }
     }
 
     match /{document=**} {

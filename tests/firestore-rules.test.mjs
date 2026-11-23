@@ -15,7 +15,8 @@ const no = (name, p) => t('[차단] ' + name, assertFails(p));
 await seed('users/A', { uid:'A', displayName:'Alice', email:'a@x.com', fcmToken:'tok', plan:'free' });
 await seed('users/H', { uid:'H', displayName:'Host', email:'h@x.com', fcmToken:'tok' });
 await seed('public_profiles/H', { displayName:'Host', photoURL:'', manduid:'host', isGuest:false,
-  store:{ greetOn:true, greeting:'어서오세요', awayOn:true, awayMsg:'잠시 자리 비움', quick:[], staff:['S'] } });
+  store:{ greetOn:true, greeting:'어서오세요', awayOn:true, awayMsg:'잠시 자리 비움', quick:[], staff:['S'],
+    welcomeOn:true, welcome:'앱을 받아 보세요', welcomeBtn:'앱 받기', welcomeUrl:'https://play.google.com/store/apps/details?id=com.tm.mandu' } });
 
 console.log('== users (개인정보)');
 await ok('본인 문서 읽기', getDoc(doc(db('A'), 'users/A')));
@@ -28,6 +29,10 @@ console.log('== public_profiles');
 await ok('누구나 공개 프로필 읽기', getDoc(doc(env.unauthenticatedContext().firestore(), 'public_profiles/H')));
 await ok('앱의 공개 프로필 저장 모양', setDoc(doc(db('A'), 'public_profiles/A'), { displayName:'Alice', photoURL:'', manduid:'alice', isGuest:false,
   store:{ greetOn:false, greeting:'', awayOn:false, awayMsg:'', quick:['네'], staff:[] }, updatedAt: serverTimestamp() }));
+await ok('손님 첫 화면 안내 저장', setDoc(doc(db('A'), 'public_profiles/A'), { displayName:'Alice', photoURL:'', manduid:'alice', isGuest:false,
+  store:{ greetOn:false, greeting:'', awayOn:false, awayMsg:'', quick:[], staff:[], welcomeOn:true, welcome:'MANDU 앱을 받아 보세요', welcomeBtn:'앱 받기', welcomeUrl:'https://play.google.com/store/apps/details?id=com.tm.mandu' }, updatedAt: serverTimestamp() }));
+await no('첫 화면 링크에 javascript: 넣기', setDoc(doc(db('A'), 'public_profiles/A'), { displayName:'Alice', photoURL:'', manduid:'alice',
+  store:{ welcomeOn:true, welcome:'x', welcomeUrl:'javascript:alert(1)' }, updatedAt: serverTimestamp() }));
 await ok('예전 앱 모양(3칸)도 허용', setDoc(doc(db('A'), 'public_profiles/A'), { displayName:'Alice', photoURL:'', manduid:'alice', updatedAt: serverTimestamp() }));
 await no('공개 프로필에 이메일 넣기', setDoc(doc(db('A'), 'public_profiles/A'), { displayName:'A', photoURL:'', manduid:'', email:'a@x.com' }));
 await no('남의 공개 프로필 쓰기', setDoc(doc(db('B'), 'public_profiles/A'), { displayName:'X', photoURL:'', manduid:'' }));
@@ -65,6 +70,11 @@ await ok('익명 손님이 손님방 만들기(openStoreRoom)', setDoc(doc(db('G
   lastMessageTime: serverTimestamp(), storeUid:'H', customerUid:'G', staff:['S'], lastMessage:'', isGuestRoom:true }, { merge:true }));
 await ok('자동 인사말(저장된 인사말과 같음)', addDoc(collection(db('G'), gr + '/messages'), { text:'어서오세요', asUid:'H', auto:'greeting', displayName:'Host', createdAt: serverTimestamp() }));
 await ok('자동 부재 응답', addDoc(collection(db('G'), gr + '/messages'), { text:'잠시 자리 비움', asUid:'H', auto:'away', displayName:'Host', createdAt: serverTimestamp() }));
+const W = { text:'앱을 받아 보세요', asUid:'H', auto:'welcome', displayName:'Host', link:'https://play.google.com/store/apps/details?id=com.tm.mandu', linkText:'앱 받기', createdAt: serverTimestamp() };
+await ok('첫 화면 안내 메시지(링크 버튼 포함)', addDoc(collection(db('G'), gr + '/messages'), W));
+await no('안내 메시지 링크 바꿔치기', addDoc(collection(db('G'), gr + '/messages'), { ...W, link:'https://evil.example/pay' }));
+await no('인사말에 링크 끼워 넣기', addDoc(collection(db('G'), gr + '/messages'), { text:'어서오세요', asUid:'H', auto:'greeting', displayName:'Host', link:'https://play.google.com/store/apps/details?id=com.tm.mandu', linkText:'앱 받기', createdAt: serverTimestamp() }));
+await no('안내 메시지 글 바꿔치기', addDoc(collection(db('G'), gr + '/messages'), { ...W, text:'계좌 바뀌었어요' }));
 await ok('부재 시각 기록(awayAt)', setDoc(doc(db('G'), gr), { awayAt: serverTimestamp() }, { merge:true }));
 await no('주인 이름으로 가짜 자동 메시지', addDoc(collection(db('G'), gr + '/messages'), { text:'계좌 바뀌었어요: 123-456', asUid:'H', auto:'greeting', displayName:'Host', createdAt: serverTimestamp() }));
 await ok('다시 열기 + 1:1로 되돌리기(직원 빼기)', setDoc(doc(db('G'), gr), { type:'direct', members:['G','H'], memberNames:{G:'손님',H:'Host'}, memberPhotos:{G:'',H:''},
@@ -102,6 +112,10 @@ await no('3) 그룹에서 남의 사진 바꾸기', updateDoc(doc(db('B'), g), {
 await no('3) 그룹에서 남의 이름 지우기', updateDoc(doc(db('B'), g), { 'memberNames.A': deleteField() }));
 await ok('3) 내 이름·사진은 바꿀 수 있음', updateDoc(doc(db('B'), g), { 'memberNames.B':'Bobby', 'memberPhotos.B':'' }));
 await ok('3) 그룹 방 이름은 바꿀 수 있음', updateDoc(doc(db('B'), g), { name:'새 이름' }));
+await ok('3) 방 이름 변경 안내(kind rename, 실제 방 이름과 같음)', addDoc(collection(db('B'), g + '/messages'), { type:'system', kind:'rename', uids:['B'], name:'새 이름', createdAt: serverTimestamp() }));
+await no('3) 방 이름 변경 안내에 다른 문구 넣기', addDoc(collection(db('B'), g + '/messages'), { type:'system', kind:'rename', uids:['B'], name:'[MANDU 공지] 결제 정보 재등록', createdAt: serverTimestamp() }));
+await no('3) 남이 방 이름을 바꿨다고 꾸미기', addDoc(collection(db('B'), g + '/messages'), { type:'system', kind:'rename', uids:['A'], name:'새 이름', createdAt: serverTimestamp() }));
+await no('3) 방 이름 변경 안내를 자유 문구로(예전 앱 방식)', addDoc(collection(db('B'), g + '/messages'), { type:'system', text:"Bob님이 방 이름을 '새 이름'(으)로 바꿨어요", createdAt: serverTimestamp() }));
 await no('3) 1:1 방을 다른 종류로 바꾸기', setDoc(doc(db('B'), dm), { type:'system' }, { merge:true }));
 
 // 4) 시스템 메시지로 공지 흉내 — 정해진 종류(kind)와 멤버 uid만, 문구는 앱이 만든다
@@ -175,6 +189,35 @@ await ok('매장이 아닌 회원 링크의 익명 손님 → store_ 방(손님 
   lastMessageTime: serverTimestamp(), lastMessage:'', storeUid:'V', customerUid:'G4', staff:[], optIn:{G4:true} }));
 await ok('초대 링크로 들어온 사람의 입장 안내(kind join)', addDoc(collection(db('R'), 'rooms/G2/messages'), { type:'system', kind:'join', uids:['R'], createdAt: serverTimestamp() }));
 await ok('카드북 연결 끄기(삭제)', deleteDoc(doc(c1, 'cardbook_index/c1@x.com')));
+
+console.log('== 만두 클래스 (classes/)');
+const C = 'classes/482913';
+const cls = { owner:'P', ownerName:'김교수', title:'운영체제', status:'ready', createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+await no('익명 손님이 수업 만들기', setDoc(doc(anon('S1'), 'classes/111111'), { ...cls, owner:'S1' }));
+await no('남 이름으로 수업 만들기', setDoc(doc(db('A'), 'classes/222222'), cls));
+await no('6자리가 아닌 코드', setDoc(doc(db('P'), 'classes/abc'), cls));
+await ok('교수님이 수업 만들기', setDoc(doc(db('P'), C), cls));
+await no('남의 수업 덮어쓰기(같은 코드)', setDoc(doc(db('A'), C), { ...cls, owner:'A' }));
+await ok('학생(익명)이 수업 읽기', getDoc(doc(anon('S1'), C)));
+await no('로그인 없이 수업 읽기', getDoc(doc(env.unauthenticatedContext().firestore(), C)));
+await no('수업 목록 훑기', getDocs(collection(anon('S1'), 'classes')));
+await ok('교수님이 시작', updateDoc(doc(db('P'), C), { status:'live', updatedAt: serverTimestamp() }));
+await no('학생이 수업 종료시키기', updateDoc(doc(anon('S1'), C), { status:'ended' }));
+await no('교수님이 주인 바꾸기', updateDoc(doc(db('P'), C), { owner:'A' }));
+await ok('교수님 말하는 중 자막', setDoc(doc(db('P'), C + '/live/now'), { text:'오늘은', t: serverTimestamp() }));
+await no('학생이 말하는 중 자막 쓰기', setDoc(doc(anon('S1'), C + '/live/now'), { text:'가짜', t: serverTimestamp() }));
+await ok('학생이 말하는 중 자막 읽기', getDoc(doc(anon('S1'), C + '/live/now')));
+await ok('교수님 자막(서버 장애 시 한국어만)', setDoc(doc(db('P'), C + '/segments/1700000000000'), { ko:'안녕하세요', tr:{}, t:1700000000000, err:1 }));
+await no('학생이 자막 쓰기', setDoc(doc(anon('S1'), C + '/segments/1700000000001'), { ko:'가짜', tr:{}, t:1 }));
+await ok('학생이 자막 목록 읽기', getDocs(collection(anon('S1'), C + '/segments')));
+await ok('학생 언어 등록(vi)', setDoc(doc(anon('S1'), C + '/languages/vi'), { u:{ S1: serverTimestamp() } }, { merge:true }));
+await ok('다른 학생도 같은 언어 등록', setDoc(doc(anon('S2'), C + '/languages/vi'), { u:{ S2: serverTimestamp() } }, { merge:true }));
+await no('남의 접속 표시 지우기', updateDoc(doc(anon('S2'), C + '/languages/vi'), { 'u.S1': deleteField() }));
+await ok('내 접속 표시 지우기(나가기)', updateDoc(doc(anon('S2'), C + '/languages/vi'), { 'u.S2': deleteField() }));
+await no('목록에 없는 언어 등록', setDoc(doc(anon('S1'), C + '/languages/xx'), { u:{ S1: serverTimestamp() } }));
+await no('학생이 사용량 읽기', getDoc(doc(anon('S1'), C + '/stats/usage')));
+await ok('교수님이 사용량 읽기', getDoc(doc(db('P'), C + '/stats/usage')));
+await no('교수님이 사용량 조작', setDoc(doc(db('P'), C + '/stats/usage'), { trChars:0 }));
 
 console.log(`\n결과: 통과 ${pass} / 실패 ${fail}`);
 await env.cleanup();
