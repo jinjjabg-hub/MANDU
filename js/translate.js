@@ -446,7 +446,7 @@ async function sendImage(input){
     // 상대방 안 읽은 수 + 푸시 알림 (sendFile과 동일하게)
     const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
     const incUpdate={lastMessage:'[사진]',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-    incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
+    // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('이미지 전송 완료!');
     sendPushNotification(others,'[사진]');
@@ -473,7 +473,7 @@ async function sendMessage(){
   });
   const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
   const incUpdate={lastMessage:text,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
-  incUpdate.unreadCount={};others.forEach(u=>{incUpdate.unreadCount[u]=firebase.firestore.FieldValue.increment(1);}); // set(merge)에선 'a.b' 키가 점 들어간 이름 그대로 저장되므로 중첩 객체로
+  // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)
   await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
   markRead(currentRoomId);
   sendPushNotification(others,text);
