@@ -749,14 +749,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
   <div class="guest-host-card">
     <div class="guest-host-avatar"><img id="guest-host-photo" src="" alt=""></div>
     <div class="guest-host-name" id="guest-host-name">—</div>
-    <div class="guest-host-sub">🥟 MANDU로 대화 요청</div>
+    <div class="guest-host-sub" id="guest-host-sub">🥟 MANDU로 대화 요청</div>
   </div>
   <div class="guest-input-wrap">
-    <label class="guest-input-label">이름을 알려주세요</label>
+    <label class="guest-input-label" id="guest-input-label">이름을 알려주세요</label>
     <input class="guest-input" id="guest-name-input" type="text" placeholder="홍길동">
   </div>
-  <button class="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기 🥟</button>
-  <div class="guest-login-hint">이미 계정이 있으신가요? <span onclick="showLoginFromGuest()" id="guest-login-lnk">로그인</span></div>
+  <button class="guest-start-btn" id="guest-start-btn" onclick="startGuestChat()">바로 대화 시작하기 🥟</button>
+  <div class="guest-login-hint"><span id="guest-login-hint">이미 계정이 있으신가요?</span> <span onclick="showLoginFromGuest()" id="guest-login-lnk">로그인</span></div>
 </div>
 
 <div id="main-screen">
@@ -2312,7 +2312,7 @@ async function loadGuestHostInfo(){
 
 async function startGuestChat(){
   const name=document.getElementById('guest-name-input').value.trim();
-  if(!name){showToast('이름을 입력해주세요');return;}
+  if(!name){showToast(_gt('need'));return;}
   try{
     // 로그인 직후 바로 대화방이 만들어지므로, 이름을 먼저 저장해 둬야 방에 손님 이름이 들어간다
     localStorage.setItem('mandu_guest_name',name);
@@ -2322,35 +2322,81 @@ async function startGuestChat(){
       isGuest:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
     localStorage.setItem('mandu_guest_name',name);
-  }catch(e){showToast('오류가 발생했어요.');}
+  }catch(e){showToast(_gt('err'));}
 }
 
 // ── 브라우저 언어 자동 감지 (게스트 입장 시 UX/번역 언어를 자동으로 맞추기 위함) ──
+// 휴대폰(브라우저) 언어 목록을 순서대로 보고 지원하는 첫 언어를 고른다. 지원하지 않는 언어만 있으면 영어.
+// (예: 노르웨이어 nb → da, 인도네시아어 옛 코드 in → id, 말레이어 ms → id)
 function detectBrowserLang(){
   const supported=['ko','en','ja','zh','es','fr','de','vi','th','mn','hi','pt','ar','id','it','da'];
-  const langs=navigator.languages||[navigator.language||'ko'];
+  const alias={nb:'da',no:'da',nn:'da',in:'id',ms:'id',jv:'id',iw:'en',gl:'es',ca:'es'};
+  let langs=[];
+  try{langs=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||'']).slice();}catch(e){}
   for(let i=0;i<langs.length;i++){
-    const code=(langs[i]||'').toLowerCase().split('-')[0];
+    let code=String(langs[i]||'').toLowerCase().split(/[-_]/)[0];
+    if(alias[code])code=alias[code];
     if(supported.indexOf(code)!==-1)return code;
   }
-  return 'ko';
+  return 'en';
+}
+// 게스트 언어: 이 기기에서 게스트가 직접 고른 값이 있으면 그것, 없으면 휴대폰 언어
+function _guestLang(){
+  try{const v=localStorage.getItem('mandu_guest_lang');if(v)return v;}catch(e){}
+  return detectBrowserLang();
+}
+// 게스트(익명) 계정의 번역 언어·화면 언어 초기 설정. 이미 정해 둔 값(게스트가 바꾼 언어)은 덮어쓰지 않는다.
+function _initGuestLang(uid){
+  const det=_guestLang();
+  let lang=det,ui=det;
+  try{
+    lang=localStorage.getItem('mandu_lang_'+uid)||det;
+    ui=localStorage.getItem('mandu_ui_lang_'+uid)||lang;
+    localStorage.setItem('mandu_lang_'+uid,lang);
+    localStorage.setItem('mandu_ui_lang_'+uid,ui);
+  }catch(e){}
+  applyUILanguage(ui);
+  const myLangEl=document.getElementById('my-lang');if(myLangEl)myLangEl.value=lang;
+  return lang;
+}
+const GUEST_T={
+  ko:{sub:'🥟 MANDU로 대화 요청',label:'이름을 알려주세요',ph:'홍길동',start:'바로 대화 시작하기 🥟',hint:'이미 계정이 있으신가요?',login:'로그인',need:'이름을 입력해주세요',err:'오류가 발생했어요',bad:'잘못된 링크예요'},
+  en:{sub:'🥟 Chat request via MANDU',label:'What is your name?',ph:'John Smith',start:'Start chatting now 🥟',hint:'Already have an account?',login:'Log in',need:'Please enter your name',err:'Something went wrong',bad:'This link is invalid'},
+  ja:{sub:'🥟 MANDUでチャットのリクエスト',label:'お名前を教えてください',ph:'山田太郎',start:'今すぐチャットを始める 🥟',hint:'すでにアカウントをお持ちですか？',login:'ログイン',need:'お名前を入力してください',err:'エラーが発生しました',bad:'無効なリンクです'},
+  zh:{sub:'🥟 通过 MANDU 发起聊天',label:'请告诉我们您的名字',ph:'张伟',start:'立即开始聊天 🥟',hint:'已有账号？',login:'登录',need:'请输入您的名字',err:'出现错误',bad:'链接无效'},
+  es:{sub:'🥟 Solicitud de chat por MANDU',label:'¿Cómo te llamas?',ph:'Juan Pérez',start:'Empezar a chatear 🥟',hint:'¿Ya tienes una cuenta?',login:'Iniciar sesión',need:'Escribe tu nombre',err:'Se produjo un error',bad:'El enlace no es válido'},
+  fr:{sub:'🥟 Demande de discussion via MANDU',label:'Quel est votre nom ?',ph:'Jean Dupont',start:'Commencer à discuter 🥟',hint:'Vous avez déjà un compte ?',login:'Se connecter',need:'Veuillez saisir votre nom',err:'Une erreur est survenue',bad:'Ce lien n’est pas valide'},
+  de:{sub:'🥟 Chat-Anfrage über MANDU',label:'Wie heißen Sie?',ph:'Max Mustermann',start:'Jetzt chatten 🥟',hint:'Sie haben schon ein Konto?',login:'Anmelden',need:'Bitte geben Sie Ihren Namen ein',err:'Ein Fehler ist aufgetreten',bad:'Dieser Link ist ungültig'},
+  vi:{sub:'🥟 Yêu cầu trò chuyện qua MANDU',label:'Bạn tên là gì?',ph:'Nguyễn Văn A',start:'Bắt đầu trò chuyện 🥟',hint:'Bạn đã có tài khoản?',login:'Đăng nhập',need:'Vui lòng nhập tên của bạn',err:'Đã xảy ra lỗi',bad:'Liên kết không hợp lệ'},
+  th:{sub:'🥟 คำขอแชตผ่าน MANDU',label:'คุณชื่ออะไร',ph:'สมชาย ใจดี',start:'เริ่มแชตเลย 🥟',hint:'มีบัญชีอยู่แล้วใช่ไหม',login:'เข้าสู่ระบบ',need:'กรุณากรอกชื่อของคุณ',err:'เกิดข้อผิดพลาด',bad:'ลิงก์ไม่ถูกต้อง'},
+  mn:{sub:'🥟 MANDU-аар чатлах хүсэлт',label:'Таны нэр хэн бэ?',ph:'Бат-Эрдэнэ',start:'Одоо чатлаж эхлэх 🥟',hint:'Бүртгэлтэй юу?',login:'Нэвтрэх',need:'Нэрээ оруулна уу',err:'Алдаа гарлаа',bad:'Холбоос буруу байна'},
+  hi:{sub:'🥟 MANDU से चैट अनुरोध',label:'आपका नाम क्या है?',ph:'राहुल शर्मा',start:'अभी चैट शुरू करें 🥟',hint:'क्या आपका पहले से खाता है?',login:'लॉग इन',need:'कृपया अपना नाम दर्ज करें',err:'कुछ गलत हो गया',bad:'यह लिंक अमान्य है'},
+  pt:{sub:'🥟 Pedido de conversa pelo MANDU',label:'Qual é o seu nome?',ph:'João Silva',start:'Começar a conversar 🥟',hint:'Já tem uma conta?',login:'Entrar',need:'Digite seu nome',err:'Ocorreu um erro',bad:'Este link é inválido'},
+  ar:{sub:'🥟 طلب محادثة عبر MANDU',label:'ما اسمك؟',ph:'محمد أحمد',start:'ابدأ المحادثة الآن 🥟',hint:'هل لديك حساب بالفعل؟',login:'تسجيل الدخول',need:'يرجى إدخال اسمك',err:'حدث خطأ',bad:'هذا الرابط غير صالح'},
+  id:{sub:'🥟 Permintaan obrolan lewat MANDU',label:'Siapa nama Anda?',ph:'Budi Santoso',start:'Mulai mengobrol 🥟',hint:'Sudah punya akun?',login:'Masuk',need:'Masukkan nama Anda',err:'Terjadi kesalahan',bad:'Tautan tidak valid'},
+  it:{sub:'🥟 Richiesta di chat tramite MANDU',label:'Come ti chiami?',ph:'Mario Rossi',start:'Inizia subito a chattare 🥟',hint:'Hai già un account?',login:'Accedi',need:'Inserisci il tuo nome',err:'Si è verificato un errore',bad:'Questo link non è valido'},
+  da:{sub:'🥟 Chatanmodning via MANDU',label:'Hvad hedder du?',ph:'Jens Hansen',start:'Begynd at chatte nu 🥟',hint:'Har du allerede en konto?',login:'Log ind',need:'Indtast dit navn',err:'Der opstod en fejl',bad:'Linket er ugyldigt'}
+};
+function _gt(k){const T=GUEST_T[_guestLang()]||GUEST_T.en;return T[k]||GUEST_T.en[k];}
+// 게스트 첫 화면(로그인 전)을 휴대폰 언어로 보여준다
+function _applyGuestScreenLang(){
+  const lang=_guestLang();
+  if(!currentUser)applyUILanguage(lang);
+  const set=function(id,v,attr){const el=document.getElementById(id);if(el){if(attr)el.setAttribute(attr,v);else el.textContent=v;}};
+  set('guest-host-sub',_gt('sub'));set('guest-input-label',_gt('label'));set('guest-name-input',_gt('ph'),'placeholder');
+  set('guest-start-btn',_gt('start'));set('guest-login-hint',_gt('hint'));set('guest-login-lnk',_gt('login'));
+  try{document.documentElement.lang=lang;}catch(e){}
 }
 
 async function openGuestRoom(){
   if(!currentUser||!hostUID)return;
   try{
     const host=await _getProfile(hostUID);
-    if(!host){showToast('잘못된 링크예요');show('login-screen');return;}
-    const guestName=currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트';
-    // 브라우저 언어 자동 감지 → UI 화면 언어 + 번역 대상 언어 둘 다 즉시 적용
-    const detectedLang=detectBrowserLang();
-    localStorage.setItem('mandu_lang_'+currentUser.uid,detectedLang);
-    localStorage.setItem('mandu_ui_lang_'+currentUser.uid,detectedLang);
-    applyUILanguage(detectedLang);
-    const myLangEl=document.getElementById('my-lang');
-    if(myLangEl)myLangEl.value=detectedLang;
+    if(!host){showToast(_gt('bad'));show('login-screen');return;}
+    // 휴대폰 언어 → 화면 언어 + 번역 언어 초기 설정 (게스트가 이미 바꾼 언어는 그대로)
+    _initGuestLang(currentUser.uid);
     await openStoreRoom(host,hostUID);
-  }catch(e){showToast('오류가 발생했어요');}
+  }catch(e){showToast(_gt('err'));}
 }
 
 function upgradeToGoogle(){
@@ -2491,6 +2537,7 @@ function saveLang(){
   if(!currentUser)return;
   const lang=document.getElementById('my-lang').value;
   localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
+  if(currentUser.isAnonymous)try{localStorage.setItem('mandu_guest_lang',lang);}catch(e){} // 이 기기의 다음 게스트 입장에도 쓴다
 }
 function saveProfileLang(){
   if(!currentUser)return;
@@ -2514,6 +2561,7 @@ let _exitPressTime=0;
 let _historyInited=false;
 
 function show(id){
+  if(id==='guest-screen')try{_applyGuestScreenLang();}catch(e){}
   SCREENS.forEach(function(s){document.getElementById(s).style.display='none';});
   const el=document.getElementById(id);
   el.style.display='flex';
@@ -3728,13 +3776,7 @@ async function joinByInvite(){
   if(!joinCode||!currentUser||_joining)return;
   _joining=true;
   try{
-    if(currentUser.isAnonymous){
-      const lang=detectBrowserLang();
-      localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
-      localStorage.setItem('mandu_ui_lang_'+currentUser.uid,lang);
-      applyUILanguage(lang);
-      const myLangEl=document.getElementById('my-lang');if(myLangEl)myLangEl.value=lang;
-    }
+    if(currentUser.isAnonymous)_initGuestLang(currentUser.uid);
     const r=await _serverPost('/api/rooms/join',{code:joinCode},true);
     if(!r.ok){
       showToast(r.status===404?_L('초대 링크가 만료됐거나 잘못됐어요','This invite link is invalid or expired'):
