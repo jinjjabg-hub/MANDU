@@ -126,8 +126,9 @@ async function translateEx(text,targetLang,opts){
   }
 
   // 3단계: 서버 호출 — 로그인 토큰만 보내고, 사용량 체크/기록은 서버가 전담
-  // (Render 무료 플랜은 오래 쉬면 잠들어서 첫 요청이 실패할 수 있어 최대 2번 재시도)
-  for(let attempt=0;attempt<3;attempt++){
+  // Render 무료 서버는 오래 쉬면 잠들고, 깨어나는 데 최대 1분쯤 걸린다 → 연결 실패·서버 오류(5xx)면 2·4·8·15·30초 간격으로 다시 시도
+  const waits=[2000,4000,8000,15000,30000];
+  for(let attempt=0;attempt<=waits.length;attempt++){
     try{
       const idToken=await currentUser.getIdToken();
       const res=await fetch('https://mandu-server.onrender.com/api/translate',{
@@ -146,8 +147,8 @@ async function translateEx(text,targetLang,opts){
         return none;
       }
       if(!res.ok){
-        if(attempt<2){await new Promise(function(r){setTimeout(r,2000+attempt*2000);});continue;}
-        return none;
+        if(res.status>=500&&attempt<waits.length){await new Promise(function(r){setTimeout(r,waits[attempt]);});continue;}
+        return none;  // 4xx(잘못된 요청 등)는 다시 해도 같은 결과
       }
       const data=await res.json();
       if(data.limit&&!_usage80WarnShown&&data.used/data.limit>=0.8){
@@ -158,7 +159,7 @@ async function translateEx(text,targetLang,opts){
       setCachedTranslation(text,targetLang,out);
       return out;
     }catch(e){
-      if(attempt<2){await new Promise(function(r){setTimeout(r,2000+attempt*2000);});continue;}
+      if(attempt<waits.length){await new Promise(function(r){setTimeout(r,waits[attempt]);});continue;}
       return none;
     }
   }

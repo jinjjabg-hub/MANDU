@@ -104,6 +104,7 @@ function handleBack(){
 }
 
 let _roomsSoundReady=false,_roomsSoundReadyAt=0;const _roomLastSoundMs={};
+let _lastSyncedUnread=null; // 마지막으로 users/{uid}.unreadTotal 에 적은 값
 function loadRooms(){
   const list=document.getElementById('room-list');
   const sub=document.getElementById('chats-sub');
@@ -163,6 +164,11 @@ function loadRooms(){
         const n=(r.unreadCount&&r.unreadCount[currentUser.uid])||0;
         return sum+(n>0?n:(isU?1:0));
       },0);
+      // 서버가 푸시 알림에 붙이는 아이콘 숫자의 기준 — 바뀔 때만 내 문서에 적는다 (서버가 사람마다 모든 방을 다시 읽지 않게)
+      if(badgeCount!==_lastSyncedUnread&&!currentUser.isAnonymous){
+        _lastSyncedUnread=badgeCount;
+        db.collection('users').doc(currentUser.uid).set({unreadTotal:badgeCount},{merge:true}).catch(function(){});
+      }
       if('setAppBadge' in navigator){
         if(badgeCount>0)navigator.setAppBadge(badgeCount).catch(function(){});
         else navigator.clearAppBadge().catch(function(){});
