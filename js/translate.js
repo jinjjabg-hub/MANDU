@@ -432,12 +432,7 @@ async function sendImage(input){
   try{
     const file=await compressImage(original,1600,0.8);
     if(file.size>5*1024*1024){showToast('5MB 이하 이미지만 가능해요');input.value='';return;}
-    const formData=new FormData();
-    formData.append('file',file);
-    formData.append('upload_preset','mandu_upload');
-    const res=await fetch('https://api.cloudinary.com/v1_1/dei44zkfy/image/upload',{method:'POST',body:formData});
-    const data=await res.json();
-    if(!data.secure_url)throw new Error('upload failed');
+    const data={secure_url:await _cloudUpload(file,'image',currentRoomId)};
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',imageUrl:data.secure_url,uid:currentUser.uid,
       displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
