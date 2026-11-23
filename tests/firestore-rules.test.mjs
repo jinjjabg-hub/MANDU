@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp, increment, arrayUnion, query, where, getDocs, deleteField } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp, increment, arrayUnion, query, where, getDocs, deleteField, deleteDoc } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 
 const env = await initializeTestEnvironment({ projectId: 'mandu-test',
@@ -23,6 +23,26 @@ await no('남의 문서 읽기(이메일·토큰)', getDoc(doc(db('B'), 'users/A
 await no('익명 손님이 회원 문서 읽기', getDoc(doc(db('G'), 'users/H')));
 await ok('본인 정보 수정(merge)', setDoc(doc(db('A'), 'users/A'), { fcmToken:'t2', mutedRooms:[] }, { merge:true }));
 await no('본인 요금제 직접 바꾸기', setDoc(doc(db('A'), 'users/A'), { plan:'business' }, { merge:true }));
+
+console.log('== 카드북 연결 (cardbook_index)');
+const mail = (uid, email) => env.authenticatedContext(uid, { email }).firestore();
+const guest = env.authenticatedContext('G2', { firebase:{ sign_in_provider:'anonymous' } }).firestore();
+await seed('users/K', { uid:'K', email:'Kim@Example.com', emailLower:'kim@example.com', cardbookConsent:true, fcmToken:'tok', plan:'pro', manduid:'kimmandu' });
+await seed('manduid_index/kimmandu', { uid:'K' });
+await seed('manduid_index/leemandu', { uid:'L' });
+await no('동의자 목록을 users에서 통째로 조회(익명)', getDocs(query(collection(guest, 'users'), where('cardbookConsent','==',true))));
+await no('동의자를 이메일로 users에서 조회', getDocs(query(collection(guest, 'users'), where('cardbookConsent','==',true), where('emailLower','in',['kim@example.com']))));
+await no('동의자 문서(이메일·토큰) 직접 읽기', getDoc(doc(guest, 'users/K')));
+await ok('동의 켜기: 내 이메일·내 만두 ID로 등록', setDoc(doc(mail('K','Kim@Example.com'), 'cardbook_index/kim@example.com'), { uid:'K', manduid:'kimmandu', updatedAt: serverTimestamp() }));
+await no('남의 이메일로 등록', setDoc(doc(mail('K','Kim@Example.com'), 'cardbook_index/lee@example.com'), { uid:'K', manduid:'kimmandu' }));
+await no('남의 만두 ID로 등록', setDoc(doc(mail('K','Kim@Example.com'), 'cardbook_index/kim@example.com'), { uid:'K', manduid:'leemandu' }));
+await no('이메일·토큰 같은 다른 칸 넣기', setDoc(doc(mail('K','Kim@Example.com'), 'cardbook_index/kim@example.com'), { uid:'K', manduid:'kimmandu', email:'Kim@Example.com' }));
+await no('이메일 없는 익명 계정이 등록', setDoc(doc(guest, 'cardbook_index/kim@example.com'), { uid:'G2', manduid:'kimmandu' }));
+await ok('카드북(익명)이 이메일 하나로 조회', getDoc(doc(guest, 'cardbook_index/kim@example.com')));
+await no('카드북 동의자 목록 훑기', getDocs(collection(guest, 'cardbook_index')));
+await no('로그인 없이 조회', getDoc(doc(env.unauthenticatedContext().firestore(), 'cardbook_index/kim@example.com')));
+await no('남이 내 등록 지우기', deleteDoc(doc(mail('L','lee@example.com'), 'cardbook_index/kim@example.com')));
+await ok('동의 끄기: 내 등록 지우기', deleteDoc(doc(mail('K','Kim@Example.com'), 'cardbook_index/kim@example.com')));
 
 console.log('== public_profiles');
 await ok('누구나 공개 프로필 읽기', getDoc(doc(env.unauthenticatedContext().firestore(), 'public_profiles/H')));

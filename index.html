@@ -2213,6 +2213,7 @@ async function confirmDeleteAccount(){
     await db.collection('friends').doc(user.uid).delete().catch(function(){});
     await db.collection('public_profiles').doc(user.uid).delete().catch(function(){});
     await db.collection('discover_profiles').doc(user.uid).delete().catch(function(){});
+    if(user.email)await db.collection('cardbook_index').doc(user.email.trim().toLowerCase()).delete().catch(function(){});   // 카드북 연결 해제
     await db.collection('users').doc(user.uid).delete();
     await user.delete();
     showToast('탈퇴가 완료됐어요.');
@@ -2587,8 +2588,16 @@ function checkGuestUpgrade(){
 }
 
 // ── 카드북 연결 동의 ─────────────────────────────────────
-// 켠 사람만 카드북이 이메일로 찾을 수 있다(만두 ID 외에는 아무것도 전달되지 않음). 끄면 바로 찾을 수 없게 된다.
+// 켠 사람만 cardbook_index/{소문자 이메일} 문서({uid, manduid})가 생긴다. 카드북은 이 문서만 이메일로 한 건씩 읽으므로
+// 만두 ID 외에는 아무것도 전달되지 않는다(users 문서는 본인만 읽음). 끄면 문서를 지워 바로 찾을 수 없게 된다.
 let _cardbookConsent=false;
+function _cardbookEmail(){return (currentUser&&currentUser.email||'').trim().toLowerCase();}
+function _cardbookIndexRef(){const e=_cardbookEmail();return e?db.collection('cardbook_index').doc(e):null;}
+function _writeCardbookIndex(){
+  const ref=_cardbookIndexRef();
+  if(!ref||!currentManduid)return Promise.reject(new Error('no email or manduid'));
+  return ref.set({uid:currentUser.uid,manduid:currentManduid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+}
 function renderCardbookConsent(){
   const tog=document.getElementById('cardbook-consent-toggle');
   if(tog)tog.className='toggle'+(_cardbookConsent?' on':'');
@@ -2599,15 +2608,22 @@ async function loadCardbookConsent(){
     const d=await db.collection('users').doc(currentUser.uid).get();
     _cardbookConsent=!!(d.exists&&d.data().cardbookConsent===true);
     renderCardbookConsent();
+    // 동의한 회원은 찾기 문서를 최신(만두 ID)으로 맞춰 둔다 — 예전에 동의했거나 다른 기기에서 켠 경우 포함
+    if(_cardbookConsent)_writeCardbookIndex().catch(function(){});
   }catch(e){}
 }
 async function toggleCardbookConsent(){
   if(!currentUser||currentUser.isAnonymous)return;
   const next=!_cardbookConsent;
   try{
-    const data={cardbookConsent:next};
-    if(next)data.emailLower=(currentUser.email||'').toLowerCase();
-    await db.collection('users').doc(currentUser.uid).set(data,{merge:true});
+    if(next){
+      await _writeCardbookIndex();
+      await db.collection('users').doc(currentUser.uid).set({cardbookConsent:true,emailLower:_cardbookEmail()},{merge:true});
+    }else{
+      const ref=_cardbookIndexRef();
+      if(ref)await ref.delete();
+      await db.collection('users').doc(currentUser.uid).set({cardbookConsent:false},{merge:true});
+    }
     _cardbookConsent=next;
     renderCardbookConsent();
     showToast(t(next?'cardbook_consent_on':'cardbook_consent_off'));
