@@ -72,6 +72,25 @@ service cloud.firestore {
       return !isAnon() || roomId.matches('^guest_' + request.auth.uid + '_[A-Za-z0-9]+$');
     }
 
+    // 방에 적힌 이름·사진(memberNames·memberPhotos) — 남의 칸은 바꿀 수 없다(방 안에서 남을 사칭하는 것 방지).
+    //  - 내 칸: 자유롭게 / 새로 들어온 멤버의 칸: 추가 가능(멤버 추가) / 방을 나간 사람의 칸: 지우기 가능
+    //  - 매장 방에서 손님·주인은 직원 구성을 맞추느라 직원·주인 칸을 다시 적을 수 있다
+    function memberMapOk(field) {
+      let d = request.resource.data.get(field, {}).diff(resource.data.get(field, {}));
+      return d.changedKeys().hasOnly([request.auth.uid])
+        && d.addedKeys().hasOnly(request.resource.data.members.concat([request.auth.uid]))
+        && d.removedKeys().intersection(request.resource.data.members.toSet().difference([request.auth.uid].toSet())).size() == 0;
+    }
+    function storeStaffEditor() {
+      return resource.data.get('storeUid', null) != null
+        && request.auth.uid in [resource.data.storeUid, resource.data.get('customerUid', '')];
+    }
+    // 안 읽음 수(unreadCount) — 내 숫자만(읽으면 0). 받는 사람들의 숫자는 서버가 메시지 알림을 보낼 때 올린다.
+    function unreadOk() {
+      return request.resource.data.get('unreadCount', {}).diff(resource.data.get('unreadCount', {})).affectedKeys()
+        .hasOnly([request.auth.uid]);
+    }
+
     // 채팅방 — 멤버만 읽고 쓸 수 있다.
     match /rooms/{roomId} {
       allow read: if request.auth != null && request.auth.uid in resource.data.members;
@@ -101,6 +120,8 @@ service cloud.firestore {
         && (!('isGuestRoom' in resource.data) || request.resource.data.get('isGuestRoom', null) == resource.data.isGuestRoom)
         && (!('readBy' in request.resource.data)
             || request.resource.data.readBy.diff(resource.data.get('readBy', {})).affectedKeys().hasOnly([request.auth.uid]))
+        && (storeStaffEditor() || (memberMapOk('memberNames') && memberMapOk('memberPhotos')))
+        && unreadOk()
         && anonUpdateOk(roomId);
       allow delete: if false;
 
