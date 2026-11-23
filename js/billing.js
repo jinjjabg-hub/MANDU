@@ -21,7 +21,7 @@ function fmtChars(n){
 // ── 이번 달 사용 내역 — 서버가 차감할 때마다 users/{uid}/usage_log 에 남긴 기록을 보여준다 ──
 // "어디서 이만큼 썼지?"에 답하기 위함: 종류별 / 언어별 합계 + 최근 기록. 원문은 기록되지 않는다.
 const USAGE_SOURCE_LABELS={
-  chat:['채팅 자동 번역','Chat auto-translate'],older:['이전 메시지 번역','Older messages'],
+  chat:['채팅 자동 번역','Chat auto-translate'],sent:['내가 보낸 메시지 번역','Messages you sent'],older:['이전 메시지 번역','Older messages'],
   ai_retry:['AI로 다시 번역','AI re-translate'],system:['안내 메시지','System messages'],
   dict_preview:['사전 미리보기','Dictionary preview'],dict_save:['사전 저장','Dictionary save'],
   image:['사진 번역','Photo'],other:['기타','Other']

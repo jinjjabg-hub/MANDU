@@ -38,6 +38,7 @@ async function initReferral(){
   if(info.length){set('ref-info-label',info[0]);set('ref-info-sub',info.slice(1).join(' · '));}
   show('ref-admin-row',!!_refMe.isAdmin);
   show('trsim-admin-row',!!_refMe.isAdmin);
+  show('langcmp-admin-row',!!_refMe.isAdmin);
 }
 function copyReferralLink(){
   if(!currentManduid)return;
@@ -144,6 +145,34 @@ async function openTranslationSim(){
     '<div>번역 '+n(d.actual.events)+'건 · '+n(d.actual.chars)+'자 (채팅 '+n(d.actual.chat_chars)+'자) · 캐시 적중 '+n(d.actual.cache_hits)+'건</div>'+
     '<div style="margin-top:12px;color:var(--outline);font-size:12px;">시뮬레이션은 메시지마다 번역한다고 가정해서, 앱 안 사전·캐시로 건너뛴 번역이 있는 실제 기록보다 조금 클 수 있어요. 원가는 구글 100만 자당 $20, AI(Haiku 5.5) 토큰 단가, 환율 1,400원 기준 추정치예요.</div>';
 }
+// 운영자 전용: 구글 전용 언어(몽골어·태국어·힌디어)를 AI로 옮겨도 되는지 — 같은 문장을 두 엔진으로 번역하고 한국어로 되돌려 비교
+async function openLangCompare(){
+  closeLangCompare();
+  const ov=document.createElement('div');ov.id='langcmp-admin';
+  ov.style.cssText='position:fixed;inset:0;z-index:9000;background:var(--background);display:flex;flex-direction:column;';
+  ov.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--outline-variant);">'+
+    '<button class="back-btn" onclick="closeLangCompare()"><span class="ms">arrow_back</span></button>'+
+    '<div style="font-size:17px;font-weight:800;flex:1;">AI 번역 vs 구글 번역 비교</div></div>'+
+    '<div id="langcmp-body" style="flex:1;overflow:auto;padding:12px 16px 32px;font-size:13px;line-height:1.6;"><div class="discover-spinner"></div><div style="text-align:center;color:var(--outline);">번역 중… (30초쯤 걸릴 수 있어요)</div></div>';
+  document.body.appendChild(ov);
+  const r=await _serverPost('/api/admin/compare-langs',{},true);
+  const body=document.getElementById('langcmp-body');if(!body)return;
+  if(!r.ok){body.textContent=r.status===403?'관리자만 볼 수 있어요':'불러오지 못했어요 (AI 번역 키가 없거나 서버 오류)';return;}
+  const d=r.data,names={mn:'몽골어',th:'태국어',hi:'힌디어'};
+  const box='padding:8px 10px;border-radius:10px;background:var(--surface-container);margin:4px 0;';
+  const sub='color:var(--outline);font-size:12px;';
+  let html='<div style="margin-bottom:12px;color:var(--outline);">지금 구글로만 번역하는 언어: '+_esc((d.googleOnlyNow||[]).join(', ')||'없음')+' · AI 모델: '+_esc(d.model||'')+'<br>'+
+    '각 결과 아래 회색 글은 그 번역을 구글로 다시 한국어로 되돌린 것이에요. 원문 뜻과 가까울수록 좋은 번역이에요. 가능하면 그 나라 사람에게도 보여 주세요.</div>';
+  let last='';
+  (d.rows||[]).forEach(function(x){
+    if(x.lang!==last){last=x.lang;html+='<div style="font-weight:800;font-size:15px;margin:18px 0 6px;">'+_esc(names[x.lang]||x.lang)+'</div>';}
+    html+='<div style="margin:10px 0 14px;"><div style="font-weight:700;">'+_esc(x.text)+'</div>'+
+      '<div style="'+box+'"><b>구글</b> '+_esc(x.google)+'<div style="'+sub+'">↩ '+_esc(x.googleBack)+'</div></div>'+
+      '<div style="'+box+'"><b>AI</b> '+_esc(x.ai||'(실패)')+'<div style="'+sub+'">↩ '+_esc(x.aiBack)+'</div></div></div>';
+  });
+  body.innerHTML=html;
+}
+function closeLangCompare(){const e=document.getElementById('langcmp-admin');if(e)e.remove();}
 function closeTranslationSim(){const e=document.getElementById('trsim-admin');if(e)e.remove();}
 function closeReferralAdmin(){const e=document.getElementById('ref-admin');if(e)e.remove();}
 function _renderReferralAdmin(){

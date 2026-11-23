@@ -113,6 +113,8 @@ async function translateEx(text,targetLang,opts){
 
   // source·src·room은 '이번 달 사용 내역'용 꼬리표 (원문은 서버 기록에 남지 않는다)
   const payload={text:text,target:targetLang,source:opts.source||'chat',src:srcLang||'',room:currentRoomId||''};
+  // 채팅 메시지는 id를 함께 보낸다 → 서버가 언어별로 한 번만 번역하고 보낸 사람 한도에서 차감 (읽는 사람은 0자)
+  if(opts.msg)payload.msg=String(opts.msg);
   if(useAi){
     payload.engine='ai';
     if(opts.context&&opts.context.length)payload.context=opts.context;
@@ -322,19 +324,19 @@ function renderMsg(d,skipTranslate){
       const line=document.createElement('div');line.className='msg-translated';w.appendChild(line);
       _showTranslation(w,b,line,d.text,cachedTr,myLang,ctx);
       if(_trNeedsAiUpgrade(cachedTr)){ // 예전 구글 번역 → 화면은 그대로 두고 뒤에서 AI 번역으로 한 번 교체
-        translateEx(d.text,myLang,{context:ctx,source:'chat'}).then(function(r2){
+        translateEx(d.text,myLang,{context:ctx,source:'chat',msg:d._id}).then(function(r2){
           if(r2&&r2.engine==='ai'&&r2.text)_showTranslation(w,b,line,d.text,r2,myLang,ctx);
         }).catch(function(){});
       }
       return;
     }
     if(skipTranslate){
-      return {bubble:b,wrap:w,text:d.text,myLang:myLang,ctx:ctx};
+      return {bubble:b,wrap:w,text:d.text,myLang:myLang,ctx:ctx,msg:d._id};
     }
     const loadingOrig=document.createElement('div');loadingOrig.className='msg-translated';
     loadingOrig.innerHTML='<span class="ms">translate</span>'+t('translating_loading');
     w.appendChild(loadingOrig);
-    translateEx(d.text,myLang,{context:ctx,source:'chat'}).then(function(r){
+    translateEx(d.text,myLang,{context:ctx,source:'chat',msg:d._id}).then(function(r){
       if(r.text&&r.text!==d.text){
         _showTranslation(w,b,loadingOrig,d.text,r,myLang,ctx);
       }else{
