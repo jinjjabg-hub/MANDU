@@ -18,3 +18,7 @@ twa/output/
 tests/node_modules/
 tests/package-lock.json
 tests/*-debug.log
+
+# Firebase 키 (절대 커밋 금지)
+*firebase-key*.json
+*-firebase-adminsdk-*.json
