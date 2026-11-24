@@ -4,16 +4,44 @@
 // 요금제: 무료 5천자 / 유료는 플랜 한도 + 무료 5천자 — 소프트 3만5천자(2,900원) / 라이트 10만5천자(8,400원) /
 // 비즈니스 50만5천자(29,000원, 초과분 1만자당 315원 자동 연장). 서버(main.py)의 PLAN_LIMITS와 반드시 같게.
 const PLAN_LIMITS={free:5000,soft:35000,light:105000,business:505000,premium:505000};
-// 추천 보너스(서버가 users/{uid}.bonusChars·bonusExpiresAt·bonusUsed.{월}에 기록) — 월 한도를 다 쓴 뒤 차감
+// ── 사용량을 세는 기간 — 서버 _usage_period(mandu-server server/plans.py)와 반드시 같은 계산 ──
+// 정기결제를 쓰는 사람: 결제일 ~ 다음 결제일, 키 'c_시작일(한국 날짜)' 예 c_20261124. 무료·만료된 사람: 달력 한 달, 키 '2026_11'.
+// 결제일이 지났는데 아직 결제 전이면 새 기간이 이미 시작된 것으로 본다(무료 5천 자는 바로 쓸 수 있음).
+function _shiftMonth(d,k,anchor){
+  let y=d.getUTCFullYear(),m=d.getUTCMonth()+k;
+  y+=Math.floor(m/12);m=((m%12)+12)%12;
+  const last=new Date(Date.UTC(y,m+1,0)).getUTCDate();
+  return new Date(Date.UTC(y,m,Math.min(anchor,last),d.getUTCHours(),d.getUTCMinutes(),d.getUTCSeconds(),d.getUTCMilliseconds()));
+}
+function _tsDate(v){return v&&v.toDate?v.toDate():(v&&v.seconds?new Date(v.seconds*1000):(v?new Date(v):null));}
+function getUsagePeriod(u,now){
+  u=u||{};const b=u.billing||{};const nb=_tsDate(b.nextBillingAt);now=now||new Date();
+  if(nb&&b.status!=='expired'){
+    const anchor=parseInt(b.billingDay,10)||nb.getUTCDate();
+    let start=nb,n=0;
+    while(start>now&&n<600){start=_shiftMonth(start,-1,anchor);n++;}
+    while(_shiftMonth(start,1,anchor)<=now&&n<600){start=_shiftMonth(start,1,anchor);n++;}
+    const k=new Date(start.getTime()+9*3600000);
+    const key='c_'+k.getUTCFullYear()+String(k.getUTCMonth()+1).padStart(2,'0')+String(k.getUTCDate()).padStart(2,'0');
+    return {key:key,start:start,end:_shiftMonth(start,1,anchor)};
+  }
+  return {key:getYearMonth(),start:null,end:null};
+}
+let _myUsagePeriod=null; // 마지막으로 내 문서에서 계산한 사용 기간 (getMonthlyUsage 가 채움)
+function myUsageKey(){
+  return (_myUsagePeriod&&_myUsagePeriod.key)||getUsagePeriod((currentUser&&usersMap[currentUser.uid])||{}).key;
+}
+
+// 추천 보너스(서버가 users/{uid}.bonusChars·bonusExpiresAt·bonusUsed.{기간}에 기록) — 기간 한도를 다 쓴 뒤 차감
 function _myBonusInfo(){
   const u=(currentUser&&usersMap[currentUser.uid])||{};
   const exp=u.bonusExpiresAt&&u.bonusExpiresAt.toDate?u.bonusExpiresAt.toDate():null;
   const avail=(u.bonusChars>0&&exp&&exp>new Date())?u.bonusChars:0;
-  const usedMonth=((u.bonusUsed||{})[getYearMonth()])||0;
+  const usedMonth=((u.bonusUsed||{})[myUsageKey()])||0;
   // 충전 글자(1회 결제 상품, 서버가 packChars·packExpiresAt·packUsed.{월}에 기록) — 보너스 다음에 차감
   const pexp=u.packExpiresAt&&u.packExpiresAt.toDate?u.packExpiresAt.toDate():null;
   const pack=(u.packChars>0&&pexp&&pexp>new Date())?u.packChars:0;
-  const packUsedMonth=((u.packUsed||{})[getYearMonth()])||0;
+  const packUsedMonth=((u.packUsed||{})[myUsageKey()])||0;
   return {avail:avail+pack,usedMonth:usedMonth+packUsedMonth,exp:exp,bonus:avail,pack:pack,packExp:pexp};
 }
 let _guestDailyWarnShown=false;
@@ -72,8 +100,9 @@ async function getMonthlyUsage(){
   if(!currentUser)return 0;
   try{
     const snap=await db.collection('users').doc(currentUser.uid).get();
-    const usage=(snap.data()&&snap.data().usage)||{};
-    return usage[getYearMonth()]||0;
+    const data=snap.data()||{};
+    _myUsagePeriod=getUsagePeriod(data);   // 정기결제면 결제일~다음 결제일
+    return (data.usage||{})[_myUsagePeriod.key]||0;
   }catch(e){return 0;}
 }
 
