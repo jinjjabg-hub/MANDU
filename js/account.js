@@ -516,6 +516,7 @@ auth.onAuthStateChanged(async function(user){
     if(isGuest&&joinCode){
       await loadInviteInfo();
       show('guest-screen');
+      checkManduApp(); // 만두 앱이 깔려 있으면 앱(로그인된 계정)으로 넘긴다 — js/open-in-app.js
     }else if(isGuest&&(hostUID||guestManduidParam)){
       if(guestManduidParam&&!hostUID){
         try{
@@ -527,6 +528,7 @@ auth.onAuthStateChanged(async function(user){
         }catch(e){}
       }else{await loadGuestHostInfo();}
       show('guest-screen');
+      checkManduApp();
     }else{
       if(!localStorage.getItem('mandu_onboarding_done')){showOnboarding();}
       else{show('login-screen');}
