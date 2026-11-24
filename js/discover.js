@@ -294,12 +294,7 @@ async function uploadProfilePhoto(input){
   showToast('프로필 사진 업로드 중...');
   try{
     const file=await compressImage(original,512,0.85);
-    const formData=new FormData();
-    formData.append('file',file);
-    formData.append('upload_preset','mandu_upload');
-    const res=await fetch('https://api.cloudinary.com/v1_1/dei44zkfy/image/upload',{method:'POST',body:formData});
-    const data=await res.json();
-    if(!data.secure_url)throw new Error('upload failed');
+    const data={secure_url:await _cloudUpload(file,'profile')};
     await currentUser.updateProfile({photoURL:data.secure_url});
     await db.collection('users').doc(currentUser.uid).update({photoURL:data.secure_url});
     if(usersMap[currentUser.uid])usersMap[currentUser.uid].photoURL=data.secure_url;

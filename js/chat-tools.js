@@ -182,18 +182,35 @@ async function sendPushNotification(toUids,body){
   }
 }
 
+// ── 사진·파일 올리기 (Cloudinary) ─────────────────────────────────
+// 서버(/api/upload/sign)에서 서명을 받아 올린다 — 로그인·방 멤버·횟수를 서버가 확인하고, 비밀키는 서버에만 있다.
+// 서버에 아직 키가 없으면({signed:false}) 예전 방식(공개 업로드 설정)으로 올린다. kind: image | file | profile
+async function _cloudUpload(file,kind,roomId){
+  const sig=await _serverPost('/api/upload/sign',{kind:kind,room:roomId||null},true);
+  if(!sig.ok)throw new Error('sign failed '+sig.status);
+  const d=sig.data,fd=new FormData();
+  fd.append('file',file);
+  let url='https://api.cloudinary.com/v1_1/dei44zkfy/'+(kind==='file'?'raw':'image')+'/upload';
+  if(d.signed){
+    ['api_key','timestamp','signature','folder','tags','upload_preset'].forEach(function(k){
+      const v=k==='api_key'?d.apiKey:d[k];if(v)fd.append(k,v);
+    });
+    url='https://api.cloudinary.com/v1_1/'+encodeURIComponent(d.cloud)+'/'+encodeURIComponent(d.resourceType)+'/upload';
+  }else{
+    fd.append('upload_preset','mandu_upload');
+  }
+  const res=await fetch(url,{method:'POST',body:fd});
+  const data=await res.json();
+  if(!data.secure_url)throw new Error('upload failed');
+  return data.secure_url;
+}
+
 async function sendFile(input){
   const file=input.files[0];if(!file||!currentUser||!currentRoomId)return;
   if(file.size>20*1024*1024){showToast('20MB 이하 파일만 가능해요');input.value='';return;}
   showToast('파일 업로드 중...');
   try{
-    const formData=new FormData();
-    formData.append('file',file);
-    formData.append('upload_preset','mandu_upload');
-    formData.append('resource_type','raw');
-    const res=await fetch('https://api.cloudinary.com/v1_1/dei44zkfy/raw/upload',{method:'POST',body:formData});
-    const data=await res.json();
-    if(!data.secure_url)throw new Error('upload failed');
+    const data={secure_url:await _cloudUpload(file,'file',currentRoomId)};
     const fileSize=file.size<1024*1024?(Math.round(file.size/1024)+'KB'):(Math.round(file.size/1024/1024*10)/10+'MB');
     await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',fileUrl:data.secure_url,fileName:file.name,fileSize:fileSize,
