@@ -35,7 +35,7 @@ async function toggleUsageLog(){
   let rows=[];
   try{
     const snap=await db.collection('users').doc(currentUser.uid).collection('usage_log')
-      .where('month','==',getYearMonth()).limit(2000).get();
+      .where('month','==',myUsageKey()).limit(2000).get();
     snap.forEach(function(doc){rows.push(doc.data());});
   }catch(e){panel.textContent=_L('내역을 불러오지 못했어요.','Could not load usage history.');return;}
   if(!rows.length){
@@ -93,8 +93,14 @@ async function renderUsageUI(){
   const btnEl=document.getElementById('usage-upgrade-btn');
   if(!monthEl)return;
 
-  const kst=_kstNow();
-  monthEl.textContent=t('usage_month_format').replace('{y}',kst.y).replace('{m}',kst.m);
+  const kst=_kstNow(),per=_myUsagePeriod;
+  if(per&&per.start){
+    // 정기결제: 결제일 ~ 다음 결제일 전날 (한국 날짜) — 예 11/24 – 12/23
+    const md=function(d){const k=new Date(d.getTime()+9*3600000);return (k.getUTCMonth()+1)+'/'+k.getUTCDate();};
+    monthEl.textContent=md(per.start)+' – '+md(new Date(per.end.getTime()-86400000));
+  }else{
+    monthEl.textContent=t('usage_month_format').replace('{y}',kst.y).replace('{m}',kst.m);
+  }
   const planLabels={free:t('plan_free'),soft:'SOFT',light:'LIGHT',business:'BUSINESS',premium:'BUSINESS'};
   badgeEl.textContent=planLabels[plan]||t('plan_free');
 
