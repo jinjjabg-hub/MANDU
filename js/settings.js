@@ -91,7 +91,10 @@ function updateUIAfterLogin(){
   const mid=currentManduid||'—';
   document.getElementById('hero-manduid').textContent='@'+mid;
   document.getElementById('settings-manduid').textContent='@'+mid;
-  document.getElementById('my-link-display').textContent=getMyLink();
+  // 내 링크로 바꾼 뒤에는 화면 언어 적용(applyUILanguage)이 기본 문구 '로그인 후 생성'으로 되돌리지 않게 표시를 뗀다
+  const linkEl=document.getElementById('my-link-display');
+  linkEl.removeAttribute('data-i18n');
+  linkEl.textContent=getMyLink();
 
   // 저장된 언어가 없으면(새 기기·캐시 삭제) 휴대폰 언어로 초기 설정
   let lang=localStorage.getItem('mandu_lang_'+currentUser.uid);
