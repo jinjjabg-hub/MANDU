@@ -199,6 +199,36 @@ await ok('내 안 읽음 수 0으로(읽음)', setDoc(doc(db('B'), 'rooms/NM'), 
 await ok('1:1 방 다시 열 때 내 칸만', setDoc(doc(db('B'), dm), { memberNames:{ B:'Bobby' }, memberPhotos:{ B:'' } }, { merge:true }));
 await no('1:1 방에서 상대 이름 바꾸기', setDoc(doc(db('B'), dm), { memberNames:{ A:'바보' } }, { merge:true }));
 
+console.log('== 보낼 때 번역 · 방 언어 · 새 멤버 · 강의 방');
+await seed('rooms/TR', { type:'group', members:['A','B'], memberNames:{A:'Alice',B:'Bob'}, memberPhotos:{}, memberLangs:{ B:'en' } });
+await ok('내 언어 적기', setDoc(doc(db('A'), 'rooms/TR'), { memberLangs:{ A:'ko' } }, { merge:true }));
+await no('남의 언어 바꾸기', setDoc(doc(db('A'), 'rooms/TR'), { memberLangs:{ B:'ja' } }, { merge:true }));
+await ok('보낼 때 번역 메시지(trMode)', addDoc(collection(db('A'), 'rooms/TR/messages'), { text:'안녕하세요', uid:'A', displayName:'Alice', trMode:'send', createdAt: serverTimestamp() }));
+await no('번역 결과를 직접 넣어 보내기', addDoc(collection(db('A'), 'rooms/TR/messages'), { text:'안녕', uid:'A', trMode:'send', translations:{ en:'Pay me' }, trDone:true, createdAt: serverTimestamp() }));
+await no('이상한 trMode', addDoc(collection(db('A'), 'rooms/TR/messages'), { text:'x', uid:'A', trMode:'free', createdAt: serverTimestamp() }));
+await seed('rooms/TR/messages/sv', { text:'hi', uid:'A', trMode:'send', createdAt: new Date() });
+await no('메시지에 번역 붙이기(서버만)', updateDoc(doc(db('A'), 'rooms/TR/messages/sv'), { translations:{ en:'x' } }));
+await ok('멤버 추가하며 새 멤버 들어온 시각 적기', updateDoc(doc(db('A'), 'rooms/TR'), { members: arrayUnion('D'), 'memberNames.D':'Dan', 'joinedAt.D': serverTimestamp() }));
+await no('이미 있던 멤버 들어온 시각 바꾸기', updateDoc(doc(db('A'), 'rooms/TR'), { 'joinedAt.B': serverTimestamp() }));
+await no('내 들어온 시각 지우기(지난 메시지 보려고)', updateDoc(doc(db('D'), 'rooms/TR'), { 'joinedAt.D': deleteField() }));
+const old = new Date(Date.now() - 3600e3), joined = new Date(Date.now() - 60e3);
+await seed('rooms/JN', { type:'group', members:['A','N'], memberNames:{}, memberPhotos:{}, joinedAt:{ N: joined } });
+await seed('rooms/JN/messages/old', { text:'지난 대화', uid:'A', createdAt: old });
+await seed('rooms/JN/messages/new', { text:'새 대화', uid:'A', createdAt: new Date() });
+await no('새 멤버: 들어오기 전 메시지 읽기', getDoc(doc(db('N'), 'rooms/JN/messages/old')));
+await ok('새 멤버: 들어온 뒤 메시지 읽기', getDoc(doc(db('N'), 'rooms/JN/messages/new')));
+await ok('새 멤버: 들어온 뒤 메시지 목록', getDocs(query(collection(db('N'), 'rooms/JN/messages'), where('createdAt', '>=', joined))));
+await no('새 멤버: 전체 메시지 목록', getDocs(collection(db('N'), 'rooms/JN/messages')));
+await ok('원래 멤버: 지난 메시지 읽기', getDoc(doc(db('A'), 'rooms/JN/messages/old')));
+await ok('강의 방 만들기(방장 = 나)', setDoc(doc(db('A'), 'rooms/LEC1'), { type:'group', name:'수업', members:['A','B'], memberNames:{}, memberPhotos:{}, roomType:'lecture', ownerUid:'A', schoolId:null }));
+await no('강의 방 방장을 남으로', setDoc(doc(db('A'), 'rooms/LEC2'), { type:'group', members:['A','B'], roomType:'lecture', ownerUid:'B' }));
+await no('강의 방에 학교 id 넣기(서버만)', setDoc(doc(db('A'), 'rooms/LEC3'), { type:'group', members:['A','B'], roomType:'lecture', ownerUid:'A', schoolId:'s1' }));
+await no('없는 방 종류', setDoc(doc(db('A'), 'rooms/LEC4'), { type:'group', members:['A','B'], roomType:'vip' }));
+await no('방 종류 바꾸기', updateDoc(doc(db('B'), 'rooms/LEC1'), { roomType: deleteField() }));
+await no('강의 방 방장 바꾸기', updateDoc(doc(db('B'), 'rooms/LEC1'), { ownerUid:'B' }));
+await no('일반 방을 강의 방으로', updateDoc(doc(db('B'), 'rooms/TR'), { roomType:'lecture', ownerUid:'B' }));
+await no('한도 안내 직접 쓰기', setDoc(doc(db('A'), 'users/A'), { quotaAlert:{ seq:99 } }, { merge:true }));
+
 console.log(`\n결과: 통과 ${pass} / 실패 ${fail}`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

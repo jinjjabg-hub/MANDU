@@ -68,8 +68,8 @@ function openInBrowser(){
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="i18n.js?v=2"></script>
-<link rel="stylesheet" href="style.css?v=2">
+<script src="i18n.js?v=3"></script>
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mandu-logo" viewBox="0 0 200 200"><ellipse cx="100" cy="88" rx="72" ry="70" fill="#6b38d4"/>
@@ -752,6 +752,7 @@ function openInBrowser(){
     <span class="screen-title" data-i18n="create_title">새 채팅방</span>
   </div>
   <div class="create-field"><input class="create-input" id="group-name" placeholder="채팅방 이름 (여러 명일 때)" data-i18n-placeholder="create_group_name_placeholder"></div>
+  <label class="create-lecture-row"><input type="checkbox" id="create-lecture"><span class="create-lecture-text"><span class="create-lecture-title" data-i18n="create_lecture_label">강의 방으로 만들기</span><span class="create-lecture-sub" data-i18n="create_lecture_sub">학생들이 보낸 메시지의 번역도 내(방장) 한도에서 차감돼요</span></span></label>
   <div class="section-lbl" data-i18n="create_select_user_label">대화 상대 선택</div>
   <div class="scroll-area" id="select-user-list"></div>
   <button class="create-done-btn" onclick="createRoom()" data-i18n="create_done_btn">채팅방 만들기</button>
@@ -812,6 +813,7 @@ function openInBrowser(){
     </select>
   </div>
   <div id="messages"></div>
+  <div class="room-lang-note" id="room-lang-note" style="display:none;"></div>
   <div class="chat-input-area">
     <input type="file" id="img-input" accept="image/*" style="display:none" onchange="sendImage(this)">
     <input type="file" id="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.hwp" style="display:none" onchange="sendFile(this)">
@@ -1166,6 +1168,7 @@ function openInBrowser(){
     <button class="sheet-close" onclick="closePlanSheet()"><span class="ms">close</span></button>
   </div>
   <div style="padding:0 16px 16px;overflow-y:auto;">
+    <div class="plan-charge-rule" data-i18n="plan_charge_rule">번역 글자는 보낸 메시지 글자 수 × 번역된 언어 수만큼 차감돼요.</div>
     <div id="plan-status-wrap" style="font-size:13px;color:var(--outline);margin-bottom:16px;text-align:center;">현재 <strong id="plan-current-label">무료</strong> · 이번 달 <strong id="plan-used-label">0자</strong> 사용</div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;" id="plan-cards"></div>
     <div id="plan-legal-notice" style="font-size:11.5px;color:var(--outline);line-height:1.6;margin-bottom:16px;text-align:center;">매월 같은 날 자동결제 · 언제든 해지 가능 · 결제하면 <a href="/terms.html" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:underline;">이용약관</a>과 <a href="/refund.html" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:underline;">환불정책</a>에 동의하는 것으로 봐요. 결제 후 유료 한도로 번역을 쓰면 청약 철회가 제한될 수 있어요.</div>
@@ -1235,21 +1238,22 @@ function openInBrowser(){
 
 <script src="js/core.js?v=1"></script>
 <script src="js/account.js?v=2"></script>
-<script src="js/settings.js?v=2"></script>
+<script src="js/settings.js?v=3"></script>
 <script src="js/discover.js?v=2"></script>
 <script src="js/rooms.js?v=1"></script>
-<script src="js/store.js?v=1"></script>
+<script src="js/store.js?v=2"></script>
 <script src="js/photo-translate.js?v=1"></script>
 <script src="js/login-extra.js?v=1"></script>
-<script src="js/chat.js?v=4"></script>
+<script src="js/chat.js?v=5"></script>
 <script src="js/translate-base.js?v=2"></script>
 <script src="js/referral.js?v=2"></script>
-<script src="js/translate.js?v=5"></script>
+<script src="js/translate.js?v=6"></script>
 <script src="js/chat-tools.js?v=3"></script>
 <script src="js/mydict.js?v=1"></script>
 <script src="js/ui-lang.js?v=1"></script>
-<script src="js/billing.js?v=3"></script>
+<script src="js/billing.js?v=4"></script>
 <script src="js/open-in-app.js?v=1"></script>
+<script src="js/send-translate.js?v=1"></script>
 <script src="js/app-start.js?v=1"></script>
 <script src="js/pwa.js?v=1"></script>
 <script src="js/ready.js?v=1"></script>

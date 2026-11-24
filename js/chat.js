@@ -124,6 +124,8 @@ function loadRooms(){
         });
       }
       snap.docs.forEach(function(d){const lt=d.data().lastMessageTime;if(lt)_roomLastSoundMs[d.id]=Math.max(_roomLastSoundMs[d.id]||0,lt.toMillis());});
+      // 방마다 내 언어를 적어 둔다(다를 때만) — 보낼 때 서버가 멤버 언어로 번역 (js/send-translate.js)
+      snap.docs.forEach(function(d){syncMyRoomLang(d.id,d.data());});
       if(!_roomsSoundReady){_roomsSoundReady=true;_roomsSoundReadyAt=Date.now()-5000;}
       _lastRoomsSnap=snap;
       list.innerHTML='';
@@ -192,7 +194,7 @@ function loadRooms(){
         item.className='room-item';
         item.innerHTML=
           '<div class="av-wrap"><div class="av">'+(_safeUrl(photo)?'<img src="'+_esc(_safeUrl(photo))+'" alt="">':( isGroup?'<span class="ms">group</span>':'<span class="ms">person</span>'))+'</div></div>'+
-          '<div class="room-info"><div class="room-name-row"><span class="room-name">'+_esc(name)+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
+          '<div class="room-info"><div class="room-name-row"><span class="room-name">'+_esc(name)+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(r.roomType==='lecture'?'<span class="country-pill">'+t('lecture_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
           '<div class="room-last">'+(r.lastMessage?_esc(r.lastMessage):t('chat_start_hint'))+'</div></div>'+
           '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'<button class="room-del" title="'+_L('삭제','Delete')+'"><span class="ms">delete</span></button></div>';
         item.querySelector('.room-del').onclick=function(e){e.stopPropagation();deleteRoom(doc.id,name);};
@@ -424,16 +426,22 @@ function showCreate(){
 
 async function createRoom(){
   if(selectedUsers.length===0){showToast('대화 상대를 선택하세요!');return;}
-  if(selectedUsers.length===1){await startDM(selectedUsers[0]);return;}
+  const lectureEl=document.getElementById('create-lecture');
+  const isLecture=!!(lectureEl&&lectureEl.checked);
+  if(selectedUsers.length===1&&!isLecture){await startDM(selectedUsers[0]);return;}
   const name=document.getElementById('group-name').value.trim()||'그룹 채팅';
   const members=[currentUser.uid].concat(selectedUsers.map(function(u){return u.uid;}));
   const memberNames={[currentUser.uid]:currentUser.displayName};
   const memberPhotos={[currentUser.uid]:currentUser.photoURL||''};
   selectedUsers.forEach(function(u){memberNames[u.uid]=u.displayName;memberPhotos[u.uid]=u.photoURL||'';});
-  const ref=await db.collection('rooms').add({
+  const roomDoc={
     type:'group',name:name,members:members,memberNames:memberNames,memberPhotos:memberPhotos,
     lastMessage:'',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp()
-  });
+  };
+  // 강의 방: 번역 글자는 방장(만든 사람) 한도에서 차감. schoolId 는 나중에 학교 요금제를 붙일 자리(지금은 비움)
+  if(isLecture){roomDoc.roomType='lecture';roomDoc.ownerUid=currentUser.uid;roomDoc.schoolId=null;}
+  if(lectureEl)lectureEl.checked=false;
+  const ref=await db.collection('rooms').add(roomDoc);
   openRoom(ref.id,name,'',true);
 }
 
@@ -547,6 +555,7 @@ function openRoom(roomId,name,photo,isGroup){
   _updateChatBell();
   _chatRawName=name;_chatIsGroup=!!isGroup;
   _renderChatHeader(null);
+  updateRoomLangNote(null);
   const icon=document.getElementById('chat-icon');
   icon.textContent='';
   const safePhoto=_safeUrl(photo);
@@ -565,6 +574,7 @@ function openRoom(roomId,name,photo,isGroup){
     if(data.type==='group'){_chatIsGroup=true;if(data.name&&!(data.customerUid===currentUser.uid&&data.storeUid))_chatRawName=data.name;}
     _renderChatHeader(data);
     updateReadReceipt(data.readBy||{});
+    syncMyRoomLang(roomId,data);updateRoomLangNote(data); // 내 언어 적기 + "이 방은 N개 언어로 번역됩니다"
   },function(err){console.error('room listener 실패:',err);});
 }
 
@@ -592,10 +602,28 @@ function loadMessages(keepLimit){
   banner.style.cssText='text-align:center;margin:6px auto 16px;display:none;';
   container.appendChild(banner);
 
-  unsubMsg=db.collection('rooms').doc(currentRoomId)
-    .collection('messages').orderBy('createdAt','asc').limitToLast(msgLimit)
+  const roomIdNow=currentRoomId;
+  // 방에 들어온 시각(joinedAt) 뒤 메시지만 보인다 — 방 문서를 아직 못 받았으면 한 번 읽어 온다
+  const roomDataP=(_currentRoomData&&_currentRoomData.members)?Promise.resolve(_currentRoomData)
+    :db.collection('rooms').doc(roomIdNow).get().then(function(s){return s.data()||{};}).catch(function(){return {};});
+  roomDataP.then(function(rd){
+  if(currentRoomId!==roomIdNow)return;
+  const joinedAt=currentUser&&((rd&&rd.joinedAt)||{})[currentUser.uid];
+  let q=db.collection('rooms').doc(roomIdNow).collection('messages');
+  if(joinedAt)q=q.where('createdAt','>=',joinedAt);
+  if(unsubMsg)unsubMsg();
+  unsubMsg=q.orderBy('createdAt','asc').limitToLast(msgLimit)
     .onSnapshot(function(snap){
       const changes=snap.docChanges().filter(function(c){return c.type==='added';});
+      // 보낼 때 번역: 서버가 메시지에 번역을 붙이면(수정됨) 그 자리에 표시
+      snap.docChanges().forEach(function(c){
+        if(c.type!=='modified')return;
+        const md=c.doc.data();if(md.trMode!=='send')return;
+        const el=container.querySelector('[data-mid="'+c.doc.id.replace(/"/g,'')+'"]');
+        if(!el)return;
+        const mine=md.uid===currentUser.uid;
+        renderServerTranslation(el,el.querySelector('.msg-bubble'),md,document.getElementById('my-lang').value,mine);
+      });
       // AI 테스터 방: 서버가 내 메시지에 '테스터가 받은 번역'을 나중에 붙이면 그 자리에 표시
       if(_isTesterRoom(currentRoomId))snap.docChanges().forEach(function(c){
         if(c.type!=='modified')return;
@@ -652,6 +680,7 @@ function loadMessages(keepLimit){
       console.error('loadMessages 실패:',err);
       showToast('메시지를 불러오지 못했어요');
     });
+  });
 }
 
 // ── 알림음 (Web Audio API로 직접 생성 — 별도 음원 파일 불필요) ──
@@ -832,6 +861,8 @@ async function confirmAddMember(){
   _addMemberSelected.forEach(function(u){
     update['memberNames.'+u.uid]=u.displayName;
     update['memberPhotos.'+u.uid]=u.photoURL||'';
+    // 들어온 시각 — 새 멤버에게는 이 뒤 메시지만 보인다 (지난 메시지는 보이지 않음)
+    if((data.members||[]).indexOf(u.uid)<0)update['joinedAt.'+u.uid]=firebase.firestore.FieldValue.serverTimestamp();
   });
   if(wasDirect){
     const allNames=Object.assign({},data.memberNames||{});

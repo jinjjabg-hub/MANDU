@@ -46,7 +46,7 @@ async function toggleUsageLog(){
   const total=rows.reduce(function(s,r){return s+(r.chars||0);},0);
   const label=function(src){const l=USAGE_SOURCE_LABELS[src]||USAGE_SOURCE_LABELS.other;return _L(l[0],l[1]);};
   // 손님(게스트) 화면에서 번역된 건 — 사장님 한도에서 차감된 것
-  rows.forEach(function(r){if(r.guest)r.source='guest';});
+  rows.forEach(function(r){if(r.guest||r.by==='guest')r.source='guest';});
   USAGE_SOURCE_LABELS.guest=['손님 화면 번역','Guest-side translation'];
   const group=function(keyFn){
     const m={};
@@ -62,7 +62,8 @@ async function toggleUsageLog(){
     });
     return '<div style="padding:10px 12px;border-radius:12px;background:var(--surface-container);margin-bottom:8px;">'+h+'</div>';
   };
-  const pair=function(r){return (r.src||'?')+' → '+(r.target||'?');};
+  // 보낼 때 번역은 한 줄에 여러 언어(targets) — 글자 수 × 언어 수로 차감
+  const pair=function(r){return (r.src||'?')+' → '+((r.targets&&r.targets.length)?r.targets.join(','):(r.target||'?'));};
   let html='<div style="margin-bottom:8px;color:var(--on-surface-variant);">'+esc(_L('기록된 합계 ','Recorded total '))+'<b>'+esc(fmtChars(total))+'</b> · '+rows.length+_L('건',' times')+'</div>';
   html+=table(_L('어디서 썼나','By feature'),group(function(r){return r.source||'other';}),label);
   html+=table(_L('어떤 언어를 번역했나','By language'),group(pair),function(k){return k;});
@@ -70,7 +71,7 @@ async function toggleUsageLog(){
   rows.slice(0,50).forEach(function(r){
     const d=r.at&&r.at.toDate?r.at.toDate():null;
     const when=d?(d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'):'';
-    html+='<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--outline-variant);"><span><span style="color:var(--outline);">'+esc(when)+'</span> '+esc(label(r.source))+' <span style="color:var(--outline);">'+esc(pair(r))+(r.engine==='ai'?' · AI':'')+'</span></span><span style="white-space:nowrap;">'+esc(fmtChars(r.chars||0))+'</span></div>';
+    html+='<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--outline-variant);"><span><span style="color:var(--outline);">'+esc(when)+'</span> '+esc(label(r.source))+' <span style="color:var(--outline);">'+esc(pair(r))+(r.langs>1?' · ×'+r.langs:'')+(r.engine==='ai'?' · AI':'')+'</span></span><span style="white-space:nowrap;">'+esc(fmtChars(r.chars||0))+'</span></div>';
   });
   panel.innerHTML=html;
 }
