@@ -83,7 +83,8 @@ await ok('그룹 만들기', setDoc(doc(db('A'), g), { type:'group', name:'팀',
 await ok('멤버 추가(update+arrayUnion)', updateDoc(doc(db('A'), g), { type:'group', members: arrayUnion('D'), 'memberNames.D':'d', 'memberPhotos.D':'' }));
 await no('다른 멤버 내보내기', updateDoc(doc(db('A'), g), { members:['A','B'] }));
 await ok('본인 나가기', updateDoc(doc(db('C'), g), { members:['A','B','D'] }));
-await no('51명 넘는 방 만들기', setDoc(doc(db('A'), 'rooms/BIG'), { type:'group', members:['A', ...Array.from({length:51},(_,i)=>'u'+i)] }));
+await ok('100명 방 만들기', setDoc(doc(db('A'), 'rooms/BIG100'), { type:'group', members:['A', ...Array.from({length:99},(_,i)=>'u'+i)] }));
+await no('100명 넘는 방 만들기', setDoc(doc(db('A'), 'rooms/BIG'), { type:'group', members:['A', ...Array.from({length:100},(_,i)=>'u'+i)] }));
 
 console.log('== 매장(손님) 방');
 const gr = 'rooms/guest_G_H';

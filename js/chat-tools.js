@@ -186,15 +186,16 @@ async function sendPushNotification(toUids,body){
 // 서버(/api/upload/sign)에서 서명을 받아 올린다 — 로그인·방 멤버·횟수를 서버가 확인하고, 비밀키는 서버에만 있다.
 // 서버에 아직 키가 없으면({signed:false}) 예전 방식(공개 업로드 설정)으로 올린다. kind: image | file | profile
 async function _cloudUpload(file,kind,roomId){
-  const sig=await _serverPost('/api/upload/sign',{kind:kind,room:roomId||null},true);
+  const sig=await _serverPost('/api/upload/sign',{kind:kind,room:roomId||null,formats:true},true);
   if(!sig.ok)throw new Error('sign failed '+sig.status);
   const d=sig.data,fd=new FormData();
   fd.append('file',file);
   let url='https://api.cloudinary.com/v1_1/dei44zkfy/'+(kind==='file'?'raw':'image')+'/upload';
   if(d.signed){
-    ['api_key','timestamp','signature','folder','tags','upload_preset'].forEach(function(k){
-      const v=k==='api_key'?d.apiKey:d[k];if(v)fd.append(k,v);
-    });
+    // 서버가 서명한 칸(fields: 폴더·표시·시각·파일 종류 제한 등)을 그대로 보낸다 — 하나라도 빠지거나 바뀌면 Cloudinary 가 거절
+    const f=d.fields||{timestamp:d.timestamp,folder:d.folder,tags:d.tags,upload_preset:d.upload_preset};
+    Object.keys(f).forEach(function(k){if(f[k])fd.append(k,f[k]);});
+    fd.append('api_key',d.apiKey);fd.append('signature',d.signature);
     url='https://api.cloudinary.com/v1_1/'+encodeURIComponent(d.cloud)+'/'+encodeURIComponent(d.resourceType)+'/upload';
   }else{
     fd.append('upload_preset','mandu_upload');
