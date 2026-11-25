@@ -163,7 +163,7 @@ async function showStoreSettings(){
         '<div class="store-sec-desc">'+_L('선택한 친구는 내 QR·링크로 들어온 손님과의 대화방에 함께 들어가 누구든 답할 수 있어요. 앞으로 새로 들어오는 손님부터 적용돼요. (최대 10명)','Selected friends join chats with customers who come through your QR or link, so anyone can reply. Applies to customers who enter from now on. (Up to 10)')+'</div>'+
         '<div id="store-staff-list"></div></div>'+
       '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('손님 1명당 하루 번역','Daily translation per customer')+'</span></div>'+
-        '<div class="store-sec-desc">'+_L('링크·QR로 들어온 손님의 번역은 내 한도에서 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)','Customer translations use your quota. Set how much one customer can use per day to prevent abuse. (about 30 characters per message)')+'</div>'+
+        '<div class="store-sec-desc">'+_L('손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)','Translations of customer and staff messages all use your quota (characters × languages translated). Set how much one customer can use per day to prevent abuse. (about 30 characters per message)')+'</div>'+
         '<select class="store-in" id="store-guest-daily" style="width:100%;"></select></div>'+
       '<button class="store-save" onclick="saveStoreSettings()">'+_L('저장','Save')+'</button>'+
     '</div>';

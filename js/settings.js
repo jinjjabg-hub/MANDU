@@ -106,6 +106,7 @@ function updateUIAfterLogin(){
   applyUILanguage(uiLang);
   initOnline();
   updateQRImages();
+  watchQuotaAlert(); // 사장님 한도 임박 안내 (js/send-translate.js)
 }
 
 function saveLang(){
@@ -113,6 +114,7 @@ function saveLang(){
   const lang=document.getElementById('my-lang').value;
   localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
   if(currentUser.isAnonymous)try{localStorage.setItem('mandu_guest_lang',lang);}catch(e){} // 이 기기의 다음 게스트 입장에도 쓴다
+  syncAllRoomLangs(); // 방마다 내 언어를 적어 둔다 — 보낼 때 서버가 이 언어로 번역 (js/send-translate.js)
 }
 function saveProfileLang(){
   if(!currentUser)return;
@@ -120,6 +122,7 @@ function saveProfileLang(){
   localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
   document.getElementById('my-lang').value=lang;
   document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
+  syncAllRoomLangs();
   showToast(_L('번역 언어가 변경됐어요!','Translation language changed!'));
 }
 function saveUILang(){

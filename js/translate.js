@@ -172,7 +172,8 @@ function isAiAvailable(){return window._aiAvailable===true;}
 // 기본 켜짐 (서버 기본 모델 Haiku — 원가가 구글 번역보다 낮다). 설정에서 끈 사람만 구글 번역.
 function isAiTranslateOn(){try{return isAiAvailable()&&localStorage.getItem('mandu_ai_tr')!=='0';}catch(e){return isAiAvailable();}}
 function initAiTranslate(){
-  ['ai-tr-section-label','ai-tr-card'].forEach(function(id){const el=document.getElementById(id);if(el)el.style.display=isAiAvailable()?'':'none';});
+  // 보낼 때 번역으로 바뀌면서 번역 엔진은 차감 계정의 플랜(무료=기본, 유료=AI)으로 서버가 정한다 → 읽는 사람의 켜기/끄기는 숨김
+  ['ai-tr-section-label','ai-tr-card'].forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});
   const set=function(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt;};
   set('ai-tr-section-label',_L('번역','Translation'));
   set('ai-tr-row-label',_L('AI 번역 (베타)','AI translation (beta)'));
@@ -200,7 +201,7 @@ function _showTranslation(w,b,line,orig,r,target,ctx){
 }
 function _translationMenuItems(w){
   const items=[];
-  if(w._tr.engine!=='ai'&&isAiAvailable())items.push({icon:'auto_awesome',label:_L('AI로 다시 번역','Retranslate with AI'),fn:function(){retranslateWithAi(w);}});
+  if(!w._tr.server&&w._tr.engine!=='ai'&&isAiAvailable())items.push({icon:'auto_awesome',label:_L('AI로 다시 번역','Retranslate with AI'),fn:function(){retranslateWithAi(w);}});
   items.push({icon:'report',label:_L('번역이 이상해요','Report a bad translation'),fn:function(){askTranslationReport(w);}});
   return items;
 }
@@ -318,6 +319,8 @@ function renderMsg(d,skipTranslate){
     _showTesterSeen(w,d);
   }
   if(stickerSrc&&!skipTranslate)return; // 스티커는 번역할 글자가 없다
+  // 보낼 때 번역된 메시지: 서버가 저장한 번역 중 내 언어 것을 보여 주기만 한다 (번역 API를 부르지 않음)
+  if(d.trMode==='send'){renderServerTranslation(w,b,d,myLang,mine);return;}
   if(!mine&&myLang){
     // 이미 번역해 둔 메시지는 '번역 중' 없이 바로 같은 번역문으로 고정 표시 (오래된 메시지도 버튼 없이)
     const cachedTr=getCachedTranslation(d.text,myLang);
@@ -462,11 +465,18 @@ async function sendMessage(){
     return;
   }
   input.value='';input.style.height='auto';
-  const msgRef=await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+  // 보낼 때 번역: 서버가 방 멤버 언어마다 1번 번역해 메시지에 붙인다 (js/send-translate.js). AI 테스터 방은 예전 방식.
+  const sendTr=usesSendTranslate(currentRoomId);
+  const roomIdNow=currentRoomId;
+  if(sendTr&&_currentRoomData)await syncMyRoomLang(roomIdNow,_currentRoomData);
+  const msgData={
     text:text,uid:currentUser.uid,
     displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  });
+  };
+  if(sendTr)msgData.trMode='send';
+  const msgRef=await db.collection('rooms').doc(roomIdNow).collection('messages').add(msgData);
+  if(sendTr&&!isSkippable(text))requestSendTranslate(roomIdNow,msgRef.id,text);
   const others=currentRoomMembers.filter(u=>u!==currentUser.uid);
   const incUpdate={lastMessage:text,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
   // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)

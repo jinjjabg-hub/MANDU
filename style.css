@@ -520,3 +520,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .attach-menu-icon .ms{font-size:18px !important;}
 #mic-btn.listening{color:#e53935;animation:mic-pulse 1s ease-in-out infinite;}
 @keyframes mic-pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* 보낼 때 번역 (js/send-translate.js) */
+.msg-untranslated{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--outline);margin-top:4px;padding:0 4px;}
+.msg-untranslated .ms{font-size:13px !important;}
+.room-lang-note{font-size:11px;color:var(--outline);text-align:center;padding:3px 12px 0;}
+.create-lecture-row{display:flex;align-items:flex-start;gap:10px;margin:0 16px 10px;padding:10px 12px;border:1px solid var(--outline-variant);border-radius:12px;cursor:pointer;}
+.create-lecture-row input{margin-top:3px;width:18px;height:18px;accent-color:var(--primary);flex-shrink:0;}
+.create-lecture-text{display:flex;flex-direction:column;gap:2px;}
+.create-lecture-title{font-size:14px;font-weight:700;color:var(--on-surface);}
+.create-lecture-sub{font-size:12px;color:var(--outline);}
+.plan-charge-rule{font-size:12px;color:var(--outline);text-align:center;margin-bottom:6px;}
