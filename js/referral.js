@@ -5,7 +5,7 @@
 async function _serverGet(path){
   for(let attempt=0;attempt<3;attempt++){
     try{
-      const res=await fetch('https://mandu-server.onrender.com'+path,{headers:{Authorization:'Bearer '+await currentUser.getIdToken()}});
+      const res=await fetch(SERVER_URL+path,{headers:{Authorization:'Bearer '+await currentUser.getIdToken()}});
       if(res.ok)return {ok:true,data:await res.json()};
       if(res.status<500)return {ok:false,status:res.status};
     }catch(e){}

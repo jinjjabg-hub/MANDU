@@ -6,7 +6,7 @@
 //  - 받는 사람: 저장된 번역 중 내 언어 것을 보여 주기만 한다(renderServerTranslation). 번역 API를 부르지 않는다.
 //  - 지난 메시지(trMode 없음)는 예전처럼 js/translate.js 의 translateEx 로 번역한다.
 // ══════════════════════════════════════════════════════
-const SEND_TR_URL='https://mandu-server.onrender.com/api/messages/translate';
+const SEND_TR_URL=SERVER_URL+'/api/messages/translate';
 
 function _myStoredLang(){
   if(!currentUser)return '';

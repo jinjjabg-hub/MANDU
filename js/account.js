@@ -307,7 +307,7 @@ document.addEventListener('visibilitychange',function(){
 });
 
 // ── 회원 탈퇴 ─────────────────────────────────────────────
-const ACCOUNT_API='https://mandu-server.onrender.com/api/account';
+const ACCOUNT_API=SERVER_URL+'/api/account';
 async function confirmDeleteAccount(){
   const ok=confirm(_L('정말 탈퇴하시겠어요?\n\n계정·프로필·번역 사전이 삭제되며 복구할 수 없습니다.\n(이미 보낸 메시지는 상대방 대화방에 남을 수 있어요)','Delete your account?\n\nYour account, profile and dictionary will be deleted and cannot be restored.\n(Messages you already sent may remain in other people\'s chats)'));
   if(!ok)return;

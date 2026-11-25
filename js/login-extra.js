@@ -63,7 +63,7 @@ async function handleKakaoReturn(){
   showToast(_L('카카오 로그인 중…','Signing in with Kakao…'));
   for(let attempt=0;attempt<3;attempt++){
     try{
-      const res=await fetch('https://mandu-server.onrender.com/api/auth/kakao',{method:'POST',headers:{'Content-Type':'application/json'},
+      const res=await fetch(SERVER_URL+'/api/auth/kakao',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({code:code,redirectUri:_kakaoRedirectUri()})});
       if(res.status>=400&&res.status<500){break;} // 코드는 한 번만 쓸 수 있어 다시 시도해도 소용없음
       if(!res.ok)throw new Error('http '+res.status);

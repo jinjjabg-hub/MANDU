@@ -5,7 +5,7 @@
 function wakeServer(){
   // 서버를 깨우면서, AI 번역을 쓸 수 있는 서버인지도 함께 확인한다
   try{
-    fetch('https://mandu-server.onrender.com/api/ping',{cache:'no-store'})
+    fetch(SERVER_URL+'/api/ping',{cache:'no-store'})
       .then(function(r){return r.json();})
       .then(function(d){
         window._aiAvailable=!!(d&&d.ai);if(typeof initAiTranslate==='function')initAiTranslate();
