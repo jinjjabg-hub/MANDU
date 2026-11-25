@@ -95,7 +95,7 @@ async function sendSticker(id){
   _stickerSending=true;
   closeEmojiPicker(true);
   try{
-    await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+    const msgRef=await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',sticker:id,uid:currentUser.uid,
       displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -106,7 +106,7 @@ async function sendSticker(id){
     // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);
-    sendPushNotification(others,label);
+    sendPushNotification(others,label,msgRef.id);
     if(isGuest)checkGuestUpgrade();
     _autoAway();
     requestTesterReply(currentRoomId);
@@ -164,7 +164,8 @@ function toggleVoiceInput(){
 }
 
 // 보낸 사람·이름은 서버가 로그인 토큰과 방 정보로 확인한다 (사칭 알림 방지)
-async function sendPushNotification(toUids,body){
+// 알림 본문도 서버가 messageId 로 실제 메시지를 읽어 만든다 — body 는 예전 서버 호환용으로만 같이 보낸다
+async function sendPushNotification(toUids,body,messageId){
   if(!toUids||toUids.length===0||!currentUser||!currentRoomId)return;
   const roomId=currentRoomId;
   // 이 요청으로 서버가 받는 사람들의 안 읽음 수도 올린다 → 서버가 잠들어 있다 깨는 중이라 실패하면 한 번 더
@@ -174,7 +175,7 @@ async function sendPushNotification(toUids,body){
       const res=await fetch('https://mandu-server.onrender.com/api/notify',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
-        body:JSON.stringify({toUids:toUids,roomId:roomId,body:body})
+        body:JSON.stringify({toUids:toUids,roomId:roomId,body:body,messageId:messageId||null})
       });
       if(res.ok||res.status<500)return;
     }catch(e){console.warn('푸시 알림 전송 실패:',e);}
@@ -213,7 +214,7 @@ async function sendFile(input){
   try{
     const data={secure_url:await _cloudUpload(file,'file',currentRoomId)};
     const fileSize=file.size<1024*1024?(Math.round(file.size/1024)+'KB'):(Math.round(file.size/1024/1024*10)/10+'MB');
-    await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+    const msgRef=await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',fileUrl:data.secure_url,fileName:file.name,fileSize:fileSize,
       uid:currentUser.uid,displayName:currentUser.displayName||'게스트',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -223,7 +224,7 @@ async function sendFile(input){
     // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('파일 전송 완료!');
-    sendPushNotification(others,'[파일] '+file.name);
+    sendPushNotification(others,'[파일] '+file.name,msgRef.id);
     requestTesterReply(currentRoomId);
   }catch(e){showToast('업로드 실패. 다시 시도해요');}
   input.value='';
