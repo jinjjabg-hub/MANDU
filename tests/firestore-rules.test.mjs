@@ -137,6 +137,22 @@ await no('목록에 없는 언어 등록', setDoc(doc(anon('S1'), C + '/language
 await no('학생이 사용량 읽기', getDoc(doc(anon('S1'), C + '/stats/usage')));
 await ok('교수님이 사용량 읽기', getDoc(doc(db('P'), C + '/stats/usage')));
 await no('교수님이 사용량 조작', setDoc(doc(db('P'), C + '/stats/usage'), { trChars:0 }));
+// 진행 중인 수업만 자막을 읽을 수 있다(코드 6자리를 차례로 넣어 끝난·오래된 수업을 엿보는 것 방지)
+await ok('교수님이 수업 종료', updateDoc(doc(db('P'), C), { status:'ended', updatedAt: serverTimestamp() }));
+await ok('끝난 수업도 수업 문서(상태)는 읽기', getDoc(doc(anon('S1'), C)));
+await no('끝난 수업 자막 읽기', getDocs(collection(anon('S1'), C + '/segments')));
+await no('끝난 수업 말하는 중 자막 읽기', getDoc(doc(anon('S1'), C + '/live/now')));
+await no('끝난 수업 접속 언어 읽기', getDoc(doc(anon('S1'), C + '/languages/vi')));
+await no('끝난 수업에 언어 등록', setDoc(doc(anon('S3'), C + '/languages/vi'), { u:{ S3: serverTimestamp() } }, { merge:true }));
+await ok('교수님은 끝난 수업 자막도 읽기', getDocs(collection(db('P'), C + '/segments')));
+const OLD = 'classes/771234';
+await seed(OLD, { owner:'P', ownerName:'김교수', title:'지난 수업', status:'paused', updatedAt: new Date(Date.now() - 13 * 3600e3) });
+await seed(OLD + '/segments/1', { ko:'지난 내용', tr:{}, t:1 });
+await no('12시간 넘게 멈춘 수업 자막 읽기', getDocs(collection(anon('S1'), OLD + '/segments')));
+await ok('교수님이 다시 시작하면', updateDoc(doc(db('P'), OLD), { status:'live', updatedAt: serverTimestamp() }));
+await ok('학생이 다시 자막 읽기', getDocs(collection(anon('S1'), OLD + '/segments')));
+await seed('classes/550001', { owner:'P', title:'옛 문서', status:'live' });
+await no('updatedAt 없는 수업 자막 읽기', getDocs(collection(anon('S1'), 'classes/550001/segments')));
 
 console.log('== 감사 지적 보완 (방·메시지·만두 ID)');
 await ok('사진 메시지(만두 업로드 주소)', addDoc(collection(db('A'), dm + '/messages'), { text:'', imageUrl:'https://res.cloudinary.com/dei44zkfy/image/upload/v1/x.jpg', uid:'A', displayName:'Alice', createdAt: serverTimestamp() }));
