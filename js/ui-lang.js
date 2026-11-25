@@ -17,6 +17,29 @@ function renderGuestLabels(){
 }
 function t(key){const T=UI_T[_uiLang]||UI_T.ko;return T[key]||UI_T.ko[key]||key;}
 
+// 화면 틀(index.html)에 적힌 한국어 문구 번역 — 요소에 영어를 적어 두면 _L(처음 한국어, 영어)로 바꾼다
+//   data-l="English"                글자만 있는 요소
+//   data-l-html="English <b>…</b>"  <br>·<strong> 이 섞인 요소 (한국어 키 = 처음 innerHTML, 공백은 한 칸으로)
+//   data-l-placeholder / data-l-title / data-l-aria-label="English"   속성
+// 처음 한국어는 data-lko… 에 적어 두고 다시 쓴다(언어를 여러 번 바꿔도 원래 키를 잃지 않게)
+function _applyHtmlL(){
+  const norm=function(s){return String(s||'').replace(/\s+/g,' ').trim();};
+  document.querySelectorAll('[data-l]').forEach(function(el){
+    if(el.dataset.lko===undefined)el.dataset.lko=norm(el.textContent);
+    el.textContent=_L(el.dataset.lko,el.getAttribute('data-l'));
+  });
+  document.querySelectorAll('[data-l-html]').forEach(function(el){
+    if(el.dataset.lko===undefined)el.dataset.lko=norm(el.innerHTML);
+    el.innerHTML=_L(el.dataset.lko,el.getAttribute('data-l-html'));
+  });
+  ['placeholder','title','aria-label'].forEach(function(a){
+    document.querySelectorAll('[data-l-'+a+']').forEach(function(el){
+      const k='data-lko-'+a;
+      if(!el.hasAttribute(k))el.setAttribute(k,norm(el.getAttribute(a)));
+      el.setAttribute(a,_L(el.getAttribute(k),el.getAttribute('data-l-'+a)));
+    });
+  });
+}
 function applyUILanguage(lang){
   _uiLang=lang||'ko';
   try{_updateIconStyleRow();}catch(e){}
@@ -61,6 +84,7 @@ function applyUILanguage(lang){
   document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
     const k=el.getAttribute('data-i18n-placeholder');el.placeholder=t(k);
   });
+  _applyHtmlL();
   // 국가 드롭다운: 브라우저 내장 Intl.DisplayNames로 현지 언어 국가명 자동 생성
   try{
     const regionLang=(lang==='zh')?'zh-Hans':lang;

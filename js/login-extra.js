@@ -17,7 +17,7 @@ function initLoginOptions(cfg){
   const txt=function(id,v){const el=document.getElementById(id);if(el)el.textContent=v;};
   txt('kakao-login-lbl',_L('카카오로 시작하기','Continue with Kakao'));
   txt('guest-login-lnk',_G('login'));
-  if(window.MANDU_INAPP)txt('google-login-lbl',_L('Google로 시작하기 (Chrome·Safari에서 열림)','Continue with Google (opens in Chrome/Safari)'));
+  txt('google-login-lbl',window.MANDU_INAPP?_L('Google로 시작하기 (Chrome·Safari에서 열림)','Continue with Google (opens in Chrome/Safari)'):_L('Google로 시작하기','Continue with Google'));
   txt('inapp-google-hint',_L('카카오톡·네이버 앱 안에서는 Google 로그인이 막혀 있어서, 버튼을 누르면 Chrome·Safari로 열려요. ','Google sign-in is blocked inside this app, so the button opens Chrome/Safari. '));
   txt('inapp-open-lnk',_L('Chrome·Safari로 열기','Open in Chrome/Safari'));
   txt('apple-login-lbl',_L('Apple로 시작하기','Continue with Apple'));
