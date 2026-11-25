@@ -82,6 +82,13 @@ const g = 'rooms/G1';
 await ok('그룹 만들기', setDoc(doc(db('A'), g), { type:'group', name:'팀', members:['A','B','C'], memberNames:{A:'a',B:'b',C:'c'}, memberPhotos:{}, lastMessage:'', lastMessageTime: serverTimestamp() }));
 await ok('멤버 추가(update+arrayUnion)', updateDoc(doc(db('A'), g), { type:'group', members: arrayUnion('D'), 'memberNames.D':'d', 'memberPhotos.D':'' }));
 await no('다른 멤버 내보내기', updateDoc(doc(db('A'), g), { members:['A','B'] }));
+// 미리보기는 바꾼 본인 이름으로만 / 방 이름은 각자 자기 화면에만(공용 name 은 바꿀 수 없음)
+await ok('미리보기 갱신(보낸 사람 = 나)', setDoc(doc(db('B'), g), { lastMessage:'안녕', lastMessageTime: serverTimestamp(), lastMessageUid:'B' }, { merge:true }));
+await no('남의 이름으로 가짜 미리보기', setDoc(doc(db('B'), g), { lastMessage:'계좌 바뀌었어요', lastMessageUid:'A' }, { merge:true }));
+await no('보낸 사람 그대로 두고 미리보기만 바꾸기', setDoc(doc(db('A'), g), { lastMessage:'가짜' }, { merge:true }));
+await no('그룹 공용 이름 바꾸기', updateDoc(doc(db('B'), g), { name:'광고방' }));
+await ok('내 화면에만 방 이름(users.roomNames)', setDoc(doc(db('B'), 'users/B'), { roomNames:{ GRPX:'우리 팀' } }, { merge:true }));
+await no('남의 방 이름 설정 바꾸기', setDoc(doc(db('A'), 'users/B'), { roomNames:{ GRPX:'x' } }, { merge:true }));
 await ok('본인 나가기', updateDoc(doc(db('C'), g), { members:['A','B','D'] }));
 await ok('100명 방 만들기', setDoc(doc(db('A'), 'rooms/BIG100'), { type:'group', members:['A', ...Array.from({length:99},(_,i)=>'u'+i)] }));
 await no('100명 넘는 방 만들기', setDoc(doc(db('A'), 'rooms/BIG'), { type:'group', members:['A', ...Array.from({length:100},(_,i)=>'u'+i)] }));

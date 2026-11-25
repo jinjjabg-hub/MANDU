@@ -99,6 +99,9 @@ function _modSheet(title,items){
 // ── 방별 알림 켜기/끄기 ──
 // users/{uid}.mutedRooms 배열에 저장 → 서버(/api/notify)도 이 값을 보고 푸시를 생략한다.
 let myMutedRooms=new Set();
+// 방 이름은 각자 따로: users/{uid}.roomNames = {방ID: 내가 정한 이름}. 나에게만 보이고 다른 멤버에게는 영향 없다.
+let myRoomNames={};
+function _myRoomName(roomId){return (roomId&&myRoomNames[roomId])||'';}
 function isRoomMuted(roomId){return !!roomId&&myMutedRooms.has(roomId);}
 function loadMutedRooms(){
   if(!currentUser)return;
@@ -106,6 +109,7 @@ function loadMutedRooms(){
     const arr=(d.exists&&d.data().mutedRooms)||[];
     myMutedRooms=new Set(arr);
     myHiddenRooms=(d.exists&&d.data().hiddenRooms)||{};
+    myRoomNames=(d.exists&&d.data().roomNames)||{};
     const gt=d.exists?d.data().guestRoomTtlDays:undefined;
     if(typeof gt==='number')myGuestTtlDays=gt;
     renderGuestTtl();

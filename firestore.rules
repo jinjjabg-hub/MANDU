@@ -110,6 +110,19 @@ service cloud.firestore {
         && request.auth.uid in [resource.data.storeUid, resource.data.get('customerUid', '')];
     }
     // 안 읽음 수(unreadCount) — 내 숫자만(읽으면 0). 받는 사람들의 숫자는 서버가 메시지 알림을 보낼 때 올린다.
+    // 마지막 메시지 미리보기 — 바꾸는 사람은 보낸 사람(lastMessageUid)을 본인으로 적어야 한다.
+    // 앱은 미리보기 앞에 이 사람 이름을 붙여 보여 주므로, 남의 이름으로 가짜 미리보기를 띄울 수 없다.
+    function lastMessageOk() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage', 'lastMessageUid'])
+        || request.resource.data.get('lastMessageUid', '') == request.auth.uid;
+    }
+    // 방 이름(name)은 처음 정한 뒤 바꿀 수 없다 — 방 이름 바꾸기는 각자 자기 화면에만(users/{uid}.roomNames).
+    // 이름이 없던 방(1:1 → 단톡 전환)에 처음 붙이는 것과, 매장 방에서 손님·주인이 이름을 지우는 것만 허용.
+    function roomNameOk() {
+      return request.resource.data.get('name', null) == resource.data.get('name', null)
+        || resource.data.get('name', null) == null
+        || storeStaffEditor();
+    }
     function unreadOk() {
       return request.resource.data.get('unreadCount', {}).diff(resource.data.get('unreadCount', {})).affectedKeys()
         .hasOnly([request.auth.uid]);
@@ -149,6 +162,8 @@ service cloud.firestore {
             || request.resource.data.readBy.diff(resource.data.get('readBy', {})).affectedKeys().hasOnly([request.auth.uid]))
         && (storeStaffEditor() || (memberMapOk('memberNames') && memberMapOk('memberPhotos')))
         && unreadOk()
+        && lastMessageOk()
+        && roomNameOk()
         && memberLangsOk()
         && joinedAtOk()
         && roomTypeSame()
