@@ -434,7 +434,7 @@ async function sendImage(input){
     const file=await compressImage(original,1600,0.8);
     if(file.size>5*1024*1024){showToast('5MB 이하 이미지만 가능해요');input.value='';return;}
     const data={secure_url:await _cloudUpload(file,'image',currentRoomId)};
-    await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+    const msgRef=await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',imageUrl:data.secure_url,uid:currentUser.uid,
       displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -445,7 +445,7 @@ async function sendImage(input){
     // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);showToast('이미지 전송 완료!');
-    sendPushNotification(others,'[사진]');
+    sendPushNotification(others,'[사진]',msgRef.id);
     requestTesterReply(currentRoomId);
   }catch(e){showToast('업로드 실패. 다시 시도해요');}
   input.value='';
@@ -462,7 +462,7 @@ async function sendMessage(){
     return;
   }
   input.value='';input.style.height='auto';
-  await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+  const msgRef=await db.collection('rooms').doc(currentRoomId).collection('messages').add({
     text:text,uid:currentUser.uid,
     displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -472,7 +472,7 @@ async function sendMessage(){
   // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)
   await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
   markRead(currentRoomId);
-  sendPushNotification(others,text);
+  sendPushNotification(others,text,msgRef.id);
   if(isGuest)checkGuestUpgrade();
   _autoAway();
   requestTesterReply(currentRoomId);
