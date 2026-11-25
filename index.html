@@ -70,7 +70,7 @@ function openInBrowser(){
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="i18n.js?v=4"></script>
+<script src="i18n.js?v=5"></script>
 <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
@@ -87,7 +87,7 @@ function openInBrowser(){
   <svg width="32" height="32" viewBox="0 0 200 200" style="flex-shrink:0;" aria-hidden="true"><use href="#mandu-logo"/></svg>
   <div style="flex:1;font-size:13px;color:var(--on-surface);line-height:1.4;" data-i18n-html="pwa_install_desc"><strong>MANDU 앱 설치</strong><br>홈 화면에서 바로 열어요</div>
   <button id="pwa-install-btn" onclick="handleInstallClick()" style="background:var(--primary);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;" data-i18n="pwa_install_btn">설치하기</button>
-  <button onclick="dismissInstallBanner()" aria-label="닫기" style="position:absolute;top:-9px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--surface);border:1px solid var(--outline-variant);color:var(--outline);font-size:12px;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.12);">✕</button>
+  <button onclick="dismissInstallBanner()" aria-label="닫기" data-l-aria-label="Close" style="position:absolute;top:-9px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--surface);border:1px solid var(--outline-variant);color:var(--outline);font-size:12px;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.12);">✕</button>
 </div>
 <div id="ios-install-sheet" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);align-items:flex-end;">
   <div style="background:var(--surface);width:100%;border-radius:20px 20px 0 0;padding:24px 20px 28px;">
@@ -202,20 +202,20 @@ function openInBrowser(){
     <circle cx="114" cy="94" r="5.5" fill="#6b38d4"/>
     <path d="M80,112 Q100,128 120,112" stroke="#6b38d4" stroke-width="4" fill="none" stroke-linecap="round"/>
   </svg>
-  <div class="id-title">나만의 MANDU ID</div>
-  <div class="id-sub">친구들이 나를 찾을 수 있는<br>나만의 고유 주소예요</div>
+  <div class="id-title" data-l="Your MANDU ID">나만의 MANDU ID</div>
+  <div class="id-sub" data-l-html="Your own unique address&lt;br&gt;so friends can find you">친구들이 나를 찾을 수 있는<br>나만의 고유 주소예요</div>
   <div class="id-input-wrap">
     <div class="id-input-row">
       <span class="id-prefix">@</span>
-      <input id="mandu-id-input" type="text" placeholder="영문+숫자+_ (3~20자)" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      <input id="mandu-id-input" type="text" placeholder="영문+숫자+_ (3~20자)" data-l-placeholder="Letters, numbers, _ (3–20)" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
     </div>
     <div id="id-check-msg" class="id-check-msg"></div>
-    <div class="id-hint">영문 소문자, 숫자, _ 만 사용 가능해요<br>한번 만들면 변경이 어려워요!</div>
+    <div class="id-hint" data-l-html="Lowercase letters, numbers and _ only&lt;br&gt;Hard to change once created!">영문 소문자, 숫자, _ 만 사용 가능해요<br>한번 만들면 변경이 어려워요!</div>
   </div>
-  <button class="id-confirm-btn" id="id-confirm-btn" onclick="createManduid()" disabled>시작하기</button>
+  <button class="id-confirm-btn" id="id-confirm-btn" onclick="createManduid()" disabled data-l="Get started">시작하기</button>
   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:4px;">
-    <div style="font-size:12px;color:var(--outline);">이미 만두 ID가 있으신가요?</div>
-    <button onclick="retryFindManduid()" style="background:none;border:1.5px solid var(--primary);color:var(--primary);border-radius:100px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
+    <div style="font-size:12px;color:var(--outline);" data-l="Already have a MANDU ID?">이미 만두 ID가 있으신가요?</div>
+    <button onclick="retryFindManduid()" data-l="Reload my account" style="background:none;border:1.5px solid var(--primary);color:var(--primary);border-radius:100px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
       내 계정 다시 불러오기
     </button>
   </div>
@@ -238,7 +238,7 @@ function openInBrowser(){
   </div>
   <div class="login-brand">MANDU</div>
   <div class="login-sub">Translation Messenger</div>
-  <div class="login-desc">언어가 달라도 <strong>대화는 하나로</strong></div>
+  <div class="login-desc" data-l-html="Different languages, &lt;strong&gt;one conversation&lt;/strong&gt;">언어가 달라도 <strong>대화는 하나로</strong></div>
   <button class="google-btn" id="loginBtn">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
     <span id="google-login-lbl">Google로 시작하기</span>
@@ -264,17 +264,17 @@ function openInBrowser(){
 
   <div style="display:flex;align-items:center;gap:12px;width:100%;max-width:280px;">
     <div style="flex:1;height:1px;background:var(--outline-variant);"></div>
-    <div style="font-size:12px;color:var(--outline);font-weight:600;">또는</div>
+    <div style="font-size:12px;color:var(--outline);font-weight:600;" data-l="or">또는</div>
     <div style="flex:1;height:1px;background:var(--outline-variant);"></div>
   </div>
 
   <!-- 이메일 로그인 폼 -->
   <div id="email-login-form" style="width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px;">
-    <input id="email-input" type="email" placeholder="이메일" autocomplete="email"
+    <input id="email-input" type="email" placeholder="이메일" data-l-placeholder="Email" autocomplete="email"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'">
     <div style="position:relative;">
-      <input id="pw-input" type="password" placeholder="비밀번호" autocomplete="current-password"
+      <input id="pw-input" type="password" placeholder="비밀번호" data-l-placeholder="Password" autocomplete="current-password"
         style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 44px 12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
         onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'"
         onkeydown="if(event.key==='Enter')emailLogin()">
@@ -284,35 +284,35 @@ function openInBrowser(){
       </button>
     </div>
     <div id="email-login-msg" style="font-size:12px;font-weight:600;min-height:16px;padding:0 4px;"></div>
-    <button onclick="emailLogin()"
+    <button data-l="Continue with email" onclick="emailLogin()"
       style="width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
       이메일로 시작하기
     </button>
     <div style="display:flex;justify-content:space-between;padding:0 4px;">
-      <span onclick="showEmailSignup()" style="font-size:12px;color:var(--primary);font-weight:600;cursor:pointer;">회원가입</span>
-      <span onclick="sendPasswordReset()" style="font-size:12px;color:var(--outline);cursor:pointer;">비밀번호 찾기</span>
+      <span onclick="showEmailSignup()" style="font-size:12px;color:var(--primary);font-weight:600;cursor:pointer;" data-l="Sign up">회원가입</span>
+      <span onclick="sendPasswordReset()" style="font-size:12px;color:var(--outline);cursor:pointer;" data-l="Forgot password?">비밀번호 찾기</span>
     </div>
   </div>
 
   <!-- 회원가입 폼 -->
   <div id="email-signup-form" style="width:100%;max-width:280px;display:none;flex-direction:column;gap:10px;">
-    <input id="signup-name-input" type="text" placeholder="이름 (닉네임)" autocomplete="nickname"
+    <input id="signup-name-input" type="text" placeholder="이름 (닉네임)" data-l-placeholder="Name (nickname)" autocomplete="nickname"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'">
-    <input id="signup-email-input" type="email" placeholder="이메일" autocomplete="email"
+    <input id="signup-email-input" type="email" placeholder="이메일" data-l-placeholder="Email" autocomplete="email"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'">
-    <input id="signup-pw-input" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="new-password"
+    <input id="signup-pw-input" type="password" placeholder="비밀번호 (6자 이상)" data-l-placeholder="Password (6+ characters)" autocomplete="new-password"
       style="width:100%;background:var(--surface);border:1.5px solid var(--outline-variant);border-radius:12px;padding:12px 16px;color:var(--on-surface);font-size:15px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;box-sizing:border-box;"
       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--outline-variant)'"
       onkeydown="if(event.key==='Enter')emailSignup()">
     <div id="email-signup-msg" style="font-size:12px;font-weight:600;min-height:16px;padding:0 4px;"></div>
-    <button onclick="emailSignup()"
+    <button data-l="Sign up" onclick="emailSignup()"
       style="width:100%;padding:13px;background:var(--primary);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
       가입하기
     </button>
     <div style="text-align:center;">
-      <span onclick="showEmailLogin()" style="font-size:12px;color:var(--outline);cursor:pointer;">이미 계정이 있어요 → 로그인</span>
+      <span onclick="showEmailLogin()" style="font-size:12px;color:var(--outline);cursor:pointer;" data-l="I have an account → Log in">이미 계정이 있어요 → 로그인</span>
     </div>
   </div>
 
@@ -324,23 +324,23 @@ function openInBrowser(){
   <div id="biz-footer" style="font-size:10px;color:var(--outline);text-align:center;margin-top:14px;line-height:1.6;opacity:.85;">
     티엠링크(T.M Link) · 대표 송승훈 · 사업자등록번호 253-63-00948<br>
     통신판매업 제2026-부산사상구-0340호 · 부산광역시 사상구 가야대로378번길 1, 1704호<br>
-    010-5334-2544 · jinjjabg@gmail.com · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;">이용약관</a> · <a class="web-only" href="/pricing.html" target="_blank" rel="noopener" style="color:inherit;">요금제</a> · <a class="web-only" href="/refund.html" target="_blank" rel="noopener" style="color:inherit;">환불정책</a>
+    010-5334-2544 · jinjjabg@gmail.com · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;" data-l="Terms">이용약관</a> · <a class="web-only" href="/pricing.html" target="_blank" rel="noopener" style="color:inherit;" data-l="Pricing">요금제</a> · <a class="web-only" href="/refund.html" target="_blank" rel="noopener" style="color:inherit;" data-l="Refund policy">환불정책</a>
   </div>
 </div>
 
 <!-- 이메일 인증 대기 (이메일·비밀번호 가입자는 인증 메일의 링크를 눌러야 앱을 쓸 수 있다) -->
 <div id="verify-screen">
   <span class="ms" style="font-size:56px !important;color:var(--primary);">mark_email_unread</span>
-  <div style="font-size:20px;font-weight:800;color:var(--on-surface);">이메일 인증이 필요해요</div>
+  <div style="font-size:20px;font-weight:800;color:var(--on-surface);" data-l="Please verify your email">이메일 인증이 필요해요</div>
   <div style="font-size:14px;color:var(--on-surface-variant,var(--outline));line-height:1.6;max-width:300px;">
-    <strong id="verify-email-addr"></strong> 으로 보낸 메일의 인증 링크를 누른 뒤,<br>아래 <strong>인증했어요</strong>를 눌러 주세요.<br>
-    <span style="font-size:12px;">메일이 안 보이면 스팸함도 확인해 주세요.</span>
+    <strong id="verify-email-addr"></strong> <span data-l-html="— open the link in the email we sent there,&lt;br&gt;then tap &lt;strong&gt;I've verified&lt;/strong&gt; below.">으로 보낸 메일의 인증 링크를 누른 뒤,<br>아래 <strong>인증했어요</strong>를 눌러 주세요.</span><br>
+    <span style="font-size:12px;" data-l="Can't find it? Check your spam folder.">메일이 안 보이면 스팸함도 확인해 주세요.</span>
   </div>
   <div id="verify-msg" style="font-size:12px;font-weight:600;min-height:16px;"></div>
   <div style="width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px;">
-    <button onclick="checkEmailVerified()" style="width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:var(--primary);border:none;color:#fff;">인증했어요</button>
-    <button onclick="resendVerifyEmail()" style="width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:none;border:1.5px solid var(--outline-variant);color:var(--on-surface);">인증 메일 다시 보내기</button>
-    <span onclick="auth.signOut()" style="font-size:12px;color:var(--outline);cursor:pointer;padding:6px;">다른 계정으로 로그인</span>
+    <button onclick="checkEmailVerified()" style="width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:var(--primary);border:none;color:#fff;" data-l="I've verified">인증했어요</button>
+    <button onclick="resendVerifyEmail()" style="width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:none;border:1.5px solid var(--outline-variant);color:var(--on-surface);" data-l="Resend verification email">인증 메일 다시 보내기</button>
+    <span onclick="auth.signOut()" style="font-size:12px;color:var(--outline);cursor:pointer;padding:6px;" data-l="Log in with another account">다른 계정으로 로그인</span>
   </div>
 </div>
 
@@ -454,8 +454,8 @@ function openInBrowser(){
     <div class="discover-panel" id="dpanel-global">
       <div style="padding:12px 16px 6px;">
         <div style="background:var(--primary-fixed);border-radius:14px;padding:11px 14px;font-size:13px;color:var(--primary);font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <span><span class=ms-i>public</span> 다른 나라 사람과 대화해보세요!</span>
-          <button onclick="shuffleGlobal()" style="padding:5px 12px;background:var(--primary);color:#fff;border:none;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0;"><span class=ms-i>refresh</span> 새로고침</button>
+          <span><span class=ms-i>public</span> <span data-l="Chat with people from other countries!">다른 나라 사람과 대화해보세요!</span></span>
+          <button onclick="shuffleGlobal()" style="padding:5px 12px;background:var(--primary);color:#fff;border:none;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0;"><span class=ms-i>refresh</span> <span data-l="Refresh">새로고침</span></button>
         </div>
       </div>
       <div class="discover-chips" id="discover-global-chips"></div>
@@ -514,7 +514,7 @@ function openInBrowser(){
           </div>
           <div id="usage-msg-lbl" style="font-size:12px;color:var(--on-surface-variant);margin-bottom:14px;line-height:1.5;" data-i18n="usage_msg_default">이번 달 번역을 아직 사용하지 않았어요.</div>
           <div id="usage-sub-line" class="web-only" style="display:none;font-size:12px;color:var(--on-surface-variant);margin:-6px 0 14px;line-height:1.5;"></div>
-          <button id="usage-log-btn" onclick="toggleUsageLog()" style="width:100%;padding:10px;margin-bottom:10px;border-radius:12px;border:1px solid var(--outline-variant);background:var(--surface);color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;"><span class=ms-i>receipt_long</span> 이번 달 사용 내역</button>
+          <button id="usage-log-btn" onclick="toggleUsageLog()" style="width:100%;padding:10px;margin-bottom:10px;border-radius:12px;border:1px solid var(--outline-variant);background:var(--surface);color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;"><span class=ms-i>receipt_long</span> <span data-l="This month's usage">이번 달 사용 내역</span></button>
           <div id="usage-log-panel" style="display:none;margin-bottom:12px;font-size:12px;line-height:1.55;color:var(--on-surface);"></div>
           <button data-icon="upgrade" id="usage-upgrade-btn" onclick="showPlanSheet()" style="width:100%;padding:12px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">플랜 업그레이드</button>
         </div>
@@ -546,12 +546,12 @@ function openInBrowser(){
           <div class="settings-chevron"><span class="ms">chevron_right</span></div>
         </div>
       </div>
-      <div class="settings-section-label">알림</div>
+      <div class="settings-section-label" data-l="Notifications">알림</div>
       <div class="settings-card">
         <div class="settings-row" onclick="openSoundPicker()">
           <div class="settings-icon-wrap"><span class="ms">music_note</span></div>
           <div class="settings-row-info">
-            <div class="settings-row-label">알림음</div>
+            <div class="settings-row-label" data-l="Notification sound">알림음</div>
             <div class="settings-row-sub sound-sub">만두 (기본)</div>
           </div>
           <div class="settings-chevron"><span class="ms">chevron_right</span></div>
@@ -767,7 +767,7 @@ function openInBrowser(){
       <div class="chat-hd-name" id="chat-title"></div>
       <div class="chat-hd-sub"><span class="chat-hd-cnt" id="chat-member-count"></span><span class="ms">translate</span><span data-i18n="chat_autotranslate_on">자동번역 ON</span></div>
     </div>
-    <button class="back-btn" id="chat-bell" onclick="toggleRoomMute()" title="알림 켜기/끄기"><span class="ms">notifications</span></button>
+    <button class="back-btn" id="chat-bell" onclick="toggleRoomMute()" title="알림 켜기/끄기" data-l-title="Notifications on/off"><span class="ms">notifications</span></button>
     <button class="back-btn" onclick="showAddMember()" title="Add member"><span class="ms">person_add</span></button>
       <button class="back-btn" onclick="openChatSafetyMenu()" title="Report / Block"><span class="ms">more_vert</span></button>
   </div>
@@ -1023,12 +1023,12 @@ function openInBrowser(){
       <div class="toggle" id="profile-dark-toggle"></div>
     </div>
   </div>
-  <div class="settings-section-label">알림</div>
+  <div class="settings-section-label" data-l="Notifications">알림</div>
   <div class="settings-card" style="margin:0 20px 16px;">
     <div class="settings-row" onclick="openSoundPicker()">
       <div class="settings-icon-wrap"><span class="ms">music_note</span></div>
       <div class="settings-row-info">
-        <div class="settings-row-label">알림음</div>
+        <div class="settings-row-label" data-l="Notification sound">알림음</div>
         <div class="settings-row-sub sound-sub">만두 (기본)</div>
       </div>
       <div class="settings-chevron"><span class="ms">chevron_right</span></div>
@@ -1148,8 +1148,8 @@ function openInBrowser(){
       </select>
     </div>
     <div class="dict-add-row" style="border-top:none;padding:8px 0 4px;">
-      <input class="dict-add-input" id="dict-input" placeholder="표현 입력 후 번역 확인..." oninput="dictPreviewDebounced()">
-      <button class="dict-add-btn" onclick="addDictEntry()">저장</button>
+      <input class="dict-add-input" id="dict-input" placeholder="표현 입력 후 번역 확인..." data-l-placeholder="Type a phrase to translate..." oninput="dictPreviewDebounced()">
+      <button class="dict-add-btn" onclick="addDictEntry()" data-l="Save">저장</button>
     </div>
     <div class="dict-preview" id="dict-preview"></div>
   </div>
@@ -1225,12 +1225,12 @@ function openInBrowser(){
   </div>
   <div class="search-box">
     <span class="ms">search</span>
-    <input id="search-input" type="text" placeholder="이름, @만두ID 검색..." oninput="runSearch(this.value)" autocomplete="off">
+    <input id="search-input" type="text" placeholder="이름, @만두ID 검색..." data-l-placeholder="Search name or @ManduID..." oninput="runSearch(this.value)" autocomplete="off">
   </div>
   <div class="search-scroll" id="search-results">
     <div class="search-empty">
       <div class="search-empty-ico"><svg width="64" height="64" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg></div>
-      <div class="search-empty-txt">검색어를 입력해보세요</div>
+      <div class="search-empty-txt" data-l="Type something to search">검색어를 입력해보세요</div>
     </div>
   </div>
 </div>
@@ -1242,14 +1242,14 @@ function openInBrowser(){
 <script src="js/rooms.js?v=3"></script>
 <script src="js/store.js?v=1"></script>
 <script src="js/photo-translate.js?v=1"></script>
-<script src="js/login-extra.js?v=1"></script>
+<script src="js/login-extra.js?v=2"></script>
 <script src="js/chat.js?v=5"></script>
 <script src="js/translate-base.js?v=2"></script>
 <script src="js/referral.js?v=2"></script>
 <script src="js/translate.js?v=7"></script>
 <script src="js/chat-tools.js?v=6"></script>
 <script src="js/mydict.js?v=2"></script>
-<script src="js/ui-lang.js?v=1"></script>
+<script src="js/ui-lang.js?v=2"></script>
 <script src="js/billing.js?v=4"></script>
 <script src="js/open-in-app.js?v=1"></script>
 <script src="js/app-start.js?v=1"></script>
