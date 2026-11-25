@@ -184,7 +184,9 @@ function loadRooms(){
       docs.forEach(function(doc){
         const r=doc.data();
         const isGroup=r.type==='group';
-        const name=isGroup?((r.customerUid===currentUser.uid&&r.memberNames&&r.memberNames[r.storeUid])||r.name):(r.memberNames&&Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})?Object.entries(r.memberNames).find(function(e){return e[0]!==currentUser.uid;})[1]:t('chat_default_room_name'));
+        const _pu=Object.keys(r.memberNames||{}).find(function(k){return k!==currentUser.uid;});
+        // 이름 흉내 막기: 1:1·매장 상대 이름도 _memberLabel 로 (운영자 사칭 이름은 'MANDU 사용자')
+        const name=isGroup?((r.customerUid===currentUser.uid&&r.memberNames&&r.memberNames[r.storeUid]&&_memberLabel(r,r.storeUid,'',{noDup:true}))||r.name):(_pu?_memberLabel(r,_pu,'',{noDup:true}):t('chat_default_room_name'));
         const photo=!isGroup&&r.memberPhotos?Object.entries(r.memberPhotos).filter(function(e){return e[0]!==currentUser.uid;})[0]?.[1]:'';
         const partnerUid=!isGroup?Object.keys(r.memberNames||{}).find(function(k){return k!==currentUser.uid;}):null;
         const rb=r.readBy||{};const mr=rb[currentUser.uid];
@@ -462,8 +464,29 @@ let _chatRawName='',_chatIsGroup=false;
 function _isAutoGroupName(n){return /, /.test(n||'')||/ 외$/.test(n||'');}
 function _otherMemberNames(data){
   const mn=(data&&data.memberNames)||{};const mem=(data&&data.members)||Object.keys(mn);
-  return mem.filter(function(u){return !currentUser||u!==currentUser.uid;}).map(function(u){return mn[u]||'';}).filter(Boolean);
+  return mem.filter(function(u){return (!currentUser||u!==currentUser.uid)&&mn[u];}).map(function(u){return _memberLabel(data,u,'');});
 }
+// ── 보낸 사람 이름 흉내 막기 ──
+// 화면에 보이는 사람 이름은 메시지에 적힌 이름(앱이 아무 글자나 넣을 수 있음)이 아니라 방의 memberNames[그 사람 uid]를 쓴다.
+// memberNames 의 칸은 본인만 바꿀 수 있다(firestore.rules memberMapOk). 그래도 내 칸에 남의 이름을 적을 수는 있으므로
+//  - 방 안에 같은 이름이 둘 이상이면 이름 뒤에 #uid 끝 4자리를 붙여 구분하고
+//  - 운영자를 사칭하는 이름은 'MANDU 사용자'로 바꿔 보여 준다(서버 알림 notify.py 의 _IMPERSONATION_RE 와 같은 규칙)
+//  - 방에 이름 칸이 없으면(나간 사람) 메시지에 적힌 이름에 '(나간 멤버)'를 붙인다
+const _IMPERSONATION_RE=/(mandu|만두).{0,6}(고객|센터|운영|관리|공식|support|admin|official|team)|고객\s*센터|customer\s*(service|support)/i;
+function _memberLabel(data,uid,fallback,opts){
+  const mn=(data&&data.memberNames)||{};
+  let name=String((uid&&mn[uid])||'').trim().slice(0,30);
+  const known=!!name;
+  if(!name)name=String(fallback||'').trim().slice(0,30)||_L('익명','Anonymous');
+  if(_IMPERSONATION_RE.test(name))name=_L('MANDU 사용자','MANDU user');
+  else if(known&&uid&&!(opts&&opts.noDup)){
+    const same=Object.keys(mn).some(function(k){return k!==uid&&String(mn[k]||'').trim().slice(0,30)===name;});
+    if(same)name+=' #'+String(uid).slice(-4);
+  }
+  if(!known&&uid&&data&&data.members&&data.members.indexOf(uid)<0)name=_L('{name} (나간 멤버)','{name} (left)',{name:name});
+  return name;
+}
+function _senderName(uid,fallback){return _memberLabel(_currentRoomData,uid,fallback);}
 function _shortGroupTitle(others){
   if(!others.length)return t('chat_default_room_name');
   if(others.length===1)return others[0];
@@ -493,7 +516,7 @@ function showRoomMembers(){
   document.getElementById('roommembers-list').innerHTML=mem.map(function(u){
     const ph=_safeUrl(mp[u]);
     return '<div class="rm-row"><div class="rm-av">'+(ph?'<img src="'+_esc(ph)+'" alt="">':'<span class="ms">person</span>')+'</div>'
-      +'<div class="rm-name">'+_esc(mn[u]||_L('알 수 없음','Unknown'))+'</div>'
+      +'<div class="rm-name">'+_esc(mn[u]?_memberLabel(data,u,''):_L('알 수 없음','Unknown'))+'</div>'
       +(u===currentUser.uid?'<span class="rm-me">'+_L('나','Me')+'</span>':'')+'</div>';
   }).join('');
   // 방 이름 바꾸기: 일반 그룹방만 (매장 방은 매장 이름이 제목이라 제외)
