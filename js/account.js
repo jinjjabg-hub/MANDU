@@ -314,8 +314,20 @@ async function confirmDeleteAccount(){
     const user=auth.currentUser;
     if(!user){showToast(_L('로그인 상태를 확인해주세요','Please check that you are logged in'));return;}
     showToast(_L('계정 삭제 중...','Deleting account...'));
-    // 유료 플랜 정기결제도 함께 해지 (이용약관 제7조) — 구독이 없으면 서버가 404를 돌려주므로 무시
-    try{if(window._myBilling&&window._myBilling.status==='active')await billingFetch('/cancel',{resume:false},user);}catch(e){}
+    // 유료 플랜 정기결제도 함께 해지 (이용약관 제7조).
+    // 정상 구독(active)·카드 실패 재시도 중(past_due) 모두 해지한다. 해지가 실패하면 탈퇴를 멈춘다
+    // (계정만 지워지고 결제가 계속 나가지 않도록). 구독이 없으면 서버가 NO_SUBSCRIPTION(404)을 돌려주므로 그대로 진행.
+    let billSt=window._myBilling&&window._myBilling.status;
+    try{const us=await db.collection('users').doc(user.uid).get();const b=us.exists&&us.data().billing;if(b&&b.status)billSt=b.status;}catch(e){}
+    if(billSt==='active'||billSt==='past_due'){
+      try{await billingFetch('/cancel',{resume:false},user);}
+      catch(e){
+        if(!e||e.code!=='NO_SUBSCRIPTION'){
+          showToast(_L('정기결제 해지에 실패해 탈퇴를 멈췄어요. 잠시 후 다시 시도해 주세요','Could not cancel your subscription, so account deletion was stopped. Please try again shortly'));
+          return;
+        }
+      }
+    }
     if(currentManduid){
       await db.collection('manduid_index').doc(currentManduid).delete().catch(()=>{});
     }
