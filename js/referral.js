@@ -30,10 +30,10 @@ async function initReferral(){
   if(!r.ok)return;
   _refMe=r.data;
   show('ref-claim-row',!!_refMe.canClaim);
-  if(_refMe.canClaim)set('ref-claim-sub',_L('{d}까지 · 입력하면 보너스 5천 자','Until {d} · get a 5,000-character bonus').replace('{d}',_fmtDate(_refMe.claimUntil)));
+  if(_refMe.canClaim)set('ref-claim-sub',_L('{d}까지 · 입력하면 보너스 5천 자','Until {d} · get a 5,000-character bonus',{d:_fmtDate(_refMe.claimUntil)}));
   const info=[];
-  if(_refMe.referred&&_refMe.referrerManduid)info.push(_L('추천인 @','Referred by @')+_refMe.referrerManduid);
-  if(_refMe.bonus>0)info.push(_L('보너스 {n}자 · {d}까지','Bonus {n} chars · until {d}').replace('{n}',_refMe.bonus.toLocaleString()).replace('{d}',_fmtDate(_refMe.bonusExpiresAt)));
+  if(_refMe.referred&&_refMe.referrerManduid)info.push(_L('추천인 @{id}','Referred by @{id}',{id:_refMe.referrerManduid}));
+  if(_refMe.bonus>0)info.push(_L('보너스 {n}자 · {d}까지','Bonus {n} chars · until {d}',{n:_refMe.bonus.toLocaleString(),d:_fmtDate(_refMe.bonusExpiresAt)}));
   show('ref-info-row',info.length>0);
   if(info.length){set('ref-info-label',info[0]);set('ref-info-sub',info.slice(1).join(' · '));}
   show('ref-admin-row',!!_refMe.isAdmin);
@@ -97,6 +97,7 @@ function askReferralCode(method){
   setTimeout(function(){inp.focus();},60);
 }
 // 운영자 전용: 추천 현황 (A → B → C → D 줄기, 결제, 감사장 체크)
+// ※ 이 아래 운영자 화면(추천 현황·번역 차감 시뮬레이션·AI vs 구글 비교)은 운영자만 보므로 한국어(일부 영어)만 둔다 — L_T 번역 대상 아님
 let _refAdmin=null,_refAdminFilter='all';
 async function openReferralAdmin(){
   closeReferralAdmin();
