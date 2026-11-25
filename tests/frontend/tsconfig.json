@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "es2020",
+    "lib": ["es2020", "dom", "dom.iterable"],
+    "skipLibCheck": true,
+    "types": []
+  },
+  "files": ["types/globals.d.ts"],
+  "include": ["../../i18n.js", "../../js/*.js"]
+}

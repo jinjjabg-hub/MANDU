@@ -2,15 +2,17 @@
   "name": "mandu-frontend-checks",
   "private": true,
   "type": "module",
-  "description": "앱 화면 코드 자동 검사 — 정적 검사(check.mjs)와 브라우저 검사(smoke.mjs). 사용: npm install && npm run check && npm run smoke",
+  "description": "앱 화면 코드 자동 검사 — 정적 검사(check.mjs), 타입 검사(tsc, tsconfig.json), 브라우저 검사(smoke.mjs). 사용: npm install && npm run check && npm run types && npm run smoke",
   "scripts": {
     "check": "node check.mjs",
-    "smoke": "node smoke.mjs"
+    "smoke": "node smoke.mjs",
+    "types": "tsc -p tsconfig.json"
   },
   "devDependencies": {
     "acorn": "8.14.0",
     "eslint": "9.17.0",
     "globals": "15.14.0",
-    "playwright": "1.63.0"
+    "playwright": "1.63.0",
+    "typescript": "5.6.3"
   }
 }
