@@ -263,7 +263,7 @@ function renderMsg(d,skipTranslate){
   const w=document.createElement('div');
   w.className='msg-wrap '+(mine?'mine':'theirs');
   if(d._id)w.dataset.mid=d._id;
-  if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||_L('익명','Anonymous');w.appendChild(s);}
+  if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=_senderName(d.uid||d.asUid,d.displayName);w.appendChild(s);}   // 보낸 사람 이름: 메시지에 적힌 이름이 아니라 방의 멤버 이름(이름 흉내 막기, chat.js _memberLabel)
   const row=document.createElement('div');row.className='msg-row';
   const b=document.createElement('div');b.className='msg-bubble';
   const stickerSrc=stickerUrl(d.sticker);
