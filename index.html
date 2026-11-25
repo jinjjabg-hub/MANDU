@@ -20,7 +20,9 @@
 </script>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 화면 확대 막기: 큰 글씨 설정 휴대폰에서 입력칸을 누르면 화면이 저절로 확대된 채 남아 대화 입력창이 화면 밖으로 밀려났다(2026-11 신고).
+     interactive-widget: 키보드가 올라오면 화면 높이를 줄여 입력창이 키보드 위에 보이게 한다. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, interactive-widget=resizes-content">
 <title>MANDU</title>
 <script>
 // 카카오톡·인스타 등 앱 안 브라우저: 구글·애플 로그인(팝업)은 막히지만, 카카오·이메일·전화번호 로그인과 손님 링크는 그대로 된다.
