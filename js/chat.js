@@ -194,7 +194,7 @@ function loadRooms(){
         item.className='room-item';
         item.innerHTML=
           '<div class="av-wrap"><div class="av">'+(_safeUrl(photo)?'<img src="'+_esc(_safeUrl(photo))+'" alt="">':( isGroup?'<span class="ms">group</span>':'<span class="ms">person</span>'))+'</div></div>'+
-          '<div class="room-info"><div class="room-name-row"><span class="room-name">'+_esc(name)+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="알림 꺼짐">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(r.roomType==='lecture'?'<span class="country-pill">'+t('lecture_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
+          '<div class="room-info"><div class="room-name-row"><span class="room-name">'+_esc(name)+'</span>'+(isRoomMuted(doc.id)?'<span class="ms" style="font-size:15px;opacity:.5;margin-left:2px;" title="'+_L('알림 꺼짐','Muted')+'">notifications_off</span>':'')+(r.isGuestRoom?'<span class="country-pill">'+t('guest_badge')+'</span>':'')+(r.roomType==='lecture'?'<span class="country-pill">'+t('lecture_badge')+'</span>':'')+(pLang&&!r.isGuestRoom?'<span class="country-pill">'+(LANG_FLAGS[pLang]||'')+' '+pLang.toUpperCase()+'</span>':'')+'</div>'+
           '<div class="room-last">'+(r.lastMessage?_esc(r.lastMessage):t('chat_start_hint'))+'</div></div>'+
           '<div class="room-meta"><span class="room-time">'+formatTime(r.lastMessageTime)+'</span>'+(isUnread?'<span class="unread-badge">'+(r.unreadCount&&r.unreadCount[currentUser.uid]>0?r.unreadCount[currentUser.uid]:'1')+'</span>':'')+'<button class="room-del" title="'+_L('삭제','Delete')+'"><span class="ms">delete</span></button></div>';
         item.querySelector('.room-del').onclick=function(e){e.stopPropagation();deleteRoom(doc.id,name);};
@@ -204,8 +204,8 @@ function loadRooms(){
     },function(err){
       // 에러 콜백이 없으면 에러 발생 시(권한 거부 등) "불러오는 중..."에서 영원히 멈춤
       console.error('loadRooms 실패:',err);
-      sub.textContent='불러오기 실패';
-      list.innerHTML='<div class="empty-state"><div class="empty-emoji"><span class="ms">error</span></div><div class="empty-title">채팅 목록을 불러오지 못했어요</div><div class="empty-desc">'+_esc(err&&err.message?err.message:'')+'</div></div>';
+      sub.textContent=_L('불러오기 실패','Failed to load');
+      list.innerHTML='<div class="empty-state"><div class="empty-emoji"><span class="ms">error</span></div><div class="empty-title">'+_L('채팅 목록을 불러오지 못했어요','Couldn\'t load your chats')+'</div><div class="empty-desc">'+_esc(err&&err.message?err.message:'')+'</div></div>';
     });
 }
 
@@ -264,7 +264,7 @@ function _renderGroupCards(docs){
     const c=document.createElement('div');c.className='group-card';
     c.innerHTML='<div class="group-card-av"><span class="ms">groups</span></div><div class="group-card-name"></div><div class="group-card-cnt"></div>';
     c.querySelector('.group-card-name').textContent=name;
-    c.querySelector('.group-card-cnt').textContent=(r.members||[]).length+_L('명',' members');
+    c.querySelector('.group-card-cnt').textContent=_L('{n}명','{n} people',{n:(r.members||[]).length});
     c.onclick=function(){openRoom(d.id,name,'',true);};
     box.insertBefore(c,addCard);
   });
@@ -339,7 +339,7 @@ function _friendItem(u){
     '<div class="user-info"><div class="user-name"></div><div class="user-status"></div></div>'+
     '<div class="friend-acts">'+(currentUser.isAnonymous?'':'<button class="act-btn friend-more" title="'+_L('더보기','More')+'"><span class="ms">more_vert</span></button>')+'<button class="act-btn"><span class="ms">chat_bubble</span></button></div>';
   _avatarInto(item.querySelector('.av'),u.photoURL);
-  item.querySelector('.user-name').textContent=(u.displayName||'익명')+(lang&&LANG_FLAGS[lang]?' '+LANG_FLAGS[lang]:'');
+  item.querySelector('.user-name').textContent=(u.displayName||_L('익명','Anonymous'))+(lang&&LANG_FLAGS[lang]?' '+LANG_FLAGS[lang]:'');
   item.querySelector('.user-status').textContent=u.manduid?'@'+u.manduid:'';
   const more=item.querySelector('.friend-more');
   if(more)more.onclick=function(e){e.stopPropagation();openFriendMenu(u);};
@@ -413,7 +413,7 @@ function showCreate(){
   friends.forEach(function(u){
     const item=document.createElement('div');
     item.className='user-item';
-    item.innerHTML='<div class="av"></div><div class="user-info"><div class="user-name">'+_esc(u.displayName||'익명')+'</div>'+(u.manduid?'<div class="user-status">@'+_esc(u.manduid)+'</div>':'')+'</div><span class="ms check-icon">check_circle</span>';
+    item.innerHTML='<div class="av"></div><div class="user-info"><div class="user-name">'+_esc(u.displayName||_L('익명','Anonymous'))+'</div>'+(u.manduid?'<div class="user-status">@'+_esc(u.manduid)+'</div>':'')+'</div><span class="ms check-icon">check_circle</span>';
     _avatarInto(item.querySelector('.av'),u.photoURL);
     item.onclick=function(){
       const idx=selectedUsers.findIndex(function(x){return x.uid===u.uid;});
@@ -425,7 +425,7 @@ function showCreate(){
 }
 
 async function createRoom(){
-  if(selectedUsers.length===0){showToast('대화 상대를 선택하세요!');return;}
+  if(selectedUsers.length===0){showToast(_L('대화 상대를 선택하세요!','Choose who to chat with!'));return;}
   const lectureEl=document.getElementById('create-lecture');
   const isLecture=!!(lectureEl&&lectureEl.checked);
   if(selectedUsers.length===1&&!isLecture){await startDM(selectedUsers[0]);return;}
@@ -467,7 +467,7 @@ function _otherMemberNames(data){
 function _shortGroupTitle(others){
   if(!others.length)return t('chat_default_room_name');
   if(others.length===1)return others[0];
-  return others[0]+_L(' 외 '+(others.length-1)+'명',' +'+(others.length-1));
+  return others[0]+_L(' 외 {n}명',' +{n}',{n:others.length-1});
 }
 function _renderChatHeader(data){
   const titleEl=document.getElementById('chat-title');
@@ -489,7 +489,7 @@ function showRoomMembers(){
   const data=_currentRoomData;if(!data||!currentUser)return;
   const mn=data.memberNames||{},mp=data.memberPhotos||{};
   const mem=(data.members||Object.keys(mn)).slice().sort(function(a,b){return (a===currentUser.uid?-1:0)-(b===currentUser.uid?-1:0);});
-  document.getElementById('roommembers-title').textContent=_L('대화 상대 '+mem.length+'명','Members ('+mem.length+')');
+  document.getElementById('roommembers-title').textContent=_L('대화 상대 {n}명','Members ({n})',{n:mem.length});
   document.getElementById('roommembers-list').innerHTML=mem.map(function(u){
     const ph=_safeUrl(mp[u]);
     return '<div class="rm-row"><div class="rm-av">'+(ph?'<img src="'+_esc(ph)+'" alt="">':'<span class="ms">person</span>')+'</div>'
@@ -634,7 +634,7 @@ function loadMessages(keepLimit){
         const total=changes.length;
         if(total>=msgLimit){
           const more=document.createElement('button');
-          more.innerHTML='<span class=ms-i>expand_less</span> 이전 메시지 더 보기';
+          more.innerHTML='<span class=ms-i>expand_less</span> '+_L('이전 메시지 더 보기','Load earlier messages');
           more.style.cssText='display:block;margin:6px auto 12px;padding:8px 16px;border-radius:100px;border:1px solid var(--outline);background:var(--surface);color:var(--on-surface);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;';
           more.onclick=function(){msgLimit+=MSG_PAGE;loadMessages(true);};
           container.insertBefore(more,banner);
@@ -678,7 +678,7 @@ function loadMessages(keepLimit){
       if(!(wasFirst&&msgLimit>MSG_PAGE))setTimeout(function(){container.scrollTop=container.scrollHeight;},300);
     },function(err){
       console.error('loadMessages 실패:',err);
-      showToast('메시지를 불러오지 못했어요');
+      showToast(_L('메시지를 불러오지 못했어요','Couldn\'t load messages'));
     });
   });
 }
@@ -825,7 +825,7 @@ function showAddMember(){
     candidates.forEach(function(u){
       const item=document.createElement('div');
       item.className='user-item';
-      item.innerHTML='<div class="av"></div><div class="user-info"><div class="user-name">'+_esc(u.displayName||'익명')+'</div>'+(u.manduid?'<div class="user-status">@'+_esc(u.manduid)+'</div>':'')+'</div><span class="ms check-icon">check_circle</span>';
+      item.innerHTML='<div class="av"></div><div class="user-info"><div class="user-name">'+_esc(u.displayName||_L('익명','Anonymous'))+'</div>'+(u.manduid?'<div class="user-status">@'+_esc(u.manduid)+'</div>':'')+'</div><span class="ms check-icon">check_circle</span>';
       _avatarInto(item.querySelector('.av'),u.photoURL);
       item.onclick=function(){
         const idx=_addMemberSelected.findIndex(function(x){return x.uid===u.uid;});

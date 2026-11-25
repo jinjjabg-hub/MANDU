@@ -95,7 +95,7 @@ async function sendSticker(id){
   _stickerSending=true;
   closeEmojiPicker(true);
   try{
-    await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+    const msgRef=await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',sticker:id,uid:currentUser.uid,
       displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -106,7 +106,7 @@ async function sendSticker(id){
     // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
     markRead(currentRoomId);
-    sendPushNotification(others,label);
+    sendPushNotification(others,label,msgRef.id);
     if(isGuest)checkGuestUpgrade();
     _autoAway();
     requestTesterReply(currentRoomId);
@@ -164,7 +164,8 @@ function toggleVoiceInput(){
 }
 
 // 보낸 사람·이름은 서버가 로그인 토큰과 방 정보로 확인한다 (사칭 알림 방지)
-async function sendPushNotification(toUids,body){
+// 알림 본문도 서버가 messageId 로 실제 메시지를 읽어 만든다 — body 는 예전 서버 호환용으로만 같이 보낸다
+async function sendPushNotification(toUids,body,messageId){
   if(!toUids||toUids.length===0||!currentUser||!currentRoomId)return;
   const roomId=currentRoomId;
   // 이 요청으로 서버가 받는 사람들의 안 읽음 수도 올린다 → 서버가 잠들어 있다 깨는 중이라 실패하면 한 번 더
@@ -174,7 +175,7 @@ async function sendPushNotification(toUids,body){
       const res=await fetch('https://mandu-server.onrender.com/api/notify',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
-        body:JSON.stringify({toUids:toUids,roomId:roomId,body:body})
+        body:JSON.stringify({toUids:toUids,roomId:roomId,body:body,messageId:messageId||null})
       });
       if(res.ok||res.status<500)return;
     }catch(e){console.warn('푸시 알림 전송 실패:',e);}
@@ -186,15 +187,16 @@ async function sendPushNotification(toUids,body){
 // 서버(/api/upload/sign)에서 서명을 받아 올린다 — 로그인·방 멤버·횟수를 서버가 확인하고, 비밀키는 서버에만 있다.
 // 서버에 아직 키가 없으면({signed:false}) 예전 방식(공개 업로드 설정)으로 올린다. kind: image | file | profile
 async function _cloudUpload(file,kind,roomId){
-  const sig=await _serverPost('/api/upload/sign',{kind:kind,room:roomId||null},true);
+  const sig=await _serverPost('/api/upload/sign',{kind:kind,room:roomId||null,formats:true},true);
   if(!sig.ok)throw new Error('sign failed '+sig.status);
   const d=sig.data,fd=new FormData();
   fd.append('file',file);
   let url='https://api.cloudinary.com/v1_1/dei44zkfy/'+(kind==='file'?'raw':'image')+'/upload';
   if(d.signed){
-    ['api_key','timestamp','signature','folder','tags','upload_preset'].forEach(function(k){
-      const v=k==='api_key'?d.apiKey:d[k];if(v)fd.append(k,v);
-    });
+    // 서버가 서명한 칸(fields: 폴더·표시·시각·파일 종류 제한 등)을 그대로 보낸다 — 하나라도 빠지거나 바뀌면 Cloudinary 가 거절
+    const f=d.fields||{timestamp:d.timestamp,folder:d.folder,tags:d.tags,upload_preset:d.upload_preset};
+    Object.keys(f).forEach(function(k){if(f[k])fd.append(k,f[k]);});
+    fd.append('api_key',d.apiKey);fd.append('signature',d.signature);
     url='https://api.cloudinary.com/v1_1/'+encodeURIComponent(d.cloud)+'/'+encodeURIComponent(d.resourceType)+'/upload';
   }else{
     fd.append('upload_preset','mandu_upload');
@@ -207,12 +209,12 @@ async function _cloudUpload(file,kind,roomId){
 
 async function sendFile(input){
   const file=input.files[0];if(!file||!currentUser||!currentRoomId)return;
-  if(file.size>20*1024*1024){showToast('20MB 이하 파일만 가능해요');input.value='';return;}
-  showToast('파일 업로드 중...');
+  if(file.size>20*1024*1024){showToast(_L('20MB 이하 파일만 가능해요','Files must be 20MB or smaller'));input.value='';return;}
+  showToast(_L('파일 업로드 중...','Uploading file...'));
   try{
     const data={secure_url:await _cloudUpload(file,'file',currentRoomId)};
     const fileSize=file.size<1024*1024?(Math.round(file.size/1024)+'KB'):(Math.round(file.size/1024/1024*10)/10+'MB');
-    await db.collection('rooms').doc(currentRoomId).collection('messages').add({
+    const msgRef=await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',fileUrl:data.secure_url,fileName:file.name,fileSize:fileSize,
       uid:currentUser.uid,displayName:currentUser.displayName||'게스트',
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -221,10 +223,10 @@ async function sendFile(input){
     const incUpdate={lastMessage:'[파일] '+file.name,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
     // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
-    markRead(currentRoomId);showToast('파일 전송 완료!');
-    sendPushNotification(others,'[파일] '+file.name);
+    markRead(currentRoomId);showToast(_L('파일 전송 완료!','File sent!'));
+    sendPushNotification(others,'[파일] '+file.name,msgRef.id);
     requestTesterReply(currentRoomId);
-  }catch(e){showToast('업로드 실패. 다시 시도해요');}
+  }catch(e){showToast(_L('업로드 실패. 다시 시도해요','Upload failed. Please try again'));}
   input.value='';
 }
 
@@ -257,15 +259,15 @@ function formatTime(ts){
 
 // ── 이모지 피커 ───────────────────────────────────────────
 const EMOJI_CATEGORIES=[
-  {icon:'😀',name:'스마일',emojis:['😀','😃','😄','😁','😆','😅','😂','🤣','🥲','☺️','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🫣','🤭','🫡','🤫','🤥','😶','🫠','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🫥','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖']},
-  {icon:'👋',name:'손/몸',emojis:['👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','🫵','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🫀','🫁','🧠','🦷','🦴','👀','👁️','👅','👄','🫦','💋','🩸']},
-  {icon:'❤️',name:'하트',emojis:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☯️','🕉️','☦️','🛐','♾️','⚛️','🆘','💯','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤']},
-  {icon:'🐶',name:'동물',emojis:['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🦂','🐢','🐍','🦎','🦈','🐬','🦭','🐳','🐋','🐊','🐅','🐆','🦓','🐘','🦛','🦏','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐈','🐓','🦃','🦤','🦚','🦜','🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔']},
-  {icon:'🍎',name:'음식',emojis:['🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🧄','🧅','🥔','🍠','🫘','🥜','🌰','🍞','🥐','🥖','🫓','🥨','🥯','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫔','🌮','🌯','🥙','🧆','🍜','🍝','🍛','🍲','🫕','🥘','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥮','🍢','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🍯','🧃','🥤','🧋','☕','🍵','🫖','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊']},
-  {icon:'⚽',name:'스포츠',emojis:['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🏓','🏸','🏒','🥍','🏑','🎿','🛷','🥌','🪃','🎯','🏹','🎣','🤿','🎽','🥊','🥋','🎖️','🏆','🥇','🥈','🥉','🏅','🎗️','🎫','🎟️','🎪','🎭','🩰','🎨','🎠','🎡','🎢','🎤','🎧','🎼','🎵','🎶','🎷','🎸','🎹','🎺','🎻','🥁','🪘','🎙️','🎚️','🎛️','📻']},
-  {icon:'🚗',name:'이동/장소',emojis:['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🏍️','🛵','🛺','🚲','🛴','🛹','🛼','⛽','🚨','🚥','🚦','🛑','🚧','⚓','🛟','⛵','🚤','🛥️','🛳️','⛴️','🚢','✈️','🛩️','🛫','🛬','🛰️','🚀','🛸','🚁','🛶','⛺','🏠','🏡','🏢','🏥','🏦','🏨','🏪','🏫','🏭','🏗️','🏰','🏯','🗼','🗽','🗿','🗺️','🧭','🌋','⛰️','🏔️','🏕️','🏖️','🏜️','🏝️','🏞️','🌅','🌄','🌠','🎇','🎆','🌇','🌆','🏙️','🌃','🌉','🌌','🌁']},
-  {icon:'💡',name:'기호/물건',emojis:['💡','🔦','🕯️','🪔','🧯','💰','💴','💵','💶','💷','💸','💳','💎','⚖️','🔧','🪛','🔨','⚒️','🛠️','⛏️','🔩','🪤','🧲','🔗','⛓️','🪜','🪞','🪟','🛋️','🪑','🚽','🪠','🚿','🛁','🧴','🧷','🧹','🧺','🧻','🪣','🧼','🫧','🪥','🧽','🧯','🛒','🚪','🪒','📦','📫','📪','📬','📭','📮','🗳️','✏️','✒️','🖊️','🖋️','📝','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🏷️','🗑️','📁','📂','🗂️','📅','📆','📇','📈','📉','📊','📋','📌','📍','📎','🖇️','📐','📏','✂️','🗃️','🗄️','🔒','🔓','🔏','🔐','🔑','🗝️','💊','💉','🩸','🩹','🩺','🩻','🌡️','🧬','🦠','🔬','🔭','🧫','🧪','🧲','⚗️']},
-  {icon:'🎉',name:'특수/기념',emojis:['🎉','🎊','🎈','🎁','🎀','🎗️','🎟️','🎫','🎖️','🏆','🥇','🥈','🥉','🏅','🎯','🎲','🎮','🕹️','🎰','🎳','🎭','🎨','🖼️','🪆','🎪','🤹','🎠','🎡','🎢','🎤','🎸','🎹','🎷','🎺','🥁','🎼','🎵','🎶','🎙️','📣','📢','🔔','🔕','✨','🌟','💫','⭐','🌠','🌈','🌊','🌀','❄️','⛄','☃️','💨','🌪️','🔥','💧','🌊','✨','🎆','🎇','🧨','🎉','🎊','🎈','🎋','🎍','🎎','🎏','🎐','🎑','🧧','🎁','🎗️','🎟️','🎫','🏮','🪔','🧿','🪬','🧸','🪅']}
+  {icon:'😀',name:'스마일',en:'Smileys',emojis:['😀','😃','😄','😁','😆','😅','😂','🤣','🥲','☺️','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🫣','🤭','🫡','🤫','🤥','😶','🫠','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🫥','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖']},
+  {icon:'👋',name:'손/몸',en:'Hands & body',emojis:['👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','🫵','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🫀','🫁','🧠','🦷','🦴','👀','👁️','👅','👄','🫦','💋','🩸']},
+  {icon:'❤️',name:'하트',en:'Hearts',emojis:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☯️','🕉️','☦️','🛐','♾️','⚛️','🆘','💯','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤']},
+  {icon:'🐶',name:'동물',en:'Animals',emojis:['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🦂','🐢','🐍','🦎','🦈','🐬','🦭','🐳','🐋','🐊','🐅','🐆','🦓','🐘','🦛','🦏','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐈','🐓','🦃','🦤','🦚','🦜','🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔']},
+  {icon:'🍎',name:'음식',en:'Food',emojis:['🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🧄','🧅','🥔','🍠','🫘','🥜','🌰','🍞','🥐','🥖','🫓','🥨','🥯','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫔','🌮','🌯','🥙','🧆','🍜','🍝','🍛','🍲','🫕','🥘','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥮','🍢','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🍯','🧃','🥤','🧋','☕','🍵','🫖','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊']},
+  {icon:'⚽',name:'스포츠',en:'Sports',emojis:['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🏓','🏸','🏒','🥍','🏑','🎿','🛷','🥌','🪃','🎯','🏹','🎣','🤿','🎽','🥊','🥋','🎖️','🏆','🥇','🥈','🥉','🏅','🎗️','🎫','🎟️','🎪','🎭','🩰','🎨','🎠','🎡','🎢','🎤','🎧','🎼','🎵','🎶','🎷','🎸','🎹','🎺','🎻','🥁','🪘','🎙️','🎚️','🎛️','📻']},
+  {icon:'🚗',name:'이동/장소',en:'Travel & places',emojis:['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🏍️','🛵','🛺','🚲','🛴','🛹','🛼','⛽','🚨','🚥','🚦','🛑','🚧','⚓','🛟','⛵','🚤','🛥️','🛳️','⛴️','🚢','✈️','🛩️','🛫','🛬','🛰️','🚀','🛸','🚁','🛶','⛺','🏠','🏡','🏢','🏥','🏦','🏨','🏪','🏫','🏭','🏗️','🏰','🏯','🗼','🗽','🗿','🗺️','🧭','🌋','⛰️','🏔️','🏕️','🏖️','🏜️','🏝️','🏞️','🌅','🌄','🌠','🎇','🎆','🌇','🌆','🏙️','🌃','🌉','🌌','🌁']},
+  {icon:'💡',name:'기호/물건',en:'Objects & symbols',emojis:['💡','🔦','🕯️','🪔','🧯','💰','💴','💵','💶','💷','💸','💳','💎','⚖️','🔧','🪛','🔨','⚒️','🛠️','⛏️','🔩','🪤','🧲','🔗','⛓️','🪜','🪞','🪟','🛋️','🪑','🚽','🪠','🚿','🛁','🧴','🧷','🧹','🧺','🧻','🪣','🧼','🫧','🪥','🧽','🧯','🛒','🚪','🪒','📦','📫','📪','📬','📭','📮','🗳️','✏️','✒️','🖊️','🖋️','📝','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🏷️','🗑️','📁','📂','🗂️','📅','📆','📇','📈','📉','📊','📋','📌','📍','📎','🖇️','📐','📏','✂️','🗃️','🗄️','🔒','🔓','🔏','🔐','🔑','🗝️','💊','💉','🩸','🩹','🩺','🩻','🌡️','🧬','🦠','🔬','🔭','🧫','🧪','🧲','⚗️']},
+  {icon:'🎉',name:'특수/기념',en:'Celebrations',emojis:['🎉','🎊','🎈','🎁','🎀','🎗️','🎟️','🎫','🎖️','🏆','🥇','🥈','🥉','🏅','🎯','🎲','🎮','🕹️','🎰','🎳','🎭','🎨','🖼️','🪆','🎪','🤹','🎠','🎡','🎢','🎤','🎸','🎹','🎷','🎺','🥁','🎼','🎵','🎶','🎙️','📣','📢','🔔','🔕','✨','🌟','💫','⭐','🌠','🌈','🌊','🌀','❄️','⛄','☃️','💨','🌪️','🔥','💧','🌊','✨','🎆','🎇','🧨','🎉','🎊','🎈','🎋','🎍','🎎','🎏','🎐','🎑','🧧','🎁','🎗️','🎟️','🎫','🏮','🪔','🧿','🪬','🧸','🪅']}
 ];
 
 let emojiPickerOpen=false,currentEmojiCategory=-1; // -1 = 만두 스티커 탭
@@ -288,7 +290,7 @@ function buildEmojiPicker(){
   EMOJI_CATEGORIES.forEach(function(cat,idx){
     const btn=document.createElement('button');
     btn.className='emoji-cat-btn';
-    btn.textContent=cat.icon;btn.title=cat.name;
+    btn.textContent=cat.icon;btn.title=_L(cat.name,cat.en||cat.name);
     btn.onclick=function(){
       document.querySelectorAll('.emoji-cat-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');currentEmojiCategory=idx;
@@ -372,7 +374,7 @@ function closeSearch(){
   document.getElementById('search-backdrop').classList.remove('open');
   document.getElementById('search-sheet').classList.remove('open');
   document.getElementById('search-input').value='';
-  document.getElementById('search-results').innerHTML='<div class="search-empty"><div class="search-empty-ico"><svg width="64" height="64" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg></div><div class="search-empty-txt">검색어를 입력해보세요</div></div>';
+  document.getElementById('search-results').innerHTML='<div class="search-empty"><div class="search-empty-ico"><svg width="64" height="64" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg></div><div class="search-empty-txt">'+_L('검색어를 입력해보세요','Type something to search')+'</div></div>';
 }
 let _searchSeq=0,_searchIdTimer=null;
 function _searchUserItem(u){
@@ -380,7 +382,7 @@ function _searchUserItem(u){
   el.innerHTML='<div class="av-wrap"><div class="av"></div></div>'+
     '<div class="room-info"><div class="room-name-row"><span class="room-name"></span>'+(u.manduid?'<span class="country-pill">@'+_esc(u.manduid)+'</span>':'')+'</div></div>';
   _avatarInto(el.querySelector('.av'),u.photoURL);
-  el.querySelector('.room-name').textContent=u.displayName||'익명';
+  el.querySelector('.room-name').textContent=u.displayName||_L('익명','Anonymous');
   el.onclick=function(){closeSearch();startDM(u);};
   return el;
 }
@@ -389,7 +391,7 @@ function runSearch(keyword){
   const q=keyword.trim().toLowerCase();
   const results=document.getElementById('search-results');
   if(!q){
-    results.innerHTML='<div class="search-empty"><div class="search-empty-ico"><svg width="64" height="64" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg></div><div class="search-empty-txt">검색어를 입력해보세요</div></div>';
+    results.innerHTML='<div class="search-empty"><div class="search-empty-ico"><svg width="64" height="64" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg></div><div class="search-empty-txt">'+_L('검색어를 입력해보세요','Type something to search')+'</div></div>';
     return;
   }
   // 친구는 이름·아이디 일부로 찾고, 모르는 사람은 @만두ID를 정확히 입력했을 때만 서버에서 한 명 조회 (가입자 목록 노출 방지)
@@ -399,10 +401,10 @@ function runSearch(keyword){
   });
   results.innerHTML='';
   if(matchedUsers.length>0){
-    const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent='사용자';results.appendChild(lbl);
+    const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent=_L('사용자','Users');results.appendChild(lbl);
     matchedUsers.forEach(function(u){results.appendChild(_searchUserItem(u));});
   }else{
-    results.innerHTML='<div class="search-empty"><div class="search-empty-ico"><span class="ms">search_off</span></div><div class="search-empty-txt">"'+_esc(keyword)+'" 검색 결과가 없어요</div></div>';
+    results.innerHTML='<div class="search-empty"><div class="search-empty-ico"><span class="ms">search_off</span></div><div class="search-empty-txt">'+_esc(_L('"{q}" 검색 결과가 없어요','No results for "{q}"',{q:keyword}))+'</div></div>';
   }
   if(/^[a-z0-9_]{3,20}$/.test(qid)&&!matchedUsers.some(function(u){return (u.manduid||'').toLowerCase()===qid;})){
     _searchIdTimer=setTimeout(function(){_searchById(qid,seq,results);},350);
@@ -418,7 +420,7 @@ async function _searchById(qid,seq,results){
     if(seq!==_searchSeq||!u)return;
     if(u.isGuest)return;
     if(results.querySelector('.search-empty'))results.innerHTML='';
-    if(!results.querySelector('.search-sec-lbl')){const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent='사용자';results.appendChild(lbl);}
+    if(!results.querySelector('.search-sec-lbl')){const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent=_L('사용자','Users');results.appendChild(lbl);}
     results.appendChild(_searchUserItem(u));
   }catch(e){console.warn('ID 검색 실패:',e&&e.code);}
 }

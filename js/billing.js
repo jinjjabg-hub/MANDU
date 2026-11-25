@@ -124,16 +124,16 @@ async function renderUsageUI(){
   // BUSINESS: 한도를 넘어도 번역은 계속되고, 초과 요금을 받는 달이면 예상 금액을 미리 보여준다 (서버와 같은 계산: 1만 자 단위 내림 × 315원)
   if((plan==='business'||plan==='premium')&&used>limit){
     const over=used-limit;
-    let line=_L('한도 초과 ','Over quota ')+fmtChars(over);
+    let line=_L('한도 초과 {n}','Over quota {n}',{n:fmtChars(over)});
     const from=window._overageFrom;
     const ym=kst.y*12+kst.m;
     if(from&&/^\d{4}_\d{1,2}$/.test(from)&&ym>=Number(from.split('_')[0])*12+Number(from.split('_')[1])){
-      line+=' · '+_L('예상 추가 요금 ','Estimated extra charge ')+(Math.floor(over/10000)*315).toLocaleString()+_L('원 (1만 자당 315원, 다음 달 초 결제)',' KRW (315 KRW per 10,000 chars, billed early next month)');
+      line+=' · '+_L('예상 추가 요금 {won}원 (1만 자당 315원, 다음 달 초 결제)','Estimated extra charge {won} KRW (315 KRW per 10,000 chars, billed early next month)',{won:(Math.floor(over/10000)*315).toLocaleString()});
     }
     msgEl.textContent=line;
   }
   const ou=window._myBilling&&window._myBilling.overageUnpaid;
-  if(ou)msgEl.textContent=_L('초과 요금 ','Overage charge of ')+Number(ou.amount||0).toLocaleString()+_L('원이 결제되지 않아 한도 초과 번역이 멈췄어요. 카드를 확인해 주세요',' KRW failed, so translation beyond your quota is paused. Please check your card.');
+  if(ou)msgEl.textContent=_L('초과 요금 {won}원이 결제되지 않아 한도 초과 번역이 멈췄어요. 카드를 확인해 주세요','The overage charge of {won} KRW failed, so translation beyond your quota is paused. Please check your card.',{won:Number(ou.amount||0).toLocaleString()});
   // 앱에서는 링크 없는 안내 문구만 허용
   if(document.documentElement.classList.contains('is-app')&&plan!=='business'&&plan!=='premium')msgEl.textContent+=' '+t('usage_web_upgrade_note');
   try{renderSubscriptionLine();}catch(e){}
