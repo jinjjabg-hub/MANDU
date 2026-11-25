@@ -262,7 +262,7 @@ function renderMsg(d,skipTranslate){
   const w=document.createElement('div');
   w.className='msg-wrap '+(mine?'mine':'theirs');
   if(d._id)w.dataset.mid=d._id;
-  if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||'익명';w.appendChild(s);}
+  if(!mine){const s=document.createElement('div');s.className='msg-sender';s.textContent=d.displayName||_L('익명','Anonymous');w.appendChild(s);}
   const row=document.createElement('div');row.className='msg-row';
   const b=document.createElement('div');b.className='msg-bubble';
   const stickerSrc=stickerUrl(d.sticker);
@@ -289,7 +289,7 @@ function renderMsg(d,skipTranslate){
     const fUrl=_safeUrl(d.fileUrl);if(fUrl)fa.href=fUrl;
     fa.setAttribute('download',String(d.fileName||''));
     fa.innerHTML='<div class="file-icon '+cls+'"><span class="ms">'+icon+'</span></div><div class="file-info"><div class="file-name"></div><div class="file-size"></div></div><span class="ms" style="font-size:18px;color:var(--primary);flex-shrink:0;">download</span>';
-    fa.querySelector('.file-name').textContent=String(d.fileName||'파일');
+    fa.querySelector('.file-name').textContent=String(d.fileName||_L('파일','File'));
     fa.querySelector('.file-size').textContent=String(d.fileSize||'');
     b.appendChild(fa);
   }else{b.textContent=d.text;}
@@ -428,11 +428,11 @@ function attachLinkPreview(wrap,text){
 
 async function sendImage(input){
   const original=input.files[0];if(!original||!currentUser||!currentRoomId)return;
-  if(original.size>20*1024*1024){showToast('20MB 이하 이미지만 가능해요');input.value='';return;}
-  showToast('이미지 업로드 중...');
+  if(original.size>20*1024*1024){showToast(_L('20MB 이하 이미지만 가능해요','Images must be 20MB or smaller'));input.value='';return;}
+  showToast(_L('이미지 업로드 중...','Uploading image...'));
   try{
     const file=await compressImage(original,1600,0.8);
-    if(file.size>5*1024*1024){showToast('5MB 이하 이미지만 가능해요');input.value='';return;}
+    if(file.size>5*1024*1024){showToast(_L('5MB 이하 이미지만 가능해요','Images must be 5MB or smaller'));input.value='';return;}
     const data={secure_url:await _cloudUpload(file,'image',currentRoomId)};
     const msgRef=await db.collection('rooms').doc(currentRoomId).collection('messages').add({
       text:'',imageUrl:data.secure_url,uid:currentUser.uid,
@@ -444,10 +444,10 @@ async function sendImage(input){
     const incUpdate={lastMessage:'[사진]',lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
     // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
-    markRead(currentRoomId);showToast('이미지 전송 완료!');
+    markRead(currentRoomId);showToast(_L('이미지 전송 완료!','Image sent!'));
     sendPushNotification(others,'[사진]',msgRef.id);
     requestTesterReply(currentRoomId);
-  }catch(e){showToast('업로드 실패. 다시 시도해요');}
+  }catch(e){showToast(_L('업로드 실패. 다시 시도해요','Upload failed. Please try again'));}
   input.value='';
 }
 
@@ -458,7 +458,7 @@ async function sendMessage(){
 
   // 500자 제한
   if(text.length>MAX_CHARS_PER_MSG){
-    showToast('메시지는 500자 이하로 입력해주세요');
+    showToast(_L('메시지는 500자 이하로 입력해주세요','Messages must be 500 characters or fewer'));
     return;
   }
   input.value='';input.style.height='auto';

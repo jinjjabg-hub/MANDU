@@ -3,7 +3,14 @@
 // ── 신고·차단 (Google Play 사용자 제작 콘텐츠 정책) ─────────────────
 // 차단 목록은 blocks/{내uid}(본인만 읽기·쓰기), 신고는 reports(생성만 가능, 운영자가 콘솔에서 검토).
 let blockedUids=new Set();let _unsubBlocks=null;let _roomsRender=null,_lastRoomsSnap=null;
-function _L(ko,en){return (typeof _uiLang==='undefined'||_uiLang==='ko')?ko:en;}
+// 화면 문구: _L(한국어, 영어) — 한국어·영어 말고 다른 화면 언어는 i18n.js 의 L_T[언어]['한국어 문구']에서 찾고, 없으면 영어.
+// 숫자 같은 바뀌는 값은 {n}처럼 적고 세 번째 값으로 넘긴다: _L('{n}명','{n} people',{n:3})
+function _L(ko,en,v){
+  const lang=(typeof _uiLang==='undefined')?'ko':_uiLang;
+  let s=lang==='ko'?ko:lang==='en'?en:(((typeof L_T!=='undefined'&&L_T[lang])||{})[ko]||en);
+  if(v)s=String(s).replace(/\{(\w+)\}/g,function(m,k){return Object.prototype.hasOwnProperty.call(v,k)?v[k]:m;});
+  return s;
+}
 function initBlocks(){
   if(!currentUser||currentUser.isAnonymous)return;
   const lbl=document.getElementById('blocked-row-label');if(lbl)lbl.textContent=_L('차단한 사용자','Blocked users');
@@ -42,7 +49,7 @@ function _writeHidden(id,hide){
 // 로그인 없이 들어온 손님과의 방은 마지막 대화 후 이 기간이 지나면 서버가 방과 메시지를 완전히 지운다.
 // users/{uid}.guestRoomTtlDays (0=끄기, 기본 7). 실제 삭제는 mandu-server 가 한다.
 let myGuestTtlDays=7;
-function _guestTtlText(d){return d>0?_L(d+'일 동안 대화가 없으면 삭제',"Deleted after "+d+" days without messages"):_L('자동 삭제 안 함','Never auto-delete');}
+function _guestTtlText(d){return d>0?_L('{d}일 동안 대화가 없으면 삭제','Deleted after {d} days without messages',{d:d}):_L('자동 삭제 안 함','Never auto-delete');}
 function renderGuestTtl(){
   const a=document.getElementById('guestttl-section-label'),b=document.getElementById('guestttl-label'),c=document.getElementById('guestttl-sub');
   if(a)a.textContent=_L('게스트 대화방','Guest chats');
@@ -53,19 +60,19 @@ function openGuestTtlPicker(){
   if(!currentUser||currentUser.isAnonymous)return;
   const items=[3,7,14,30,0].map(function(d){
     return {icon:d===myGuestTtlDays?'radio_button_checked':'radio_button_unchecked',
-      label:d>0?_L(d+'일','After '+d+' days'):_L('삭제 안 함','Never'),fn:function(){setGuestTtl(d);}};
+      label:d>0?_L('{d}일','After {d} days',{d:d}):_L('삭제 안 함','Never'),fn:function(){setGuestTtl(d);}};
   });
   _modSheet(_L('게스트 대화방 자동 삭제','Auto-delete guest chats'),items);
 }
 function setGuestTtl(d){
   const prev=myGuestTtlDays;myGuestTtlDays=d;renderGuestTtl();
   db.collection('users').doc(currentUser.uid).set({guestRoomTtlDays:d},{merge:true})
-    .then(function(){showToast(d>0?_L('게스트 대화방은 '+d+'일 후 삭제돼요','Guest chats will be deleted after '+d+' days'):_L('자동 삭제를 껐어요','Auto-delete turned off'));})
+    .then(function(){showToast(d>0?_L('게스트 대화방은 {d}일 후 삭제돼요','Guest chats will be deleted after {d} days',{d:d}):_L('자동 삭제를 껐어요','Auto-delete turned off'));})
     .catch(function(){myGuestTtlDays=prev;renderGuestTtl();showToast(_L('저장하지 못했어요','Could not save'));});
 }
 function deleteRoom(roomId,name){
   if(!currentUser||!roomId)return;
-  if(!confirm(_L('"'+(name||'채팅방')+'" 대화방을 목록에서 삭제할까요?\n상대방에게는 영향이 없고, 상대가 새 메시지를 보내면 다시 나타나요.','Delete this chat from your list?\nThe other person is not affected, and it reappears if they send a new message.')))return;
+  if(!confirm(_L('"{name}" 대화방을 목록에서 삭제할까요?\n상대방에게는 영향이 없고, 상대가 새 메시지를 보내면 다시 나타나요.','Delete "{name}" from your list?\nThe other person is not affected, and it reappears if they send a new message.',{name:name||_L('채팅방','Chat')})))return;
   myHiddenRooms[roomId]=Date.now();
   if(currentRoomId===roomId&&document.getElementById('chat-screen').style.display==='flex')handleBack();
   if(_lastRoomsSnap&&typeof _roomsRender==='function')_roomsRender(_lastRoomsSnap);

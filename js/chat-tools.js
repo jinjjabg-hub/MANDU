@@ -209,8 +209,8 @@ async function _cloudUpload(file,kind,roomId){
 
 async function sendFile(input){
   const file=input.files[0];if(!file||!currentUser||!currentRoomId)return;
-  if(file.size>20*1024*1024){showToast('20MB 이하 파일만 가능해요');input.value='';return;}
-  showToast('파일 업로드 중...');
+  if(file.size>20*1024*1024){showToast(_L('20MB 이하 파일만 가능해요','Files must be 20MB or smaller'));input.value='';return;}
+  showToast(_L('파일 업로드 중...','Uploading file...'));
   try{
     const data={secure_url:await _cloudUpload(file,'file',currentRoomId)};
     const fileSize=file.size<1024*1024?(Math.round(file.size/1024)+'KB'):(Math.round(file.size/1024/1024*10)/10+'MB');
@@ -223,10 +223,10 @@ async function sendFile(input){
     const incUpdate={lastMessage:'[파일] '+file.name,lastMessageTime:firebase.firestore.FieldValue.serverTimestamp(),lastMessageUid:currentUser.uid};
     // 받는 사람들의 안 읽음 수는 서버(/api/notify)가 올린다 — 앱은 남의 숫자를 바꿀 수 없다(firestore.rules)
     await db.collection('rooms').doc(currentRoomId).set(incUpdate,{merge:true});
-    markRead(currentRoomId);showToast('파일 전송 완료!');
+    markRead(currentRoomId);showToast(_L('파일 전송 완료!','File sent!'));
     sendPushNotification(others,'[파일] '+file.name,msgRef.id);
     requestTesterReply(currentRoomId);
-  }catch(e){showToast('업로드 실패. 다시 시도해요');}
+  }catch(e){showToast(_L('업로드 실패. 다시 시도해요','Upload failed. Please try again'));}
   input.value='';
 }
 
@@ -259,15 +259,15 @@ function formatTime(ts){
 
 // ── 이모지 피커 ───────────────────────────────────────────
 const EMOJI_CATEGORIES=[
-  {icon:'😀',name:'스마일',emojis:['😀','😃','😄','😁','😆','😅','😂','🤣','🥲','☺️','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🫣','🤭','🫡','🤫','🤥','😶','🫠','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🫥','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖']},
-  {icon:'👋',name:'손/몸',emojis:['👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','🫵','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🫀','🫁','🧠','🦷','🦴','👀','👁️','👅','👄','🫦','💋','🩸']},
-  {icon:'❤️',name:'하트',emojis:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☯️','🕉️','☦️','🛐','♾️','⚛️','🆘','💯','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤']},
-  {icon:'🐶',name:'동물',emojis:['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🦂','🐢','🐍','🦎','🦈','🐬','🦭','🐳','🐋','🐊','🐅','🐆','🦓','🐘','🦛','🦏','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐈','🐓','🦃','🦤','🦚','🦜','🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔']},
-  {icon:'🍎',name:'음식',emojis:['🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🧄','🧅','🥔','🍠','🫘','🥜','🌰','🍞','🥐','🥖','🫓','🥨','🥯','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫔','🌮','🌯','🥙','🧆','🍜','🍝','🍛','🍲','🫕','🥘','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥮','🍢','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🍯','🧃','🥤','🧋','☕','🍵','🫖','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊']},
-  {icon:'⚽',name:'스포츠',emojis:['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🏓','🏸','🏒','🥍','🏑','🎿','🛷','🥌','🪃','🎯','🏹','🎣','🤿','🎽','🥊','🥋','🎖️','🏆','🥇','🥈','🥉','🏅','🎗️','🎫','🎟️','🎪','🎭','🩰','🎨','🎠','🎡','🎢','🎤','🎧','🎼','🎵','🎶','🎷','🎸','🎹','🎺','🎻','🥁','🪘','🎙️','🎚️','🎛️','📻']},
-  {icon:'🚗',name:'이동/장소',emojis:['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🏍️','🛵','🛺','🚲','🛴','🛹','🛼','⛽','🚨','🚥','🚦','🛑','🚧','⚓','🛟','⛵','🚤','🛥️','🛳️','⛴️','🚢','✈️','🛩️','🛫','🛬','🛰️','🚀','🛸','🚁','🛶','⛺','🏠','🏡','🏢','🏥','🏦','🏨','🏪','🏫','🏭','🏗️','🏰','🏯','🗼','🗽','🗿','🗺️','🧭','🌋','⛰️','🏔️','🏕️','🏖️','🏜️','🏝️','🏞️','🌅','🌄','🌠','🎇','🎆','🌇','🌆','🏙️','🌃','🌉','🌌','🌁']},
-  {icon:'💡',name:'기호/물건',emojis:['💡','🔦','🕯️','🪔','🧯','💰','💴','💵','💶','💷','💸','💳','💎','⚖️','🔧','🪛','🔨','⚒️','🛠️','⛏️','🔩','🪤','🧲','🔗','⛓️','🪜','🪞','🪟','🛋️','🪑','🚽','🪠','🚿','🛁','🧴','🧷','🧹','🧺','🧻','🪣','🧼','🫧','🪥','🧽','🧯','🛒','🚪','🪒','📦','📫','📪','📬','📭','📮','🗳️','✏️','✒️','🖊️','🖋️','📝','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🏷️','🗑️','📁','📂','🗂️','📅','📆','📇','📈','📉','📊','📋','📌','📍','📎','🖇️','📐','📏','✂️','🗃️','🗄️','🔒','🔓','🔏','🔐','🔑','🗝️','💊','💉','🩸','🩹','🩺','🩻','🌡️','🧬','🦠','🔬','🔭','🧫','🧪','🧲','⚗️']},
-  {icon:'🎉',name:'특수/기념',emojis:['🎉','🎊','🎈','🎁','🎀','🎗️','🎟️','🎫','🎖️','🏆','🥇','🥈','🥉','🏅','🎯','🎲','🎮','🕹️','🎰','🎳','🎭','🎨','🖼️','🪆','🎪','🤹','🎠','🎡','🎢','🎤','🎸','🎹','🎷','🎺','🥁','🎼','🎵','🎶','🎙️','📣','📢','🔔','🔕','✨','🌟','💫','⭐','🌠','🌈','🌊','🌀','❄️','⛄','☃️','💨','🌪️','🔥','💧','🌊','✨','🎆','🎇','🧨','🎉','🎊','🎈','🎋','🎍','🎎','🎏','🎐','🎑','🧧','🎁','🎗️','🎟️','🎫','🏮','🪔','🧿','🪬','🧸','🪅']}
+  {icon:'😀',name:'스마일',en:'Smileys',emojis:['😀','😃','😄','😁','😆','😅','😂','🤣','🥲','☺️','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🫣','🤭','🫡','🤫','🤥','😶','🫠','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🫥','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖']},
+  {icon:'👋',name:'손/몸',en:'Hands & body',emojis:['👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','🫵','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🫀','🫁','🧠','🦷','🦴','👀','👁️','👅','👄','🫦','💋','🩸']},
+  {icon:'❤️',name:'하트',en:'Hearts',emojis:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☯️','🕉️','☦️','🛐','♾️','⚛️','🆘','💯','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤']},
+  {icon:'🐶',name:'동물',en:'Animals',emojis:['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷️','🦂','🐢','🐍','🦎','🦈','🐬','🦭','🐳','🐋','🐊','🐅','🐆','🦓','🐘','🦛','🦏','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐈','🐓','🦃','🦤','🦚','🦜','🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔']},
+  {icon:'🍎',name:'음식',en:'Food',emojis:['🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🧄','🧅','🥔','🍠','🫘','🥜','🌰','🍞','🥐','🥖','🫓','🥨','🥯','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫔','🌮','🌯','🥙','🧆','🍜','🍝','🍛','🍲','🫕','🥘','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥮','🍢','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🍯','🧃','🥤','🧋','☕','🍵','🫖','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊']},
+  {icon:'⚽',name:'스포츠',en:'Sports',emojis:['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🏓','🏸','🏒','🥍','🏑','🎿','🛷','🥌','🪃','🎯','🏹','🎣','🤿','🎽','🥊','🥋','🎖️','🏆','🥇','🥈','🥉','🏅','🎗️','🎫','🎟️','🎪','🎭','🩰','🎨','🎠','🎡','🎢','🎤','🎧','🎼','🎵','🎶','🎷','🎸','🎹','🎺','🎻','🥁','🪘','🎙️','🎚️','🎛️','📻']},
+  {icon:'🚗',name:'이동/장소',en:'Travel & places',emojis:['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🏍️','🛵','🛺','🚲','🛴','🛹','🛼','⛽','🚨','🚥','🚦','🛑','🚧','⚓','🛟','⛵','🚤','🛥️','🛳️','⛴️','🚢','✈️','🛩️','🛫','🛬','🛰️','🚀','🛸','🚁','🛶','⛺','🏠','🏡','🏢','🏥','🏦','🏨','🏪','🏫','🏭','🏗️','🏰','🏯','🗼','🗽','🗿','🗺️','🧭','🌋','⛰️','🏔️','🏕️','🏖️','🏜️','🏝️','🏞️','🌅','🌄','🌠','🎇','🎆','🌇','🌆','🏙️','🌃','🌉','🌌','🌁']},
+  {icon:'💡',name:'기호/물건',en:'Objects & symbols',emojis:['💡','🔦','🕯️','🪔','🧯','💰','💴','💵','💶','💷','💸','💳','💎','⚖️','🔧','🪛','🔨','⚒️','🛠️','⛏️','🔩','🪤','🧲','🔗','⛓️','🪜','🪞','🪟','🛋️','🪑','🚽','🪠','🚿','🛁','🧴','🧷','🧹','🧺','🧻','🪣','🧼','🫧','🪥','🧽','🧯','🛒','🚪','🪒','📦','📫','📪','📬','📭','📮','🗳️','✏️','✒️','🖊️','🖋️','📝','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🏷️','🗑️','📁','📂','🗂️','📅','📆','📇','📈','📉','📊','📋','📌','📍','📎','🖇️','📐','📏','✂️','🗃️','🗄️','🔒','🔓','🔏','🔐','🔑','🗝️','💊','💉','🩸','🩹','🩺','🩻','🌡️','🧬','🦠','🔬','🔭','🧫','🧪','🧲','⚗️']},
+  {icon:'🎉',name:'특수/기념',en:'Celebrations',emojis:['🎉','🎊','🎈','🎁','🎀','🎗️','🎟️','🎫','🎖️','🏆','🥇','🥈','🥉','🏅','🎯','🎲','🎮','🕹️','🎰','🎳','🎭','🎨','🖼️','🪆','🎪','🤹','🎠','🎡','🎢','🎤','🎸','🎹','🎷','🎺','🥁','🎼','🎵','🎶','🎙️','📣','📢','🔔','🔕','✨','🌟','💫','⭐','🌠','🌈','🌊','🌀','❄️','⛄','☃️','💨','🌪️','🔥','💧','🌊','✨','🎆','🎇','🧨','🎉','🎊','🎈','🎋','🎍','🎎','🎏','🎐','🎑','🧧','🎁','🎗️','🎟️','🎫','🏮','🪔','🧿','🪬','🧸','🪅']}
 ];
 
 let emojiPickerOpen=false,currentEmojiCategory=-1; // -1 = 만두 스티커 탭
@@ -290,7 +290,7 @@ function buildEmojiPicker(){
   EMOJI_CATEGORIES.forEach(function(cat,idx){
     const btn=document.createElement('button');
     btn.className='emoji-cat-btn';
-    btn.textContent=cat.icon;btn.title=cat.name;
+    btn.textContent=cat.icon;btn.title=_L(cat.name,cat.en||cat.name);
     btn.onclick=function(){
       document.querySelectorAll('.emoji-cat-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');currentEmojiCategory=idx;
@@ -374,7 +374,7 @@ function closeSearch(){
   document.getElementById('search-backdrop').classList.remove('open');
   document.getElementById('search-sheet').classList.remove('open');
   document.getElementById('search-input').value='';
-  document.getElementById('search-results').innerHTML='<div class="search-empty"><div class="search-empty-ico"><svg width="64" height="64" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg></div><div class="search-empty-txt">검색어를 입력해보세요</div></div>';
+  document.getElementById('search-results').innerHTML='<div class="search-empty"><div class="search-empty-ico"><svg width="64" height="64" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg></div><div class="search-empty-txt">'+_L('검색어를 입력해보세요','Type something to search')+'</div></div>';
 }
 let _searchSeq=0,_searchIdTimer=null;
 function _searchUserItem(u){
@@ -382,7 +382,7 @@ function _searchUserItem(u){
   el.innerHTML='<div class="av-wrap"><div class="av"></div></div>'+
     '<div class="room-info"><div class="room-name-row"><span class="room-name"></span>'+(u.manduid?'<span class="country-pill">@'+_esc(u.manduid)+'</span>':'')+'</div></div>';
   _avatarInto(el.querySelector('.av'),u.photoURL);
-  el.querySelector('.room-name').textContent=u.displayName||'익명';
+  el.querySelector('.room-name').textContent=u.displayName||_L('익명','Anonymous');
   el.onclick=function(){closeSearch();startDM(u);};
   return el;
 }
@@ -391,7 +391,7 @@ function runSearch(keyword){
   const q=keyword.trim().toLowerCase();
   const results=document.getElementById('search-results');
   if(!q){
-    results.innerHTML='<div class="search-empty"><div class="search-empty-ico"><svg width="64" height="64" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg></div><div class="search-empty-txt">검색어를 입력해보세요</div></div>';
+    results.innerHTML='<div class="search-empty"><div class="search-empty-ico"><svg width="64" height="64" viewBox="0 0 200 200" aria-hidden="true"><use href="#mandu-logo"/></svg></div><div class="search-empty-txt">'+_L('검색어를 입력해보세요','Type something to search')+'</div></div>';
     return;
   }
   // 친구는 이름·아이디 일부로 찾고, 모르는 사람은 @만두ID를 정확히 입력했을 때만 서버에서 한 명 조회 (가입자 목록 노출 방지)
@@ -401,10 +401,10 @@ function runSearch(keyword){
   });
   results.innerHTML='';
   if(matchedUsers.length>0){
-    const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent='사용자';results.appendChild(lbl);
+    const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent=_L('사용자','Users');results.appendChild(lbl);
     matchedUsers.forEach(function(u){results.appendChild(_searchUserItem(u));});
   }else{
-    results.innerHTML='<div class="search-empty"><div class="search-empty-ico"><span class="ms">search_off</span></div><div class="search-empty-txt">"'+_esc(keyword)+'" 검색 결과가 없어요</div></div>';
+    results.innerHTML='<div class="search-empty"><div class="search-empty-ico"><span class="ms">search_off</span></div><div class="search-empty-txt">'+_esc(_L('"{q}" 검색 결과가 없어요','No results for "{q}"',{q:keyword}))+'</div></div>';
   }
   if(/^[a-z0-9_]{3,20}$/.test(qid)&&!matchedUsers.some(function(u){return (u.manduid||'').toLowerCase()===qid;})){
     _searchIdTimer=setTimeout(function(){_searchById(qid,seq,results);},350);
@@ -420,7 +420,7 @@ async function _searchById(qid,seq,results){
     if(seq!==_searchSeq||!u)return;
     if(u.isGuest)return;
     if(results.querySelector('.search-empty'))results.innerHTML='';
-    if(!results.querySelector('.search-sec-lbl')){const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent='사용자';results.appendChild(lbl);}
+    if(!results.querySelector('.search-sec-lbl')){const lbl=document.createElement('div');lbl.className='search-sec-lbl';lbl.textContent=_L('사용자','Users');results.appendChild(lbl);}
     results.appendChild(_searchUserItem(u));
   }catch(e){console.warn('ID 검색 실패:',e&&e.code);}
 }
