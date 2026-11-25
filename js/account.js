@@ -167,7 +167,7 @@ async function initFCM(){
         const isGroup=r.type==='group';
         const entries=r.memberNames?Object.entries(r.memberNames):[];
         const otherEntry=entries.find(function(en){return en[0]!==currentUser.uid;});
-        const name=isGroup?((r.customerUid===currentUser.uid&&r.memberNames&&r.memberNames[r.storeUid]&&_memberLabel(r,r.storeUid,'',{noDup:true}))||r.name):(otherEntry?_memberLabel(r,otherEntry[0],'',{noDup:true}):t('chat_default_room_name'));
+        const name=isGroup?(_myRoomName(roomId)||(r.customerUid===currentUser.uid&&r.memberNames&&r.memberNames[r.storeUid]&&_memberLabel(r,r.storeUid,'',{noDup:true}))||r.name):(otherEntry?_memberLabel(r,otherEntry[0],'',{noDup:true}):t('chat_default_room_name'));
         openRoom(roomId,name,r.photoURL||'',isGroup);
       }).catch(function(){});
     });
