@@ -145,6 +145,30 @@ async function openTranslationSim(){
     '<div style="font-weight:800;margin:16px 0 4px;">실제 기록(지금 방식으로 실제 차감된 것)</div>'+
     '<div>번역 '+n(d.actual.events)+'건 · '+n(d.actual.chars)+'자 (채팅 '+n(d.actual.chat_chars)+'자) · 캐시 적중 '+n(d.actual.cache_hits)+'건</div>'+
     '<div style="margin-top:12px;color:var(--outline);font-size:12px;">시뮬레이션은 메시지마다 번역한다고 가정해서, 앱 안 사전·캐시로 건너뛴 번역이 있는 실제 기록보다 조금 클 수 있어요. 원가는 구글 100만 자당 $20, AI(Haiku 5.5) 토큰 단가, 환율 1,400원 기준 추정치예요.</div>';
+  _appendRouteStats(body);
+}
+// 운영자 전용: 번역 경로별 호출 수 (지난 30일) — "읽을 때 번역"을 없애도 되는지 판단용 (서버 /api/admin/route-stats)
+// 채팅의 읽을 때 번역(read_shared·read_chat·read_older)이 한동안 0에 가까우면 지난 메시지가 다 보낼 때 번역으로 넘어간 것이다.
+async function _appendRouteStats(body){
+  const r=await _serverGet('/api/admin/route-stats?days=30');
+  if(!r.ok||!body.isConnected)return;
+  const d=r.data,n=function(v){return Math.round(v||0).toLocaleString();};
+  const NAMES={send:'보낼 때 번역',read_shared:'읽을 때 · 공용(메시지별 1번)',read_chat:'읽을 때 · 예전 방식(채팅)',read_older:'읽을 때 · 지난 메시지 버튼',
+    read_system:'시스템 안내',read_ai_retry:'AI로 다시 번역',read_dict_preview:'내 사전 미리보기',read_dict_save:'내 사전 저장'};
+  const td='padding:5px 4px;border-bottom:1px solid var(--outline-variant);text-align:right;white-space:nowrap;';
+  const keys=Object.keys(d.total||{}).sort(function(a,b){return (d.total[b]||0)-(d.total[a]||0);});
+  const recent=(d.daily||[]).slice(0,7).reverse();
+  let rows='<tr style="color:var(--outline);"><td style="'+td+'text-align:left;">경로</td><td style="'+td+'">30일</td>'+recent.map(function(x){return '<td style="'+td+'">'+_esc(x.day.slice(4,6)+'/'+x.day.slice(6))+'</td>';}).join('')+'</tr>';
+  keys.forEach(function(k){
+    rows+='<tr><td style="'+td+'text-align:left;white-space:normal;">'+_esc(NAMES[k]||k)+'</td><td style="'+td+'">'+n(d.total[k])+'</td>'+
+      recent.map(function(x){return '<td style="'+td+'">'+n((x.counts||{})[k])+'</td>';}).join('')+'</tr>';
+  });
+  const sec=document.createElement('div');
+  sec.innerHTML='<div style="font-weight:800;margin:20px 0 4px;">번역 경로별 호출 수 (지난 30일)</div>'+
+    '<div style="margin-bottom:6px;">채팅 읽을 때 번역 <b>'+n(d.readChat)+'</b>번 · 보낼 때 번역 <b>'+n(d.send)+'</b>번</div>'+
+    (keys.length?'<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'+rows+'</table></div>':'<div style="color:var(--outline);">아직 기록이 없어요 (서버 업데이트 이후부터 쌓여요)</div>')+
+    '<div style="margin-top:8px;color:var(--outline);font-size:12px;">채팅의 "읽을 때" 세 줄이 2주 넘게 거의 0이면, 지난 메시지가 모두 보낼 때 번역으로 넘어간 것이라 읽을 때 번역(채팅용)을 없애도 돼요. 내 사전·AI 다시 번역·시스템 안내는 계속 이 경로를 써요.</div>';
+  body.appendChild(sec);
 }
 // 운영자 전용: 구글 전용 언어(몽골어·태국어·힌디어)를 AI로 옮겨도 되는지 — 같은 문장을 두 엔진으로 번역하고 한국어로 되돌려 비교
 async function openLangCompare(){
