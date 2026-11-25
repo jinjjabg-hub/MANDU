@@ -14,7 +14,7 @@ async function _serverGet(path){
   return {ok:false,status:0};
 }
 let _refMe=null;
-function _fmtDate(iso){const d=new Date(iso);return isNaN(d)?'':(d.getMonth()+1)+'/'+d.getDate();}
+function _fmtDate(iso){const d=new Date(iso);return isNaN(d.getTime())?'':(d.getMonth()+1)+'/'+d.getDate();}
 async function initReferral(){
   if(!currentUser||currentUser.isAnonymous)return;
   const set=function(id,v){const e=document.getElementById(id);if(e)e.textContent=v;};

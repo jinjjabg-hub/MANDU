@@ -70,9 +70,11 @@
 
 화면 코드(`index.html`·`js/`·`i18n.js`·`style.css`·`sw.js`)가 바뀐 PR마다 `.github/workflows/frontend-check.yml`이 돈다.
 - 정적 검사 `tests/frontend/check.mjs`: 파일 목록·순서, `sw.js` 캐시 목록, `?v=` 표시, 문법, 없는 함수·변수, 화면 버튼이 부르는 함수, 불러오는 순서 문제
+- 타입 검사 `npx tsc -p tsconfig.json`(tests/frontend): 오타 난 함수·속성 이름, 잘못된 값 종류(예: 숫자에 글자 함수).
+  밖에서 불러오는 라이브러리나 `index.html` 안의 함수를 새로 쓰면 `tests/frontend/types/globals.d.ts`에 한 줄 알려 준다.
 - 브라우저 검사 `tests/frontend/smoke.mjs`: 첫 화면(온보딩·로그인·손님 링크·영어)이 오류 없이 뜨는지
 
-PR을 올리기 전에 직접 돌려 본다: `cd tests/frontend && npm install && node check.mjs && node smoke.mjs`
+PR을 올리기 전에 직접 돌려 본다: `cd tests/frontend && npm install && node check.mjs && npx tsc -p tsconfig.json && node smoke.mjs`
 (브라우저가 없으면 `npx playwright install chromium`). 검사가 실패하면 검사를 끄지 말고 코드를 고친다.
 
 ## 배포

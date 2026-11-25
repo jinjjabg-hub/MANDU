@@ -113,7 +113,7 @@ function _iconStyleName(k){const L=(typeof _uiLang!=='undefined'&&_uiLang==='ko'
 function _paintIconTiles(){
   // 컬러 스타일용: 설정 아이콘마다 순서대로 다른 색 지정
   const pal=_iconStyle()==='block'?ICON_BLOCK_COLORS:ICON_TILE_COLORS;
-  document.querySelectorAll('#main-screen .settings-icon-wrap').forEach(function(el,i){el.style.setProperty('--tile',pal[i%pal.length]);el.setAttribute('data-alt',i%2);});
+  document.querySelectorAll('#main-screen .settings-icon-wrap').forEach(function(el,i){el.style.setProperty('--tile',pal[i%pal.length]);el.setAttribute('data-alt',String(i%2));});
 }
 function _updateIconStyleRow(){
   const lang=(typeof _uiLang!=='undefined')?_uiLang:'ko';

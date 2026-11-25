@@ -2,6 +2,7 @@ name: Frontend check
 
 # 앱 화면 코드가 바뀐 PR마다 자동 검사 (빌드 없이 지금 방식 그대로).
 #  - 정적 검사: 파일 목록·순서, 오프라인 캐시 목록, 문법, 없는 함수·변수, 화면 버튼이 부르는 함수, 불러오는 순서 문제
+#  - 타입 검사: TypeScript(tsc --checkJs)로 js/·i18n.js 의 오타 난 함수·속성 이름, 잘못된 값 종류 (설정: tests/frontend/tsconfig.json, types/globals.d.ts)
 #  - 브라우저 검사: 실제 Chromium으로 첫 화면(온보딩·로그인·손님 링크·영어)을 열어 오류 없이 뜨는지
 # 실패하면 PR에 ❌가 뜬다. 자세한 이유는 Actions 탭의 실행 기록에 한국어로 나온다.
 on:
@@ -50,6 +51,9 @@ jobs:
       - name: 정적 검사
         working-directory: tests/frontend
         run: node check.mjs
+      - name: 타입 검사
+        working-directory: tests/frontend
+        run: npx tsc -p tsconfig.json
 
   smoke:
     name: 브라우저 검사
