@@ -307,6 +307,7 @@ document.addEventListener('visibilitychange',function(){
 });
 
 // ── 회원 탈퇴 ─────────────────────────────────────────────
+const ACCOUNT_API='https://mandu-server.onrender.com/api/account';
 async function confirmDeleteAccount(){
   const ok=confirm(_L('정말 탈퇴하시겠어요?\n\n계정·프로필·번역 사전이 삭제되며 복구할 수 없습니다.\n(이미 보낸 메시지는 상대방 대화방에 남을 수 있어요)','Delete your account?\n\nYour account, profile and dictionary will be deleted and cannot be restored.\n(Messages you already sent may remain in other people\'s chats)'));
   if(!ok)return;
@@ -314,47 +315,18 @@ async function confirmDeleteAccount(){
     const user=auth.currentUser;
     if(!user){showToast(_L('로그인 상태를 확인해주세요','Please check that you are logged in'));return;}
     showToast(_L('계정 삭제 중...','Deleting account...'));
-    // 유료 플랜 정기결제도 함께 해지 (이용약관 제7조).
-    // 정상 구독(active)·카드 실패 재시도 중(past_due) 모두 해지한다. 해지가 실패하면 탈퇴를 멈춘다
-    // (계정만 지워지고 결제가 계속 나가지 않도록). 구독이 없으면 서버가 NO_SUBSCRIPTION(404)을 돌려주므로 그대로 진행.
-    let billSt=window._myBilling&&window._myBilling.status;
-    try{const us=await db.collection('users').doc(user.uid).get();const b=us.exists&&us.data().billing;if(b&&b.status)billSt=b.status;}catch(e){}
-    if(billSt==='active'||billSt==='past_due'){
-      try{await billingFetch('/cancel',{resume:false},user);}
-      catch(e){
-        if(!e||e.code!=='NO_SUBSCRIPTION'){
-          showToast(_L('정기결제 해지에 실패해 탈퇴를 멈췄어요. 잠시 후 다시 시도해 주세요','Could not cancel your subscription, so account deletion was stopped. Please try again shortly'));
-          return;
-        }
-      }
-    }
-    if(currentManduid){
-      await db.collection('manduid_index').doc(currentManduid).delete().catch(()=>{});
-    }
-    // 내 번역 사전 → 프로필 문서 순서로 삭제 (실패하면 탈퇴를 멈추고 알림 — 데이터가 남은 채 계정만 지워지지 않도록)
-    const dictSnap=await db.collection('users').doc(user.uid).collection('mydict').get();
-    await Promise.all(dictSnap.docs.map(function(d){return d.ref.delete();}));
-    // 번역 결과 백업도 함께 삭제 (규칙 미게시 등으로 읽기 실패해도 탈퇴는 계속)
-    try{
-      for(let i=0;i<50;i++){
-        const trSnap=await db.collection('users').doc(user.uid).collection('trcache').limit(400).get();
-        if(trSnap.empty)break;
-        await Promise.all(trSnap.docs.map(function(d){return d.ref.delete();}));
-      }
-    }catch(e){}
-    await db.collection('friends').doc(user.uid).delete().catch(function(){});
-    await db.collection('public_profiles').doc(user.uid).delete().catch(function(){});
-    await db.collection('discover_profiles').doc(user.uid).delete().catch(function(){});
-    if(user.email)await db.collection('cardbook_index').doc(user.email.trim().toLowerCase()).delete().catch(function(){});   // 카드북 연결 해제
-    await db.collection('users').doc(user.uid).delete();
-    await user.delete();
+    // 탈퇴는 서버가 끝까지 처리한다 (mandu-server server/account_delete.py):
+    // 정기결제 중지·카드 삭제 → 개인 데이터 → 대화방 정리 → 올린 사진 → 로그인 계정.
+    // 앱이 하나씩 지우면 중간에 꺼졌을 때 일부만 남고, 방 멤버 목록·사진은 앱 권한으로 지울 수 없었다.
+    await billingFetch('/delete',{},user,ACCOUNT_API);
+    await auth.signOut().catch(function(){});
     showToast(_L('탈퇴가 완료됐어요.','Your account has been deleted.'));
   }catch(e){
-    if(e.code==='auth/requires-recent-login'){
+    if(e.code==='REQUIRES_RECENT_LOGIN'||e.code==='auth/requires-recent-login'){
       showToast(_L('보안을 위해 재로그인 후 탈퇴해주세요','For security, please log in again and then delete your account'));
       await auth.signOut();
     }else{
-      showToast(_L('탈퇴 실패: ','Could not delete account: ')+e.message);
+      showToast(_L('탈퇴하지 못했어요. 잠시 후 다시 시도해 주세요','Could not delete your account. Please try again shortly'));
     }
   }
 }
