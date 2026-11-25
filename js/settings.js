@@ -120,7 +120,7 @@ function saveProfileLang(){
   localStorage.setItem('mandu_lang_'+currentUser.uid,lang);
   document.getElementById('my-lang').value=lang;
   document.getElementById('hero-lang').textContent=(LANG_FLAGS[lang]||'')+lang.toUpperCase();
-  showToast('번역 언어가 변경됐어요!');
+  showToast(_L('번역 언어가 변경됐어요!','Translation language changed!'));
 }
 function saveUILang(){
   if(!currentUser)return;
@@ -154,7 +154,7 @@ window.addEventListener('popstate',function(e){
     if(now-_exitPressTime<2000)return;
     _exitPressTime=now;
     history.pushState({manduScreen:'main',tab:'chats'},'');
-    showToast('한 번 더 누르면 종료됩니다');
+    showToast(_L('한 번 더 누르면 종료됩니다','Press back again to exit'));
     return;
   }
   const cur=SCREENS.find(function(s){

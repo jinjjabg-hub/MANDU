@@ -19,12 +19,12 @@ document.addEventListener('DOMContentLoaded',function(){
         return;
       }
       if(cleaned.length<3){
-        setIdMsg('3자 이상 입력해주세요','var(--outline)');return;
+        setIdMsg(_L('3자 이상 입력해주세요','Enter at least 3 characters'),'var(--outline)');return;
       }
       if(cleaned.length>20){
-        setIdMsg('20자 이하로 입력해주세요','var(--error)');return;
+        setIdMsg(_L('20자 이하로 입력해주세요','Use 20 characters or fewer'),'var(--error)');return;
       }
-      setIdMsg('확인 중...','var(--outline)');
+      setIdMsg(_L('확인 중...','Checking...'),'var(--outline)');
       idCheckTimeout=setTimeout(()=>checkManduidAvailable(cleaned),600);
     });
   }
@@ -39,21 +39,21 @@ async function checkManduidAvailable(id){
   try{
     const doc=await db.collection('manduid_index').doc(id).get();
     if(doc.exists){
-      setIdMsg('이미 사용 중인 ID예요','var(--error)');
+      setIdMsg(_L('이미 사용 중인 ID예요','This ID is already taken'),'var(--error)');
       idAvailable=false;
     }else{
-      setIdMsg('✓ 사용 가능한 ID예요!','var(--success)');
+      setIdMsg(_L('✓ 사용 가능한 ID예요!','✓ This ID is available!'),'var(--success)');
       idAvailable=true;
       document.getElementById('id-confirm-btn').disabled=false;
     }
   }catch(e){
-    setIdMsg('확인 실패. 다시 시도해주세요','var(--error)');
+    setIdMsg(_L('확인 실패. 다시 시도해주세요','Could not check. Please try again'),'var(--error)');
   }
 }
 
 async function retryFindManduid(){
   if(!currentUser)return;
-  showToast('계정 정보를 다시 확인하는 중...');
+  showToast(_L('계정 정보를 다시 확인하는 중...','Checking your account again...'));
   try{
     // 1단계: users 문서에서 manduid 직접 확인 (서버에서 강제 읽기)
     const userDoc=await db.collection('users').doc(currentUser.uid).get({source:'server'});
@@ -62,7 +62,7 @@ async function retryFindManduid(){
       currentManduid=userData.manduid;
       updateUIAfterLogin();
       showMain();
-      showToast('반가워요 @'+userData.manduid+'');
+      showToast(_L('반가워요 @{id}','Welcome back @{id}',{id:userData.manduid}));
       return;
     }
     // 2단계: manduid_index에서 역방향 조회
@@ -73,9 +73,9 @@ async function retryFindManduid(){
       currentManduid=foundId;
       updateUIAfterLogin();
       showMain();
-      showToast('반가워요 @'+foundId+'');
+      showToast(_L('반가워요 @{id}','Welcome back @{id}',{id:foundId}));
     }else{
-      showToast('새 만두 ID를 만들어주세요!');
+      showToast(_L('새 만두 ID를 만들어주세요!','Please create your MANDU ID!'));
     }
   }catch(e){
     console.error('retryFindManduid error:',e);
@@ -87,27 +87,27 @@ async function retryFindManduid(){
         currentManduid=ud2.manduid;
         updateUIAfterLogin();
         showMain();
-        showToast('반가워요 @'+ud2.manduid+'');
+        showToast(_L('반가워요 @{id}','Welcome back @{id}',{id:ud2.manduid}));
       }else{
-        showToast('오류가 발생했어요. 다시 시도해요');
+        showToast(_L('오류가 발생했어요. 다시 시도해요','Something went wrong. Please try again'));
       }
-    }catch(e2){showToast('오류가 발생했어요. 다시 시도해요');}
+    }catch(e2){showToast(_L('오류가 발생했어요. 다시 시도해요','Something went wrong. Please try again'));}
   }
 }
 
 async function createManduid(){
   if(!currentUser||!idAvailable)return;
   const id=document.getElementById('mandu-id-input').value.toLowerCase().replace(/[^a-z0-9_]/g,'');
-  if(id.length<3||id.length>20){showToast('3~20자로 입력해주세요');return;}
+  if(id.length<3||id.length>20){showToast(_L('3~20자로 입력해주세요','Use 3–20 characters'));return;}
 
   const btn=document.getElementById('id-confirm-btn');
   btn.disabled=true;
-  btn.textContent='저장 중...';
+  btn.textContent=_L('저장 중...','Saving...');
 
   try{
     // 중복 최종 확인
     const existing=await db.collection('manduid_index').doc(id).get();
-    if(existing.exists){showToast('이미 사용 중인 ID예요');btn.disabled=false;btn.textContent='시작하기';return;}
+    if(existing.exists){showToast(_L('이미 사용 중인 ID예요','This ID is already taken'));btn.disabled=false;btn.textContent=_L('시작하기','Get started');return;}
 
     // 저장
     await db.collection('manduid_index').doc(id).set({uid:currentUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
@@ -117,12 +117,12 @@ async function createManduid(){
     currentManduid=id;
     updateUIAfterLogin();
     showMain();
-    showToast('환영해요 @'+id+'');
+    showToast(t('welcome_toast').replace('{id}',id));
     setTimeout(afterNewAccountReferral,1200);
   }catch(e){
-    showToast('저장 실패. 다시 시도해요');
+    showToast(_L('저장 실패. 다시 시도해요','Could not save. Please try again'));
     btn.disabled=false;
-    btn.textContent='시작하기';
+    btn.textContent=_L('시작하기','Get started');
   }
 }
 
@@ -156,7 +156,7 @@ async function initFCM(){
       if(chatOpen&&d.roomId&&d.roomId===currentRoomId)return;
       if(d.roomId&&isRoomMuted(d.roomId))return;
       // 소리는 방 목록 리스너(loadRooms)가 냄 — 알림 권한이 없는 사용자도 소리가 나도록 하고 중복 방지
-      showToast((d.title||'MANDU')+': '+(d.body||'새 메시지'));
+      showToast((d.title||'MANDU')+': '+(d.body||_L('새 메시지','New message')));
     });
     navigator.serviceWorker.addEventListener('message',function(e){
       if(!e.data||e.data.type!=='OPEN_ROOM'||!e.data.roomId)return;
@@ -210,43 +210,43 @@ function setEmailMsg(id,msg,isError){
 async function emailLogin(){
   const email=document.getElementById('email-input').value.trim();
   const pw=document.getElementById('pw-input').value;
-  if(!email||!pw){setEmailMsg('email-login-msg','이메일과 비밀번호를 입력해주세요',true);return;}
-  setEmailMsg('email-login-msg','로그인 중...',false);
+  if(!email||!pw){setEmailMsg('email-login-msg',_L('이메일과 비밀번호를 입력해주세요','Please enter your email and password'),true);return;}
+  setEmailMsg('email-login-msg',_L('로그인 중...','Logging in...'),false);
   try{
     await auth.signInWithEmailAndPassword(email,pw);
   }catch(e){
-    const msgs={'auth/user-not-found':'등록되지 않은 이메일이에요','auth/wrong-password':'비밀번호가 틀렸어요',
-      'auth/invalid-email':'이메일 형식이 올바르지 않아요','auth/too-many-requests':'잠시 후 다시 시도해주세요',
-      'auth/invalid-credential':'이메일 또는 비밀번호가 틀렸어요'};
-    setEmailMsg('email-login-msg',msgs[e.code]||'로그인 실패: '+e.message,true);
+    const msgs={'auth/user-not-found':_L('등록되지 않은 이메일이에요','This email is not registered'),'auth/wrong-password':_L('비밀번호가 틀렸어요','Wrong password'),
+      'auth/invalid-email':_L('이메일 형식이 올바르지 않아요','Invalid email format'),'auth/too-many-requests':_L('잠시 후 다시 시도해주세요','Please try again later'),
+      'auth/invalid-credential':_L('이메일 또는 비밀번호가 틀렸어요','Wrong email or password')};
+    setEmailMsg('email-login-msg',msgs[e.code]||_L('로그인 실패: ','Login failed: ')+e.message,true);
   }
 }
 async function emailSignup(){
   const name=document.getElementById('signup-name-input').value.trim();
   const email=document.getElementById('signup-email-input').value.trim();
   const pw=document.getElementById('signup-pw-input').value;
-  if(!name){setEmailMsg('email-signup-msg','이름을 입력해주세요',true);return;}
-  if(!email){setEmailMsg('email-signup-msg','이메일을 입력해주세요',true);return;}
-  if(pw.length<6){setEmailMsg('email-signup-msg','비밀번호는 6자 이상이에요',true);return;}
-  setEmailMsg('email-signup-msg','가입 중...',false);
+  if(!name){setEmailMsg('email-signup-msg',_L('이름을 입력해주세요','Please enter your name'),true);return;}
+  if(!email){setEmailMsg('email-signup-msg',_L('이메일을 입력해주세요','Please enter your email'),true);return;}
+  if(pw.length<6){setEmailMsg('email-signup-msg',_L('비밀번호는 6자 이상이에요','Password must be at least 6 characters'),true);return;}
+  setEmailMsg('email-signup-msg',_L('가입 중...','Signing up...'),false);
   try{
     window._pendingDisplayName=name; // 가입 직후 로그인 처리가 먼저 돌아도 이름을 다시 묻지 않도록
     const cred=await auth.createUserWithEmailAndPassword(email,pw);
     await cred.user.updateProfile({displayName:name,photoURL:''});
     // 인증 메일은 로그인 처리(onAuthStateChanged)가 인증 대기 화면을 띄우면서 한 번 보낸다
   }catch(e){
-    const msgs={'auth/email-already-in-use':'이미 사용 중인 이메일이에요',
-      'auth/invalid-email':'이메일 형식이 올바르지 않아요','auth/weak-password':'비밀번호가 너무 짧아요'};
-    setEmailMsg('email-signup-msg',msgs[e.code]||'가입 실패: '+e.message,true);
+    const msgs={'auth/email-already-in-use':_L('이미 사용 중인 이메일이에요','This email is already in use'),
+      'auth/invalid-email':_L('이메일 형식이 올바르지 않아요','Invalid email format'),'auth/weak-password':_L('비밀번호가 너무 짧아요','Password is too short')};
+    setEmailMsg('email-signup-msg',msgs[e.code]||_L('가입 실패: ','Sign-up failed: ')+e.message,true);
   }
 }
 async function sendPasswordReset(){
   const email=document.getElementById('email-input').value.trim();
-  if(!email){setEmailMsg('email-login-msg','이메일을 먼저 입력해주세요',true);return;}
+  if(!email){setEmailMsg('email-login-msg',_L('이메일을 먼저 입력해주세요','Please enter your email first'),true);return;}
   try{
     await auth.sendPasswordResetEmail(email);
-    setEmailMsg('email-login-msg','재설정 메일을 보냈어요 ✓',false);
-  }catch(e){setEmailMsg('email-login-msg','전송 실패. 이메일을 확인해주세요',true);}
+    setEmailMsg('email-login-msg',_L('재설정 메일을 보냈어요 ✓','Reset email sent ✓'),false);
+  }catch(e){setEmailMsg('email-login-msg',_L('전송 실패. 이메일을 확인해주세요','Could not send. Please check your email'),true);}
 }
 function showEmailSignup(){
   document.getElementById('email-login-form').style.display='none';
@@ -275,8 +275,8 @@ function showVerifyScreen(user){
   show('verify-screen');
   // 인증 기능 이전에 가입한 계정은 메일을 받은 적이 없으므로 처음 한 번 자동으로 보낸다
   if(_verifySentUid!==user.uid){
-    _sendVerifyEmail(user).then(function(){setEmailMsg('verify-msg','인증 메일을 보냈어요 ✓',false);})
-      .catch(function(e){if(e&&e.code!=='auth/too-many-requests')setEmailMsg('verify-msg','메일 전송 실패. 다시 보내기를 눌러 주세요',true);});
+    _sendVerifyEmail(user).then(function(){setEmailMsg('verify-msg',_L('인증 메일을 보냈어요 ✓','Verification email sent ✓'),false);})
+      .catch(function(e){if(e&&e.code!=='auth/too-many-requests')setEmailMsg('verify-msg',_L('메일 전송 실패. 다시 보내기를 눌러 주세요','Could not send the email. Tap resend'),true);});
   }
 }
 async function checkEmailVerified(){
@@ -288,13 +288,13 @@ async function checkEmailVerified(){
       location.reload();                         // 일반 로그인 흐름으로 다시 시작
       return;
     }
-    setEmailMsg('verify-msg','아직 인증되지 않았어요. 메일의 링크를 먼저 눌러 주세요',true);
-  }catch(e){setEmailMsg('verify-msg','확인 실패. 잠시 후 다시 시도해 주세요',true);}
+    setEmailMsg('verify-msg',_L('아직 인증되지 않았어요. 메일의 링크를 먼저 눌러 주세요','Not verified yet. Please tap the link in the email first'),true);
+  }catch(e){setEmailMsg('verify-msg',_L('확인 실패. 잠시 후 다시 시도해 주세요','Could not check. Please try again later'),true);}
 }
 async function resendVerifyEmail(){
   const user=auth.currentUser;if(!user)return;
-  try{await _sendVerifyEmail(user);setEmailMsg('verify-msg','인증 메일을 다시 보냈어요 ✓',false);}
-  catch(e){setEmailMsg('verify-msg',e&&e.code==='auth/too-many-requests'?'잠시 후 다시 시도해 주세요':'메일 전송 실패',true);}
+  try{await _sendVerifyEmail(user);setEmailMsg('verify-msg',_L('인증 메일을 다시 보냈어요 ✓','Verification email resent ✓'),false);}
+  catch(e){setEmailMsg('verify-msg',e&&e.code==='auth/too-many-requests'?_L('잠시 후 다시 시도해 주세요','Please try again later'):_L('메일 전송 실패','Could not send the email'),true);}
 }
 // 메일 앱에서 인증하고 돌아오면 자동으로 확인
 whenAllLoaded(function(){   // 모든 js/ 파일을 불러온 뒤 등록 (CLAUDE.md "불러오는 순서")
@@ -308,12 +308,12 @@ document.addEventListener('visibilitychange',function(){
 
 // ── 회원 탈퇴 ─────────────────────────────────────────────
 async function confirmDeleteAccount(){
-  const ok=confirm('정말 탈퇴하시겠어요?\n\n계정·프로필·번역 사전이 삭제되며 복구할 수 없습니다.\n(이미 보낸 메시지는 상대방 대화방에 남을 수 있어요)');
+  const ok=confirm(_L('정말 탈퇴하시겠어요?\n\n계정·프로필·번역 사전이 삭제되며 복구할 수 없습니다.\n(이미 보낸 메시지는 상대방 대화방에 남을 수 있어요)','Delete your account?\n\nYour account, profile and dictionary will be deleted and cannot be restored.\n(Messages you already sent may remain in other people\'s chats)'));
   if(!ok)return;
   try{
     const user=auth.currentUser;
-    if(!user){showToast('로그인 상태를 확인해주세요');return;}
-    showToast('계정 삭제 중...');
+    if(!user){showToast(_L('로그인 상태를 확인해주세요','Please check that you are logged in'));return;}
+    showToast(_L('계정 삭제 중...','Deleting account...'));
     // 유료 플랜 정기결제도 함께 해지 (이용약관 제7조) — 구독이 없으면 서버가 404를 돌려주므로 무시
     try{if(window._myBilling&&window._myBilling.status==='active')await billingFetch('/cancel',{resume:false},user);}catch(e){}
     if(currentManduid){
@@ -336,13 +336,13 @@ async function confirmDeleteAccount(){
     if(user.email)await db.collection('cardbook_index').doc(user.email.trim().toLowerCase()).delete().catch(function(){});   // 카드북 연결 해제
     await db.collection('users').doc(user.uid).delete();
     await user.delete();
-    showToast('탈퇴가 완료됐어요.');
+    showToast(_L('탈퇴가 완료됐어요.','Your account has been deleted.'));
   }catch(e){
     if(e.code==='auth/requires-recent-login'){
-      showToast('보안을 위해 재로그인 후 탈퇴해주세요');
+      showToast(_L('보안을 위해 재로그인 후 탈퇴해주세요','For security, please log in again and then delete your account'));
       await auth.signOut();
     }else{
-      showToast('탈퇴 실패: '+e.message);
+      showToast(_L('탈퇴 실패: ','Could not delete account: ')+e.message);
     }
   }
 }
@@ -478,7 +478,7 @@ auth.onAuthStateChanged(async function(user){
           currentManduid=foundId;
           updateUIAfterLogin();
           showMain();
-          showToast('반가워요 @'+foundId+'');
+          showToast(_L('반가워요 @{id}','Welcome back @{id}',{id:foundId}));
           return;
         }
       }catch(e){}
@@ -699,7 +699,7 @@ function upgradeToGoogle(){
   currentUser.linkWithPopup(provider)
     .then(function(result){
       currentUser=result.user;isGuest=false;
-      showToast('가입 완료! 환영해요');hideBanner();
+      showToast(_L('가입 완료! 환영해요','Signed up! Welcome'));hideBanner();
       // 손님 → 회원 전환: 새 토큰(익명 아님)을 받은 뒤 추천인 자동 기록/입력 안내
       currentUser.getIdToken(true).then(function(){setTimeout(afterNewAccountReferral,1200);}).catch(function(){});
       db.collection('users').doc(currentUser.uid).set({

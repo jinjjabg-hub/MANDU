@@ -7,6 +7,13 @@ const _INDUSTRY_ICONS={food:'restaurant',finance:'account_balance',it:'computer'
 // 업종 이름을 화면 언어로 (번역 없으면 한국어)
 function _industryText(k){const v=(typeof t==='function')?t('ind_'+k):'';return (v&&v!=='ind_'+k)?v:(_INDUSTRY_LABELS[k]||'');}
 const _COUNTRY_LABELS={KR:'🇰🇷 대한민국',US:'🇺🇸 미국',JP:'🇯🇵 일본',CN:'🇨🇳 중국',VN:'🇻🇳 베트남',TH:'🇹🇭 태국',ID:'🇮🇩 인도네시아',MN:'🇲🇳 몽골',IN:'🇮🇳 인도',SG:'🇸🇬 싱가포르',MY:'🇲🇾 말레이시아',PH:'🇵🇭 필리핀',GB:'🇬🇧 영국',DE:'🇩🇪 독일',FR:'🇫🇷 프랑스',ES:'🇪🇸 스페인',IT:'🇮🇹 이탈리아',NL:'🇳🇱 네덜란드',CH:'🇨🇭 스위스',CA:'🇨🇦 캐나다',AU:'🇦🇺 호주',BR:'🇧🇷 브라질',MX:'🇲🇽 멕시코',AR_C:'🇦🇷 아르헨티나',RU:'🇷🇺 러시아',TR:'🇹🇷 터키',AE:'🇦🇪 아랍에미리트',SA:'🇸🇦 사우디아라비아',PT:'🇵🇹 포르투갈'};
+// 나라 이름: 화면 언어로 (브라우저 내장 Intl.DisplayNames). 안 되면 위의 한국어 이름
+function _countryText(k){
+  const base=_COUNTRY_LABELS[k]||'';if(!k||!base)return base;
+  if(typeof _uiLang==='undefined'||_uiLang==='ko')return base;
+  try{const n=new Intl.DisplayNames([_uiLang],{type:'region'}).of(k);if(n&&n!==k)return base.split(' ')[0]+' '+n;}catch(e){}
+  return base;
+}
 
 // ── 탐색(Discover) ──────────────────────────────────────────
 // discover_profiles/{uid}: 'Discover 공개'를 켠 사람의 공개용 정보만 담는다(이름·사진·ID·회사·직함·업종·나라·언어·소개).
@@ -52,7 +59,7 @@ function _buildDiscoverCard(u){
   const lang=(typeof LANG_FLAGS!=='undefined'&&u.lang)?(LANG_FLAGS[u.lang]||''):'';
   div.querySelector('.discover-card-name').textContent=(u.displayName||_L('이름 없음','No name'))+(lang?' '+lang:'');
   const mid=div.querySelector('.discover-card-mid');if(u.manduid)mid.textContent='@'+u.manduid;else mid.remove();
-  const meta=[u.jobTitle,u.company,(u.industry?_industryText(u.industry):''),_COUNTRY_LABELS[u.country]||''].filter(Boolean).join(' · ');
+  const meta=[u.jobTitle,u.company,(u.industry?_industryText(u.industry):''),_countryText(u.country)].filter(Boolean).join(' · ');
   const me=div.querySelector('.discover-card-meta');if(meta)me.textContent=meta;else me.remove();
   const bio=div.querySelector('.discover-card-bio');if(u.bio)bio.textContent='"'+u.bio+'"';else bio.remove();
   const add=div.querySelector('.discover-add-btn');
@@ -87,7 +94,7 @@ function _renderDiscoverChips(tab){
     if(k&&tab==='business'){
       const ic=document.createElement('span');ic.className='ms';ic.textContent=_INDUSTRY_ICONS[k]||'work';
       b.appendChild(ic);b.appendChild(document.createTextNode(_industryText(k)));
-    }else{b.textContent=k?labels[k]:_L('전체','All');}
+    }else{b.textContent=k?_countryText(k):_L('전체','All');}
     b.onclick=function(){if(st.filter===k)return;st.filter=k;_renderDiscoverChips(tab);_loadDiscoverPage(tab,true);};
     box.appendChild(b);
   });
@@ -181,11 +188,11 @@ function initDiscoverContacts(){
   if(navigator.contacts&&navigator.contacts.select){
     inner.innerHTML=
       '<div style="padding:20px 16px 12px;">'+
-        '<button onclick="pickContacts()" style="display:block;width:100%;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;"><span class=ms-i>contacts</span> 연락처에서 찾기</button>'+
+        '<button onclick="pickContacts()" style="display:block;width:100%;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:\'Plus Jakarta Sans\',sans-serif;"><span class=ms-i>contacts</span> '+_L('연락처에서 찾기','Find from contacts')+'</button>'+
       '</div>'+
       '<div id="contacts-result"></div>';
   }else{
-    inner.innerHTML='<div class="discover-empty"><span class="ms" style="font-size:44px;color:var(--primary-fixed-dim);">contacts</span><div style="font-size:14px;color:var(--outline);">이 기기에서는 지원되지 않아요</div></div>';
+    inner.innerHTML='<div class="discover-empty"><span class="ms" style="font-size:44px;color:var(--primary-fixed-dim);">contacts</span><div style="font-size:14px;color:var(--outline);">'+_L('이 기기에서는 지원되지 않아요','Not supported on this device')+'</div></div>';
   }
 }
 
@@ -200,10 +207,10 @@ async function pickContacts(){
     // 만두는 가입 때 전화번호를 저장하지 않아 연락처 번호로 회원을 찾을 수 없다(전체 가입자 조회도 규칙상 금지)
     var matched=[];
     result.innerHTML='';
-    if(!matched.length){_discoverEmpty(result,'person_search','연락처에서 MANDU 사용자를 찾지 못했어요');return;}
+    if(!matched.length){_discoverEmpty(result,'person_search',_L('연락처에서 MANDU 사용자를 찾지 못했어요','No MANDU users found in your contacts'));return;}
     matched.forEach(function(d){var u=d.data();u.uid=d.id;result.appendChild(_buildDiscoverCard(u));});
   }catch(e){
-    showToast('연락처 접근에 실패했어요');
+    showToast(_L('연락처 접근에 실패했어요','Could not access contacts'));
   }
 }
 
@@ -214,7 +221,7 @@ async function discoverStartDM(uid){
     if(!partner)return;
     await startDM(partner);
     switchTab('chats');
-  }catch(e){showToast('채팅방 생성에 실패했어요');}
+  }catch(e){showToast(_L('채팅방 생성에 실패했어요','Could not create the chat'));}
 }
 
 function showProfile(){
@@ -268,7 +275,7 @@ async function saveBusinessProfile(){
   if(!currentUser)return;
   const btn=document.getElementById('biz-save-btn');
   const orig=btn.textContent;
-  btn.disabled=true;btn.textContent='저장 중...';
+  btn.disabled=true;btn.textContent=_L('저장 중...','Saving...');
   const data={
     country:document.getElementById('biz-country').value,
     company:document.getElementById('biz-company').value.trim(),
@@ -281,17 +288,17 @@ async function saveBusinessProfile(){
     await db.collection('users').doc(currentUser.uid).update(data);
     if(usersMap[currentUser.uid])Object.assign(usersMap[currentUser.uid],data);
     await syncDiscoverProfile(!data.discoverPublic);
-    showToast('비즈니스 프로필이 저장됐어요');
+    showToast(_L('비즈니스 프로필이 저장됐어요','Business profile saved'));
   }catch(e){
-    showToast('저장 실패. 다시 시도해주세요');
+    showToast(_L('저장 실패. 다시 시도해주세요','Could not save. Please try again'));
   }
   btn.disabled=false;btn.textContent=orig;
 }
 
 async function uploadProfilePhoto(input){
   const original=input.files[0];if(!original||!currentUser)return;
-  if(original.size>20*1024*1024){showToast('20MB 이하 이미지만 가능해요');input.value='';return;}
-  showToast('프로필 사진 업로드 중...');
+  if(original.size>20*1024*1024){showToast(_L('20MB 이하 이미지만 가능해요','Images must be 20MB or smaller'));input.value='';return;}
+  showToast(_L('프로필 사진 업로드 중...','Uploading profile photo...'));
   try{
     const file=await compressImage(original,512,0.85);
     const data={secure_url:await _cloudUpload(file,'profile')};
@@ -302,20 +309,20 @@ async function uploadProfilePhoto(input){
     ['pe-photo','my-avatar','hero-avatar','settings-avatar'].forEach(function(id){
       const el=document.getElementById(id);if(el)el.src=data.secure_url;
     });
-    showToast('프로필 사진이 변경됐어요');
-  }catch(e){showToast('업로드 실패. 다시 시도해요');}
+    showToast(_L('프로필 사진이 변경됐어요','Profile photo updated'));
+  }catch(e){showToast(_L('업로드 실패. 다시 시도해요','Upload failed. Please try again'));}
   input.value='';
 }
 
 async function saveProfile(){
   if(!currentUser)return;
   const name=document.getElementById('pe-name').value.trim();
-  if(!name){showToast('이름을 입력하세요');return;}
+  if(!name){showToast(_L('이름을 입력하세요','Please enter a name'));return;}
   await db.collection('users').doc(currentUser.uid).update({displayName:name});
   if(usersMap[currentUser.uid])usersMap[currentUser.uid].displayName=name;
   syncPublicProfile();
   document.getElementById('hero-name').textContent=name;
   document.getElementById('settings-name').textContent=name;
-  showToast('저장됐어요!');
+  showToast(_L('저장됐어요!','Saved!'));
 }
 

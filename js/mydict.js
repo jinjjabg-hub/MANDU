@@ -59,9 +59,9 @@ async function dictPreview(){
   const to=document.getElementById('dict-to').value;
   const el=document.getElementById('dict-preview');
   if(!text){el.textContent='';return;}
-  el.textContent='번역 중...';
+  el.textContent=_L('번역 중...','Translating...');
   const result=await translate(text,to,{source:'dict_preview'});
-  el.textContent=result?('→ '+result):'번역 실패';
+  el.textContent=result?('→ '+result):_L('번역 실패','Translation failed');
 }
 
 // ── 저장 ────────────────────────────────────────────
@@ -70,16 +70,16 @@ async function addDictEntry(){
   const from=document.getElementById('dict-from').value;
   const to=document.getElementById('dict-to').value;
   const previewEl=document.getElementById('dict-preview');
-  if(!orig){showToast('표현을 입력해주세요');return;}
-  if(from===to){showToast('출발 언어와 도착 언어가 같아요');return;}
+  if(!orig){showToast(_L('표현을 입력해주세요','Please enter a phrase'));return;}
+  if(from===to){showToast(_L('출발 언어와 도착 언어가 같아요','The two languages are the same'));return;}
   if(!currentUser)return;
 
-  previewEl.textContent='번역 중...';
+  previewEl.textContent=_L('번역 중...','Translating...');
   const trans=await translate(orig,to,{source:'dict_save'});
-  if(!trans){showToast('번역 실패. 다시 시도해요');previewEl.textContent='';return;}
+  if(!trans){showToast(_L('번역 실패. 다시 시도해요','Translation failed. Please try again'));previewEl.textContent='';return;}
 
   const key=from+'|'+to+'|'+orig;
-  if(myDictCache[key]){showToast('이미 등록된 표현이에요');return;}
+  if(myDictCache[key]){showToast(_L('이미 등록된 표현이에요','This phrase is already saved'));return;}
 
   try{
     const ref=await db.collection('users').doc(currentUser.uid)
@@ -90,10 +90,10 @@ async function addDictEntry(){
     myDictCache[key]={trans,id:ref.id};
     document.getElementById('dict-input').value='';
     previewEl.textContent='';
-    showToast('저장됐어요');
+    showToast(_L('저장됐어요','Saved'));
     renderDictList();
     updateDictCountLabel();
-  }catch(e){showToast('저장 실패');}
+  }catch(e){showToast(_L('저장 실패','Could not save'));}
 }
 
 // ── 삭제 ────────────────────────────────────────────
@@ -104,10 +104,10 @@ async function deleteDictEntry(key){
     await db.collection('users').doc(currentUser.uid)
       .collection('mydict').doc(id).delete();
     delete myDictCache[key];
-    showToast('삭제됐어요');
+    showToast(_L('삭제됐어요','Deleted'));
     renderDictList();
     updateDictCountLabel();
-  }catch(e){showToast('삭제 실패');}
+  }catch(e){showToast(_L('삭제 실패','Could not delete'));}
 }
 
 // ── 목록 렌더 ────────────────────────────────────────
@@ -116,10 +116,10 @@ function renderDictList(){
   const list=document.getElementById('dict-list');
   const keys=Object.keys(myDictCache);
   if(keys.length===0){
-    list.innerHTML='<div class="dict-empty">아직 등록된 표현이 없어요<br>자주 쓰는 말을 저장해보세요</div>';
+    list.innerHTML='<div class="dict-empty">'+_L('아직 등록된 표현이 없어요','No saved phrases yet')+'<br>'+_L('자주 쓰는 말을 저장해보세요','Save phrases you use often')+'</div>';
     return;
   }
-  list.innerHTML='<div style="padding:6px 16px 2px;font-size:11px;font-weight:700;color:var(--outline);letter-spacing:1px;">'+keys.length+'개 등록됨</div>';
+  list.innerHTML='<div style="padding:6px 16px 2px;font-size:11px;font-weight:700;color:var(--outline);letter-spacing:1px;">'+_L('{n}개 등록됨','{n} saved',{n:keys.length})+'</div>';
   keys.forEach(function(key){
     const parts=key.split('|');
     const from=parts[0],to=parts[1],orig=parts[2];
