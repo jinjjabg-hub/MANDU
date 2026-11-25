@@ -51,6 +51,11 @@
    - `index.html`에 직접 적는 한국어 문구는 `data-l="영어"`(글자만), `data-l-html`(<br>·<strong> 섞임), `data-l-placeholder`·`data-l-title`·`data-l-aria-label`을 붙이고,
      같은 방법으로 `L_T`에 한국어 문구를 키로 넣는다(`js/ui-lang.js`의 `_applyHtmlL`이 바꿔 준다). 코드가 나중에 글자를 덮어쓰는 요소에는 붙이지 않는다.
 
+## 사람이 입력한 글을 화면에 넣을 때
+
+이름·메시지·파일 이름·매장 안내 글처럼 사용자가 쓴 값은 `textContent`로 넣거나, HTML 문자열에 넣을 때는 `_esc()`(`js/chat.js`)로 감싼다.
+주소(사진·링크)는 `_safeUrl()`·`_safeHttpsUrl()`을 거친다. 안 하면 다른 사람 화면에서 남의 코드가 실행될 수 있다(XSS).
+
 ## 불러오는 순서 (중요)
 
 `js/` 파일들은 모듈이 아니라 일반 `<script>`라서 **전역 변수·함수를 서로 공유**하고, `index.html`에 적힌 순서대로 실행된다.
@@ -69,7 +74,7 @@
 ## 자동 검사
 
 화면 코드(`index.html`·`js/`·`i18n.js`·`style.css`·`sw.js`)가 바뀐 PR마다 `.github/workflows/frontend-check.yml`이 돈다.
-- 정적 검사 `tests/frontend/check.mjs`: 파일 목록·순서, `sw.js` 캐시 목록, `?v=` 표시, 문법, 없는 함수·변수, 화면 버튼이 부르는 함수, 불러오는 순서 문제
+- 정적 검사 `tests/frontend/check.mjs`: 파일 목록·순서, `sw.js` 캐시 목록, `?v=` 표시, 문법, 없는 함수·변수, 화면 버튼이 부르는 함수, 불러오는 순서 문제, 사람이 입력한 값(이름·메시지 등)을 `_esc()` 없이 `innerHTML`로 넣는 곳
 - 브라우저 검사 `tests/frontend/smoke.mjs`: 첫 화면(온보딩·로그인·손님 링크·영어)이 오류 없이 뜨는지
 
 PR을 올리기 전에 직접 돌려 본다: `cd tests/frontend && npm install && node check.mjs && node smoke.mjs`
