@@ -209,9 +209,21 @@ function openSubs() {
   renderStatus();
   if (subsOn) return;
   subsOn = true;
-  classRef.onSnapshot(s => { status = (s.data() || {}).status || ''; renderStatus(); });
-  classRef.collection('live').doc('now').onSnapshot(s => { setLive((s.data() || {}).text || ''); }, () => {});
-  classRef.collection('segments').orderBy('t').onSnapshot(snap => {
+  classRef.onSnapshot(s => {
+    const prev = status;
+    status = (s.data() || {}).status || '';
+    renderStatus();
+    // 자막은 진행 중인 수업만 읽을 수 있다(firestore.rules classOpen). 오래전에 만든 수업에 미리 들어와 거절됐으면
+    // 교수님이 시작·재개할 때 다시 받는다.
+    if (subsFailed && status !== prev && status !== 'ended') { subsFailed = false; listenSubs(); beat(); }
+  });
+  listenSubs();
+}
+let subsFailed = false, unsubLive = null, unsubSegs = null;
+function listenSubs() {
+  if (unsubLive) unsubLive(); if (unsubSegs) unsubSegs();
+  unsubLive = classRef.collection('live').doc('now').onSnapshot(s => { setLive((s.data() || {}).text || ''); }, () => { subsFailed = true; });
+  unsubSegs = classRef.collection('segments').orderBy('t').onSnapshot(snap => {
     const stick = atBottom();
     snap.docChanges().forEach(ch => {
       const id = ch.doc.id;
@@ -223,7 +235,7 @@ function openSubs() {
     setLive(liveText);
     $('empty').classList.toggle('hidden', segs.size > 0);
     afterContent(stick);
-  }, e => console.warn(e));
+  }, e => { subsFailed = true; console.warn(e); });
 }
 
 function paintSeg(id, d, idx) {

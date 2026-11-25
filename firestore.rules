@@ -341,6 +341,16 @@ service cloud.firestore {
       return request.auth != null
         && get(/databases/$(database)/documents/classes/$(code)).data.owner == request.auth.uid;
     }
+    // 진행 중인 수업만 자막을 읽을 수 있다 — 수업 코드가 숫자 6자리라 차례로 넣어 보면 찾을 수 있으므로,
+    // 끝난 수업(ended)이나 12시간 넘게 시작·일시정지 등 상태 변화가 없는 수업은 학생이 자막·말하는 중·접속 언어를 읽거나 쓸 수 없다.
+    // (교수님은 언제든 자기 수업을 읽는다. 수업 문서 자체(제목·상태)는 학생 화면이 '끝났어요'를 보여 주려고 계속 읽을 수 있다)
+    function classOpen(code) {
+      let c = get(/databases/$(database)/documents/classes/$(code)).data;
+      return request.auth != null
+        && c.get('status', '') in ['ready', 'live', 'paused']
+        && c.get('updatedAt', null) is timestamp
+        && c.updatedAt > request.time - duration.value(12, 'h');
+    }
     match /classes/{code} {
       allow get: if request.auth != null;
       allow list: if false;
@@ -361,14 +371,14 @@ service cloud.firestore {
 
       // 교수님이 지금 말하는 중인 한국어 (1초마다 갱신)
       match /live/{docId} {
-        allow read: if request.auth != null;
+        allow read: if classOpen(code) || classOwner(code);
         allow write: if docId == 'now' && classOwner(code)
           && request.resource.data.keys().hasOnly(['text', 't'])
           && request.resource.data.text is string && request.resource.data.text.size() <= 1000;
       }
       // 확정된 자막 — 보통 서버가 번역과 함께 쓰고, 서버가 안 될 때만 교수님 화면이 한국어만 쓴다
       match /segments/{segId} {
-        allow read: if request.auth != null;
+        allow read: if classOpen(code) || classOwner(code);
         allow create, update: if classOwner(code)
           && request.resource.data.keys().hasOnly(['ko', 'tr', 't', 'engine', 'at', 'err'])
           && request.resource.data.ko is string && request.resource.data.ko.size() <= 1000;
@@ -376,12 +386,12 @@ service cloud.firestore {
       }
       // 접속 언어 — 문서 id = 언어 코드, u = {학생uid: 마지막 신호 시각}. 자기 uid 칸만 넣고 뺄 수 있다.
       match /languages/{lang} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null
+        allow read: if classOpen(code) || classOwner(code);
+        allow create: if classOpen(code)
           && lang in ['en', 'ja', 'zh', 'es', 'fr', 'de', 'vi', 'th', 'mn', 'hi', 'pt', 'ar', 'id', 'it', 'da', 'ru']
           && request.resource.data.keys().hasOnly(['u'])
           && request.resource.data.u.keys().hasOnly([request.auth.uid]);
-        allow update: if request.auth != null
+        allow update: if classOpen(code)
           && request.resource.data.keys().hasOnly(['u'])
           && request.resource.data.u.diff(resource.data.get('u', {})).affectedKeys().hasOnly([request.auth.uid]);
         allow delete: if false;
