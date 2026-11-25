@@ -3,14 +3,6 @@
 // ── 신고·차단 (Google Play 사용자 제작 콘텐츠 정책) ─────────────────
 // 차단 목록은 blocks/{내uid}(본인만 읽기·쓰기), 신고는 reports(생성만 가능, 운영자가 콘솔에서 검토).
 let blockedUids=new Set();let _unsubBlocks=null;let _roomsRender=null,_lastRoomsSnap=null;
-// 화면 문구: _L(한국어, 영어) — 한국어·영어 말고 다른 화면 언어는 i18n.js 의 L_T[언어]['한국어 문구']에서 찾고, 없으면 영어.
-// 숫자 같은 바뀌는 값은 {n}처럼 적고 세 번째 값으로 넘긴다: _L('{n}명','{n} people',{n:3})
-function _L(ko,en,v){
-  const lang=(typeof _uiLang==='undefined')?'ko':_uiLang;
-  let s=lang==='ko'?ko:lang==='en'?en:(((typeof L_T!=='undefined'&&L_T[lang])||{})[ko]||en);
-  if(v)s=String(s).replace(/\{(\w+)\}/g,function(m,k){return Object.prototype.hasOwnProperty.call(v,k)?v[k]:m;});
-  return s;
-}
 function initBlocks(){
   if(!currentUser||currentUser.isAnonymous)return;
   const lbl=document.getElementById('blocked-row-label');if(lbl)lbl.textContent=_L('차단한 사용자','Blocked users');
