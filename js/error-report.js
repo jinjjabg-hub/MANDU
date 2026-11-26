@@ -1,7 +1,7 @@
 // MANDU — 화면 오류를 서버로 알리기 (mandu-server server/error_stats.py 가 오류별 하루 횟수로 모은다)
 // 왜: 사용자 휴대폰에서 난 오류는 지금까지 아무도 볼 수 없었다. 운영자 화면에서 "어떤 오류가 하루 몇 번" 나는지 본다.
 // 개인정보: 오류 글·파일 위치만 보낸다(메시지 내용·이름은 보내지 않음). 서버가 이메일·긴 숫자도 한 번 더 지운다.
-// 한 번 열 때 최대 5건, 같은 오류는 1번만 보낸다. 다른 사이트 스크립트·브라우저 확장 오류는 보내지 않는다.
+// 한 번 열 때 최대 5건, 같은 오류는 1번만 보낸다. 로그인돼 있으면 토큰을 같이 보낸다(서버가 사람마다 센다). 다른 사이트 스크립트·브라우저 확장 오류는 보내지 않는다.
 // ※ core.js 바로 뒤에 불러와 앞쪽 파일에서 난 오류도 잡는다. 여기 콜백은 이 파일 함수와 SERVER_URL(core.js)만 쓴다.
 const _errSent={};let _errCount=0;
 function _reportError(kind,msg,src){
@@ -13,8 +13,14 @@ function _reportError(kind,msg,src){
     const key=kind+'|'+msg+'|'+src;
     if(_errSent[key]||_errCount>=5)return;
     _errSent[key]=1;_errCount++;
-    fetch(SERVER_URL+'/api/errors/report',{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,
-      body:JSON.stringify({kind:kind,msg:msg,src:src,page:(location.search.match(/[?&](u|host|join)=/)?'guest-link':'app')})}).catch(function(){});
+    const body=JSON.stringify({kind:kind,msg:msg,src:src,page:(location.search.match(/[?&](u|host|join)=/)?'guest-link':'app')});
+    // 로그인돼 있으면 토큰을 같이 보낸다 — 서버가 사람마다 따로 세서, 로그인 없이 쏟아지는 가짜 신고에 막히지 않는다
+    const send=function(tok){
+      const h={'Content-Type':'application/json'};if(tok)h.Authorization='Bearer '+tok;
+      fetch(SERVER_URL+'/api/errors/report',{method:'POST',headers:h,keepalive:true,body:body}).catch(function(){});
+    };
+    const u=(typeof currentUser!=='undefined')?currentUser:null;
+    if(u&&u.getIdToken)u.getIdToken().then(send,function(){send(null);});else send(null);
   }catch(e){}
 }
 window.addEventListener('error',function(e){
