@@ -91,3 +91,9 @@ PR을 올리기 전에 직접 돌려 본다: `cd tests/frontend && npm install &
 - 보안 규칙: `firestore.rules`를 고쳐 PR → `main`에 합치면 `.github/workflows/deploy-firestore-rules.yml`이
   규칙 테스트를 돌리고 통과하면 Firebase(mandutok)에 자동 게시한다. 합친 뒤 Actions 탭에서 "Deploy Firestore rules" 성공까지 확인한다.
 - 서버는 별도 저장소(`mandu-server`, Render)에 있다.
+
+## 오류 수집
+
+- 자체 집계: `js/error-report.js` → 서버 `/api/errors/report` → 운영자 화면 '최근 7일 오류'.
+- Sentry(tm-link 조직): 앱은 `index.html` 맨 위의 Loader 스크립트(`mandu-web` 프로젝트), 서버는 Render 환경변수 `SENTRY_DSN`(`mandu-server` 프로젝트).
+  개인정보(사용자 정보·주소의 ? 뒤 값·화면 행동 기록·로그인 토큰·메시지 본문)는 보내지 않게 설정돼 있다. 설정을 바꿀 때 이 원칙을 지킨다.
