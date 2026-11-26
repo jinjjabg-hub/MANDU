@@ -217,6 +217,8 @@ function renderPlanCards(){
 }
 
 function showPlanSheet(){
+  // '글자 수 × 번역된 언어 수' 안내는 시행일(2026-12-26 한국 시간, 서버 SEND_PER_LANG_START)부터 보인다
+  try{const pr=document.getElementById('plan-charge-rule');if(pr)pr.style.display=Date.now()>=Date.UTC(2026,11,25,15)?'':'none';}catch(e){}
   if(document.documentElement.classList.contains('is-app'))return; // 앱에서는 플랜 선택/결제 화면 금지
   wakeServer();
   try{loadPortOneSdk().catch(function(){});}catch(e){} // 결제 버튼을 누르면 바로 창이 뜨도록 미리 불러옴
