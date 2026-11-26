@@ -175,6 +175,24 @@ async function _appendCacheStats(body){
     });
     html+='<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'+tr+'</table></div>';
   }
+  // 가장 많이 재사용된 문장 TOP 20 (누적) — 어떤 문장이 비용을 아껴 주는지, 데이터로 가치 있는 문장이 무엇인지
+  const top=d.top||[];
+  if(top.length){
+    const slot=function(x){return _esc(x).replace(/⟦\d+⟧/g,'<span style="color:var(--primary);font-weight:700;">{매장 이름}</span>');};
+    html+='<div style="font-weight:800;margin:16px 0 4px;">가장 많이 재사용된 문장 TOP '+top.length+' (누적)</div>';
+    top.forEach(function(x,i){
+      const langs=(x.langs||[]).map(function(l){return _esc(l.lang)+' '+n(l.hits);}).join(' · ');
+      const trs=(x.langs||[]).map(function(l){return '<div><b>'+_esc(l.lang)+'</b> '+slot(l.tgt)+'</div>';}).join('');
+      html+='<details style="padding:8px 10px;border-radius:10px;background:var(--surface-container);margin:6px 0;">'+
+        '<summary style="cursor:pointer;list-style:none;display:flex;gap:8px;align-items:baseline;">'+
+          '<b style="color:var(--primary);min-width:22px;">'+(i+1)+'</b>'+
+          '<span style="flex:1;word-break:break-all;">'+slot(x.text)+'</span>'+
+          '<b style="white-space:nowrap;">'+n(x.hits)+'번</b></summary>'+
+        '<div style="margin-top:4px;font-size:12px;color:var(--on-surface-variant);">'+langs+' · 아낀 글자 '+n(x.chars_saved)+'자</div>'+
+        '<div style="margin-top:4px;font-size:12px;line-height:1.5;">'+trs+'</div></details>';
+    });
+    html+='<div style="color:var(--outline);font-size:12px;">누르면 언어별 번역이 보여요. {매장 이름}은 매장마다 이름만 바꿔 함께 쓰는 문장이에요. 횟수는 캐시가 생긴 뒤 누적이에요.</div>';
+  }
   const p=d.notFlushedYet||{};
   if((p.hits||0)+(p.misses||0)+(p.skipped||0))html+='<div style="margin-top:6px;color:var(--outline);font-size:12px;">아직 기록 전(서버 메모리): 캐시 '+n(p.hits)+'번 · 구글 '+n((p.misses||0)+(p.skipped||0))+'번</div>';
   html+='<div style="margin-top:8px;color:var(--outline);font-size:12px;">"구글(저장 안 함)"은 50자가 넘거나 숫자·전화번호·이메일·주소가 들어 있어 캐시에 남기지 않은 번역이에요. AI 번역은 앞 대화에 따라 결과가 달라 여기 들어가지 않아요. 금액은 구글 100만 자당 $20, 환율 '+n(CACHE_WON_PER_USD)+'원 기준 추정치예요.</div>';
