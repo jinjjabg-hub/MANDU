@@ -118,7 +118,13 @@ function renderServerTranslation(w,b,d,myLang,mine){
     w._tr.server=true;
     return;
   }
-  if(d.trDone){if(line&&!w._tr)line.remove();return;}
+  if(d.trDone){
+    if(line&&!w._tr)line.remove();
+    // 서버 번역은 끝났는데 내 언어가 없다(방에 내 언어가 적히기 전에 온 메시지, 언어를 바꾼 직후 등)
+    // → 원문만 두지 않고 예전 방식(읽을 때 번역, 서버 shared_translate)으로 번역한다
+    if(!w._tr&&!w._readFallback&&d.text&&!isSkippable(d.text)&&detectLang(d.text)!==myLang)_readTimeFallback(w,b,d,myLang);
+    return;
+  }
   // 아직 서버가 번역 중 — 내 언어로 쓴 글이나 번역할 필요 없는 글이면 기다리지 않는다
   if(line||isSkippable(d.text)||detectLang(d.text)===myLang)return;
   line=document.createElement('div');line.className='msg-translated';
@@ -126,6 +132,19 @@ function renderServerTranslation(w,b,d,myLang,mine){
   w.appendChild(line);
   // 보낸 사람이 요청 전에 앱을 닫는 등으로 번역이 오지 않으면 1분 뒤 '번역 중'을 지운다
   setTimeout(function(){if(line.parentNode&&!w._tr)line.remove();},60000);
+}
+
+// 보낼 때 번역에 내 언어가 빠진 메시지 → 읽을 때 번역(메시지 id 를 같이 보내 언어별 1번만 번역·저장, 서버 shared_translate)
+function _readTimeFallback(w,b,d,myLang){
+  w._readFallback=true;
+  const cached=getCachedTranslation(d.text,myLang);
+  const line=document.createElement('div');line.className='msg-translated';w.appendChild(line);
+  if(cached){_showTranslation(w,b,line,d.text,cached,myLang,[]);return;}
+  line.innerHTML='<span class="ms">translate</span>'+t('translating_loading');
+  translateEx(d.text,myLang,{context:[],source:'chat',msg:d._id}).then(function(r){
+    if(r&&r.text&&r.text!==d.text)_showTranslation(w,b,line,d.text,r,myLang,[]);
+    else line.remove();
+  }).catch(function(){line.remove();});
 }
 
 // ── 사장님(차감 계정) 한도 안내: 서버가 users/{내uid}.quotaAlert 에 남긴 것 (손님에게는 보이지 않는다) ──
