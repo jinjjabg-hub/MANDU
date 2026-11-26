@@ -145,7 +145,41 @@ async function openTranslationSim(){
     '<div style="font-weight:800;margin:16px 0 4px;">실제 기록(지금 방식으로 실제 차감된 것)</div>'+
     '<div>번역 '+n(d.actual.events)+'건 · '+n(d.actual.chars)+'자 (채팅 '+n(d.actual.chat_chars)+'자) · 캐시 적중 '+n(d.actual.cache_hits)+'건</div>'+
     '<div style="margin-top:12px;color:var(--outline);font-size:12px;">시뮬레이션은 메시지마다 번역한다고 가정해서, 앱 안 사전·캐시로 건너뛴 번역이 있는 실제 기록보다 조금 클 수 있어요. 원가는 구글 100만 자당 $20, AI(Haiku 5.5) 토큰 단가, 환율 1,400원 기준 추정치예요.</div>';
-  _appendRouteStats(body).then(function(){return _appendLoginStats(body);}).then(function(){return _appendErrorStats(body);});
+  _appendCacheStats(body).then(function(){return _appendRouteStats(body);}).then(function(){return _appendLoginStats(body);}).then(function(){return _appendErrorStats(body);});
+}
+// 운영자 전용: 번역 캐시 절감 (서버 /api/admin/cache-stats, mandu-server server/translation_cache.py)
+// 왜: 같은 문장을 구글에 다시 보내지 않아 아낀 돈을 숫자로 본다. 적중률이 낮으면 캐시 조건(50자·숫자 없음)을 다시 볼 때다.
+const CACHE_WON_PER_USD=1400;   // 원가 추정 환율 (위 '만두 번역 원가'와 같은 값)
+async function _appendCacheStats(body){
+  const r=await _serverGet('/api/admin/cache-stats?days=30');
+  if(!r.ok||!body.isConnected)return;
+  const d=r.data,t=d.total||{},n=function(v){return Math.round(v||0).toLocaleString();};
+  const won=function(usd){return n((usd||0)*CACHE_WON_PER_USD);};
+  const td='padding:5px 4px;border-bottom:1px solid var(--outline-variant);text-align:right;white-space:nowrap;';
+  const looked=(t.hits||0)+(t.misses||0)+(t.skipped||0);
+  // 구글로 간 글자 중 캐시로 아낀 비율 (글자 기준 — 구글은 글자 수로 돈을 받는다)
+  const charRate=((t.chars_saved||0)+(t.chars_google||0))?Math.round((t.chars_saved||0)*1000/((t.chars_saved||0)+(t.chars_google||0)))/10:0;
+  const tile=function(big,small){return '<div style="flex:1;min-width:0;padding:10px 8px;border-radius:12px;background:var(--surface-container);text-align:center;">'+
+    '<div style="font-size:18px;font-weight:800;color:var(--primary);">'+big+'</div><div style="font-size:11px;color:var(--on-surface-variant);">'+small+'</div></div>';};
+  let html='<div style="font-weight:800;margin:20px 0 4px;">번역 캐시 절감 (지난 30일)</div>';
+  if(d.enabled===false)html+='<div style="color:var(--error,#c00);margin-bottom:6px;">지금 꺼져 있어요 (Render 환경변수 TRANSLATION_CACHE=off)</div>';
+  if(!looked){
+    html+='<div style="color:var(--outline);">아직 기록이 없어요 (서버 업데이트 이후부터 쌓여요. 50건 또는 5분마다 한 번에 기록돼요)</div>';
+  }else{
+    html+='<div style="display:flex;gap:6px;margin:6px 0;">'+tile(t.hit_rate+'%','캐시 적중률')+tile('₩'+won(t.usd_saved),'아낀 구글 비용')+tile(n(t.chars_saved)+'자','아낀 글자')+'</div>'+
+      '<div style="margin-bottom:6px;">번역 '+n(looked)+'번 중 <b>'+n(t.hits)+'번</b>은 구글 호출 없이 캐시에서 · 구글로 간 글자 '+n(t.chars_google)+'자(₩'+won(t.usd_google)+') · 글자 기준 절감 '+charRate+'%</div>';
+    const rows=(d.rows||[]).slice(0,7);
+    let tr='<tr style="color:var(--outline);"><td style="'+td+'text-align:left;">날짜</td><td style="'+td+'">캐시</td><td style="'+td+'">구글(저장)</td><td style="'+td+'">구글(저장 안 함)</td><td style="'+td+'">적중률</td><td style="'+td+'">아낀 글자</td></tr>';
+    rows.forEach(function(x){
+      tr+='<tr><td style="'+td+'text-align:left;">'+_esc(String(x.day).slice(5).replace('-','/'))+'</td><td style="'+td+'">'+n(x.hits)+'</td><td style="'+td+'">'+n(x.misses)+'</td><td style="'+td+'">'+n(x.skipped)+'</td><td style="'+td+'">'+_esc(String(x.hit_rate))+'%</td><td style="'+td+'">'+n(x.chars_saved)+'</td></tr>';
+    });
+    html+='<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'+tr+'</table></div>';
+  }
+  const p=d.notFlushedYet||{};
+  if((p.hits||0)+(p.misses||0)+(p.skipped||0))html+='<div style="margin-top:6px;color:var(--outline);font-size:12px;">아직 기록 전(서버 메모리): 캐시 '+n(p.hits)+'번 · 구글 '+n((p.misses||0)+(p.skipped||0))+'번</div>';
+  html+='<div style="margin-top:8px;color:var(--outline);font-size:12px;">"구글(저장 안 함)"은 50자가 넘거나 숫자·전화번호·이메일·주소가 들어 있어 캐시에 남기지 않은 번역이에요. AI 번역은 앞 대화에 따라 결과가 달라 여기 들어가지 않아요. 금액은 구글 100만 자당 $20, 환율 '+n(CACHE_WON_PER_USD)+'원 기준 추정치예요.</div>';
+  const sec=document.createElement('div');sec.innerHTML=html;
+  body.appendChild(sec);
 }
 // 운영자 전용: 번역 경로별 호출 수 (지난 30일) — "읽을 때 번역"을 없애도 되는지 판단용 (서버 /api/admin/route-stats)
 // 채팅의 읽을 때 번역(read_shared·read_chat·read_older)이 한동안 0에 가까우면 지난 메시지가 다 보낼 때 번역으로 넘어간 것이다.
