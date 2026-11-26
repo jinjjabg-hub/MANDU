@@ -145,7 +145,7 @@ async function openTranslationSim(){
     '<div style="font-weight:800;margin:16px 0 4px;">실제 기록(지금 방식으로 실제 차감된 것)</div>'+
     '<div>번역 '+n(d.actual.events)+'건 · '+n(d.actual.chars)+'자 (채팅 '+n(d.actual.chat_chars)+'자) · 캐시 적중 '+n(d.actual.cache_hits)+'건</div>'+
     '<div style="margin-top:12px;color:var(--outline);font-size:12px;">시뮬레이션은 메시지마다 번역한다고 가정해서, 앱 안 사전·캐시로 건너뛴 번역이 있는 실제 기록보다 조금 클 수 있어요. 원가는 구글 100만 자당 $20, AI(Haiku 5.5) 토큰 단가, 환율 1,400원 기준 추정치예요.</div>';
-  _appendRouteStats(body);
+  _appendRouteStats(body).then(function(){return _appendLoginStats(body);});
 }
 // 운영자 전용: 번역 경로별 호출 수 (지난 30일) — "읽을 때 번역"을 없애도 되는지 판단용 (서버 /api/admin/route-stats)
 // 채팅의 읽을 때 번역(read_shared·read_chat·read_older)이 한동안 0에 가까우면 지난 메시지가 다 보낼 때 번역으로 넘어간 것이다.
@@ -168,6 +168,26 @@ async function _appendRouteStats(body){
     '<div style="margin-bottom:6px;">채팅 읽을 때 번역 <b>'+n(d.readChat)+'</b>번 · 보낼 때 번역 <b>'+n(d.send)+'</b>번</div>'+
     (keys.length?'<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'+rows+'</table></div>':'<div style="color:var(--outline);">아직 기록이 없어요 (서버 업데이트 이후부터 쌓여요)</div>')+
     '<div style="margin-top:8px;color:var(--outline);font-size:12px;">채팅의 "읽을 때" 세 줄이 2주 넘게 거의 0이면, 지난 메시지가 모두 보낼 때 번역으로 넘어간 것이라 읽을 때 번역(채팅용)을 없애도 돼요. 내 사전·AI 다시 번역·시스템 안내는 계속 이 경로를 써요.</div>';
+  body.appendChild(sec);
+}
+// 운영자 전용: 로그인 방법별 사용자 수 — 로그인 방법을 줄여도 되는지 판단용 (서버 /api/admin/login-stats)
+// "이 방법만"인 사람은 그 방법을 끄면 로그인할 수 없게 된다.
+async function _appendLoginStats(body){
+  const r=await _serverGet('/api/admin/login-stats');
+  if(!r.ok||!body.isConnected)return;
+  const d=r.data,n=function(v){return Math.round(v||0).toLocaleString();};
+  const NAMES={kakao:'카카오',google:'구글',email:'이메일',apple:'Apple',phone:'전화번호',anonymous:'손님(익명)',other:'기타'};
+  const td='padding:5px 4px;border-bottom:1px solid var(--outline-variant);text-align:right;white-space:nowrap;';
+  const keys=Object.keys(d.methods||{}).sort(function(a,b){return d.methods[b].users-d.methods[a].users;});
+  let rows='<tr style="color:var(--outline);"><td style="'+td+'text-align:left;">방법</td><td style="'+td+'">전체</td><td style="'+td+'">최근 '+d.activeDays+'일</td><td style="'+td+'">이 방법만</td><td style="'+td+'">이 방법만·최근</td></tr>';
+  keys.forEach(function(k){const m=d.methods[k];
+    rows+='<tr><td style="'+td+'text-align:left;">'+_esc(NAMES[k]||k)+((d.enabled||[]).indexOf(k)>=0?' (켜짐)':'')+'</td><td style="'+td+'">'+n(m.users)+'</td><td style="'+td+'">'+n(m.active)+'</td><td style="'+td+'">'+n(m.only)+'</td><td style="'+td+'">'+n(m.onlyActive)+'</td></tr>';
+  });
+  const sec=document.createElement('div');
+  sec.innerHTML='<div style="font-weight:800;margin:20px 0 4px;">로그인 방법별 사용자 수</div>'+
+    '<div style="margin-bottom:6px;">전체 계정 '+n(d.total)+'개 · 최근 '+d.activeDays+'일 로그인 '+n(d.activeTotal)+'명</div>'+
+    '<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'+rows+'</table></div>'+
+    '<div style="margin-top:8px;color:var(--outline);font-size:12px;">한 사람이 여러 방법을 연결했으면 각 방법에 모두 세요. "이 방법만·최근"이 0인 방법은 꺼도 지금 쓰는 사람이 로그인 못 하게 되지 않아요. 전화번호·Apple은 Render 환경변수 LOGIN_PROVIDERS 에서 빼면 꺼져요.</div>';
   body.appendChild(sec);
 }
 // 운영자 전용: 구글 전용 언어(몽골어·태국어·힌디어)를 AI로 옮겨도 되는지 — 같은 문장을 두 엔진으로 번역하고 한국어로 되돌려 비교
