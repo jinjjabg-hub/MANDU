@@ -78,7 +78,10 @@ async function joinByInvite(){
   _joining=true;
   try{
     if(currentUser.isAnonymous)_initGuestLang(currentUser.uid);
-    const r=await _serverPost('/api/rooms/join',{code:joinCode},true);
+    // 내 언어도 같이 보낸다 — 서버가 방의 memberLangs 에 적어, 들어오자마자 오는 메시지부터 내 언어로 번역된다
+    const myLangSel=document.getElementById('my-lang');
+    const joinLang=(myLangSel&&myLangSel.value)||(typeof _myStoredLang==='function'?_myStoredLang():'')||'';
+    const r=await _serverPost('/api/rooms/join',{code:joinCode,lang:joinLang},true);
     if(!r.ok){
       showToast(r.status===404?_L('초대 링크가 만료됐거나 잘못됐어요','This invite link is invalid or expired'):
         r.status===409?_L('대화방 인원이 가득 찼어요','This chat is full'):_L('대화방에 들어가지 못했어요. 다시 시도해주세요','Could not join the chat. Please try again.'));
@@ -651,7 +654,7 @@ function loadMessages(keepLimit){
       // 보낼 때 번역: 서버가 메시지에 번역을 붙이면(수정됨) 그 자리에 표시
       snap.docChanges().forEach(function(c){
         if(c.type!=='modified')return;
-        const md=c.doc.data();if(md.trMode!=='send')return;
+        const md=Object.assign(c.doc.data(),{_id:c.doc.id});if(md.trMode!=='send')return;
         const el=container.querySelector('[data-mid="'+c.doc.id.replace(/"/g,'')+'"]');
         if(!el)return;
         const mine=md.uid===currentUser.uid;
