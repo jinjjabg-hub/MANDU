@@ -27,6 +27,7 @@
 | `js/ui-lang.js` | 화면 언어 적용(문구 자체는 `i18n.js`) |
 | `js/billing.js` | 사용량 화면, 이번 달 사용 내역, 요금제, 정기결제·1회 결제 |
 | `js/send-translate.js` | **보낼 때 번역**: 서버(`/api/messages/translate`)에 번역 요청, 받은 번역 표시, 방별 내 언어(`memberLangs`) 기록, "이 방은 N개 언어로 번역됩니다", 사장님 한도 임박 안내 |
+| `js/store-dashboard.js` | 사장님 대시보드: 매장 설정 맨 위 "이번 기간 매장 현황"(번역한 손님 수·언어·글자, 남은 한도). 서버 `/api/store/dashboard` |
 | `js/open-in-app.js` | 손님 링크·QR을 만두 앱이 깔린 사람이 브라우저로 열면 앱(로그인된 계정)으로 넘기기 |
 | `js/app-start.js` | 약관·환불·해지 안내, 서버 깨우기, **앱 시작 코드**(페이지를 열면 바로 실행), 서비스 워커 등록 |
 | `js/pwa.js` | 앱 설치 유도 배너 |

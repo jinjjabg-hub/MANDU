@@ -142,6 +142,7 @@ async function showStoreSettings(){
   el.innerHTML=
     '<div class="store-hd"><button onclick="closeStoreSettings()"><span class="ms">arrow_back</span></button><span>'+_L('매장 설정','Store settings')+'</span></div>'+
     '<div class="store-body">'+
+      '<div class="store-sec sdash" id="store-dash"></div>'+
       '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('손님 첫 화면 안내','Customer welcome screen')+'</span><div class="toggle" id="store-welcome-toggle"></div></div>'+
         '<div class="store-sec-desc">'+_L('내 QR·링크로 들어온 손님(로그인 없이)이 이름을 적기 전 첫 화면에 보이고, 대화방에 들어가면 안내 메시지로도 올라가요(손님 언어로 번역). 이벤트·메뉴 안내나 앱 설치 안내에 써 보세요.','Shown on the first screen to customers who open your QR or link without signing in, and posted in the chat as a notice when they enter (translated to their language). Use it for events, menus or an app download guide.')+'</div>'+
         '<textarea class="store-ta" id="store-welcome" maxlength="300" placeholder="'+_L('예) 어서오세요! MANDU 앱을 받으면 다음에도 바로 대화할 수 있어요.','e.g. Welcome! Get the MANDU app to chat with us anytime.')+'"></textarea>'+
@@ -183,6 +184,7 @@ async function showStoreSettings(){
     tg.onclick=function(){_storeDraft[x[1]]=!_storeDraft[x[1]];tg.className='toggle '+(_storeDraft[x[1]]?'on':'');};
   });
   _storeRenderQuick();_storeRenderStaff();
+  loadStoreDashboard(document.getElementById('store-dash'));   // js/store-dashboard.js
   const gd=document.getElementById('store-guest-daily');
   STORE_GUEST_DAILY_OPTIONS.forEach(function(n){const o=document.createElement('option');o.value=String(n);o.textContent=fmtChars(n)+(n===2000?_L(' (기본)',' (default)'):'');gd.appendChild(o);});
   gd.value=String(_storeDraft.guestDaily);
