@@ -286,9 +286,9 @@ const PORTONE_CHANNEL_KEY='channel-key-e9829a19-f375-417e-aaaf-9850a36a1da4'; //
 // 1회 결제(일반결제) 채널 — KCP는 정기결제와 일반결제의 사이트코드가 달라서 포트원 콘솔에 채널을 따로 추가한 뒤 그 키로 교체.
 // 따로 만들기 전까지는 같은 테스트 채널을 쓴다.
 const PORTONE_PAY_CHANNEL_KEY='channel-key-e9829a19-f375-417e-aaaf-9850a36a1da4';
-const PAY_API='https://mandu-server.onrender.com/api/pay';
+const PAY_API=SERVER_URL+'/api/pay';
 const PORTONE_SDK_URL='https://cdn.portone.io/v2/browser-sdk.js';
-const BILLING_API='https://mandu-server.onrender.com/api/billing';
+const BILLING_API=SERVER_URL+'/api/billing';
 const BILLING_MSG={
   ko:{packSuccess:'{chars} 충전이 완료됐어요',payCanceled:'결제를 취소했어요',preparing:'결제 준비 중...',processing:'결제를 확인하고 있어요...',success:'{plan} 플랜 결제가 완료됐어요',fail:'결제에 실패했어요',canceled:'카드 등록을 취소했어요',guest:'게스트는 결제할 수 없어요. 가입 후 이용해 주세요.',net:'서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.',notReady:'결제 준비 중이에요. 잠시 후 다시 시도해 주세요.',popup:'팝업이 차단됐어요. 주소창 오른쪽에서 이 사이트의 팝업을 허용한 뒤 다시 시도해 주세요.'},
   en:{packSuccess:'{chars} top-up complete',payCanceled:'Payment canceled',preparing:'Preparing payment...',processing:'Confirming your payment...',success:'{plan} plan payment complete',fail:'Payment failed',canceled:'Card registration canceled',guest:'Guests can\'t pay. Please sign up first.',net:'Could not reach the server. Please try again shortly.',notReady:'Payments are not available yet. Please try again later.',popup:'Pop-up was blocked. Allow pop-ups for this site (address bar, right side) and try again.'},

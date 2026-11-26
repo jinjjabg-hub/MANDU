@@ -5,11 +5,15 @@
 function wakeServer(){
   // 서버를 깨우면서, AI 번역을 쓸 수 있는 서버인지도 함께 확인한다
   try{
-    fetch('https://mandu-server.onrender.com/api/ping',{cache:'no-store'})
+    fetch(SERVER_URL+'/api/ping',{cache:'no-store'})
       .then(function(r){return r.json();})
       .then(function(d){
         window._aiAvailable=!!(d&&d.ai);if(typeof initAiTranslate==='function')initAiTranslate();
         window._overageFrom=(d&&d.overageFrom)||null;
+        // 플랜 한도는 서버 값을 기준으로 (숫자만 받아들임)
+        if(d&&d.planLimits&&typeof d.planLimits==='object'){
+          Object.keys(d.planLimits).forEach(function(k){const v=d.planLimits[k];if(typeof v==='number'&&v>=0)PLAN_LIMITS[k]=v;});
+        }
         if(d&&typeof initLoginOptions==='function')initLoginOptions(d);
       })
       .catch(function(){});

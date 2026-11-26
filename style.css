@@ -531,3 +531,25 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .create-lecture-title{font-size:14px;font-weight:700;color:var(--on-surface);}
 .create-lecture-sub{font-size:12px;color:var(--outline);}
 .plan-charge-rule{font-size:12px;color:var(--outline);text-align:center;margin-bottom:6px;}
+
+/* 사장님 대시보드 (js/store-dashboard.js) */
+.sdash{display:flex;flex-direction:column;gap:10px}
+.sdash-hd{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;font-size:15px}
+.sdash-period{font-weight:500;font-size:12px;color:var(--outline)}
+.sdash-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sdash-tile{background:var(--surface-container,#f3f3f3);border-radius:14px;padding:10px 8px;text-align:center;display:flex;flex-direction:column;gap:2px;min-width:0}
+.sdash-tile b{font-size:20px;color:var(--primary);overflow:hidden;text-overflow:ellipsis}
+.sdash-tile span{font-size:11px;color:var(--outline)}
+.sdash-value{font-size:13px;line-height:1.5}
+.sdash-lang{display:grid;grid-template-columns:minmax(0,9em) 1fr 4.5em;align-items:center;gap:8px;font-size:12px}
+.sdash-lang-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sdash-lang-n{color:var(--outline);font-variant-numeric:tabular-nums;text-align:right}
+.sdash-bar{display:block;height:8px;border-radius:8px;background:var(--surface-container-high,#e6e6e6);overflow:hidden}
+.sdash-bar i{display:block;height:100%;border-radius:8px;background:var(--primary)}
+.sdash-use{font-size:12px;display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.sdash-left{color:var(--outline)}
+
+/* 테이블 QR 인쇄물 버튼 (js/store-qr-print.js) */
+.store-qr-btns{display:flex;gap:8px;margin-top:10px}
+.store-qr-btns button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border-radius:12px;border:1px solid var(--primary);background:var(--surface,#fff);color:var(--primary);font-weight:700;font-size:14px;cursor:pointer}
+.store-qr-btns button .ms{font-size:18px !important}

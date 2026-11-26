@@ -11,6 +11,7 @@
 | `style.css` | 앱 디자인 전체 |
 | `i18n.js` | 화면 다국어 문구 `UI_T`(17개 언어), 손님 화면 문구 `GUEST_T`, `_L()` 문구 번역 `L_T`와 `_L` 함수 |
 | `js/core.js` | `whenAllLoaded` 장치, 앱 초기화(Firebase 설정), 공통 상태 변수, 주소(URL) 값 읽기, 온보딩, 테마, 아이콘 스타일, 내 링크·QR |
+| `js/error-report.js` | 화면 오류를 서버(`/api/errors/report`)로 알리기 — 운영자 화면 "최근 7일 오류"에서 본다. `core.js` 바로 뒤 |
 | `js/account.js` | 만두 ID, 푸시 알림 준비, 이메일 로그인·가입·인증, 회원 탈퇴, 개인정보처리방침, ID 자동 생성, 로그인 상태 처리(`onAuthStateChanged`), 공개 명함, 브라우저 언어 감지 |
 | `js/settings.js` | 카드북 연결 동의, ID 검색 허용, 로그인 후 화면 갱신, 언어 저장, 화면 전환(`show`·`switchTab`) |
 | `js/discover.js` | 탐색(Discover) 탭 |
@@ -27,6 +28,8 @@
 | `js/ui-lang.js` | 화면 언어 적용(문구 자체는 `i18n.js`) |
 | `js/billing.js` | 사용량 화면, 이번 달 사용 내역, 요금제, 정기결제·1회 결제 |
 | `js/send-translate.js` | **보낼 때 번역**: 서버(`/api/messages/translate`)에 번역 요청, 받은 번역 표시, 방별 내 언어(`memberLangs`) 기록, "이 방은 N개 언어로 번역됩니다", 사장님 한도 임박 안내 |
+| `js/store-dashboard.js` | 사장님 대시보드: 매장 설정 맨 위 "이번 기간 매장 현황"(번역한 손님 수·언어·글자, 남은 한도). 서버 `/api/store/dashboard` |
+| `js/store-qr-print.js` | 가게용 테이블 QR 인쇄물(A6): 가게 이름 + QR + 여러 언어 안내를 그려 이미지 저장·인쇄(PDF) |
 | `js/open-in-app.js` | 손님 링크·QR을 만두 앱이 깔린 사람이 브라우저로 열면 앱(로그인된 계정)으로 넘기기 |
 | `js/app-start.js` | 약관·환불·해지 안내, 서버 깨우기, **앱 시작 코드**(페이지를 열면 바로 실행), 서비스 워커 등록 |
 | `js/pwa.js` | 앱 설치 유도 배너 |
@@ -51,6 +54,11 @@
    - `index.html`에 직접 적는 한국어 문구는 `data-l="영어"`(글자만), `data-l-html`(<br>·<strong> 섞임), `data-l-placeholder`·`data-l-title`·`data-l-aria-label`을 붙이고,
      같은 방법으로 `L_T`에 한국어 문구를 키로 넣는다(`js/ui-lang.js`의 `_applyHtmlL`이 바꿔 준다). 코드가 나중에 글자를 덮어쓰는 요소에는 붙이지 않는다.
 
+## 사람이 입력한 글을 화면에 넣을 때
+
+이름·메시지·파일 이름·매장 안내 글처럼 사용자가 쓴 값은 `textContent`로 넣거나, HTML 문자열에 넣을 때는 `_esc()`(`js/chat.js`)로 감싼다.
+주소(사진·링크)는 `_safeUrl()`·`_safeHttpsUrl()`을 거친다. 안 하면 다른 사람 화면에서 남의 코드가 실행될 수 있다(XSS).
+
 ## 불러오는 순서 (중요)
 
 `js/` 파일들은 모듈이 아니라 일반 `<script>`라서 **전역 변수·함수를 서로 공유**하고, `index.html`에 적힌 순서대로 실행된다.
@@ -69,7 +77,7 @@
 ## 자동 검사
 
 화면 코드(`index.html`·`js/`·`i18n.js`·`style.css`·`sw.js`)가 바뀐 PR마다 `.github/workflows/frontend-check.yml`이 돈다.
-- 정적 검사 `tests/frontend/check.mjs`: 파일 목록·순서, `sw.js` 캐시 목록, `?v=` 표시, 문법, 없는 함수·변수, 화면 버튼이 부르는 함수, 불러오는 순서 문제
+- 정적 검사 `tests/frontend/check.mjs`: 파일 목록·순서, `sw.js` 캐시 목록, `?v=` 표시, 문법, 없는 함수·변수, 화면 버튼이 부르는 함수, 불러오는 순서 문제, 사람이 입력한 값(이름·메시지 등)을 `_esc()` 없이 `innerHTML`로 넣는 곳
 - 타입 검사 `npx tsc -p tsconfig.json`(tests/frontend): 오타 난 함수·속성 이름, 잘못된 값 종류(예: 숫자에 글자 함수).
   밖에서 불러오는 라이브러리나 `index.html` 안의 함수를 새로 쓰면 `tests/frontend/types/globals.d.ts`에 한 줄 알려 준다.
 - 브라우저 검사 `tests/frontend/smoke.mjs`: 첫 화면(온보딩·로그인·손님 링크·영어)이 오류 없이 뜨는지

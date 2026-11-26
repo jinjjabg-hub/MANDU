@@ -1,6 +1,8 @@
 // MANDU — 앱 초기화(Firebase 설정), 공통 상태 변수, 주소(URL) 값 읽기, 온보딩, 테마, 아이콘 스타일, 내 링크·QR
 // index.html에서 옮김. 파일 순서가 중요하다: index.html이 불러오는 순서대로 실행된다(CLAUDE.md 참고).
 const BASE_URL='https://mandu.bizmy.net/';
+// 서버(mandu-server, Render) 주소 — 서버를 옮기면 여기 한 곳만 바꾼다. 모든 js/ 파일이 이 값을 쓴다.
+const SERVER_URL='https://mandu-server.onrender.com';
 const LANG_FLAGS={ko:'🇰🇷',en:'🇺🇸',ja:'🇯🇵',zh:'🇨🇳',es:'🇪🇸',fr:'🇫🇷',de:'🇩🇪',vi:'🇻🇳',th:'🇹🇭',mn:'🇲🇳',hi:'🇮🇳',pt:'🇧🇷',ar:'🇸🇦',id:'🇮🇩',it:'🇮🇹',da:'🇩🇰',ru:'🇷🇺'};
 
 // 모든 js/ 파일을 다 불러온 뒤에 실행할 일.

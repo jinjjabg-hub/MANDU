@@ -13,7 +13,7 @@ async function _serverPost(path,body,needAuth){
     try{
       const headers={'Content-Type':'application/json'};
       if(needAuth)headers.Authorization='Bearer '+await currentUser.getIdToken();
-      const res=await fetch('https://mandu-server.onrender.com'+path,{method:'POST',headers:headers,body:JSON.stringify(body)});
+      const res=await fetch(SERVER_URL+path,{method:'POST',headers:headers,body:JSON.stringify(body)});
       if(res.ok)return {ok:true,data:await res.json()};
       if(res.status<500){let d=null;try{d=await res.json();}catch(e){}return {ok:false,status:res.status,data:d};}
     }catch(e){}
