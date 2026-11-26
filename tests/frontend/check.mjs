@@ -7,6 +7,7 @@
 //  5) 화면 버튼(onclick 등)이 부르는 함수가 실제로 있는지
 //  6) 불러오는 순서 문제(CLAUDE.md "불러오는 순서"): 불러오는 순간 뒤 파일 함수를 쓰거나,
 //     불러오는 도중 등록한 '나중에 실행될 코드'가 뒤 파일 함수를 쓰는 곳(whenAllLoaded로 감싸면 괜찮다)
+//  7) 사람이 입력한 값(이름·메시지·파일 이름 등)을 _esc() 없이 innerHTML 로 넣는 곳 (XSS 방지)
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -182,6 +183,34 @@ const BROWSER = new Set([...Object.keys(globals.browser), ...Object.keys(globals
       }
     }
   });
+}
+
+// 7) 사람이 입력한 값을 HTML 로 넣을 때는 _esc() 로 감싸야 한다 (아니면 textContent 를 쓴다)
+//    이름·메시지 등에 <img onerror=...> 같은 글을 넣으면 다른 사람 화면에서 코드가 실행될 수 있다.
+{
+  const USER_FIELDS = /\.(displayName|manduid|text|fileName|fileSize|welcome|welcomeUrl|lastMessage|storeName|bio|company|jobTitle|translated|email|photoURL|imageUrl|fileUrl|link)\b/;
+  const stripEsc = line => {
+    let out = '', i = 0;
+    while (i < line.length) {
+      const mm = /\b_?esc\(/.exec(line.slice(i));
+      if (!mm) { out += line.slice(i); break; }
+      out += line.slice(i, i + mm.index) + '\'\'';
+      let j = i + mm.index + mm[0].length, depth = 1;
+      while (j < line.length && depth) { if (line[j] === '(') depth++; else if (line[j] === ')') depth--; j++; }
+      i = j;
+    }
+    return out;
+  };
+  for (const sc of scripts) {
+    const lines = sc.code.split('\n');
+    lines.forEach((ln, k) => {
+      if (!/(innerHTML|outerHTML)\s*\+?=|insertAdjacentHTML\(/.test(ln)) return;
+      // 조건으로만 쓴 경우(u.manduid?…, a.text&&…, x.text===…, .length)는 화면에 들어가지 않으므로 뺀다
+      const cond = new RegExp(USER_FIELDS.source + '(\\s*(\\?(?!\\.)|&&|===?|!==?)|\\.length)', 'g');
+      const hit = stripEsc(ln).replace(cond, '').match(USER_FIELDS);
+      if (hit) bad('XSS', `${sc.name}:${sc.lineOffset + k + 1} 사람이 입력한 값(${hit[1]})을 _esc() 없이 innerHTML 로 넣어요 — _esc()로 감싸거나 textContent 를 쓰세요`);
+    });
+  }
 }
 
 finish();

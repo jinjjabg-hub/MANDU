@@ -38,7 +38,7 @@ async function translateImage(url,lang){
   for(let attempt=0;attempt<2;attempt++){
     try{
       const idToken=await currentUser.getIdToken();
-      const res=await fetch('https://mandu-server.onrender.com/api/translate/image',{
+      const res=await fetch(SERVER_URL+'/api/translate/image',{
         method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
         body:JSON.stringify({imageUrl:url,target:lang})
       });

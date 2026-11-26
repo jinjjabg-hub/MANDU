@@ -172,7 +172,7 @@ async function sendPushNotification(toUids,body,messageId){
   for(let attempt=0;attempt<2;attempt++){
     try{
       const idToken=await currentUser.getIdToken();
-      const res=await fetch('https://mandu-server.onrender.com/api/notify',{
+      const res=await fetch(SERVER_URL+'/api/notify',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
         body:JSON.stringify({toUids:toUids,roomId:roomId,body:body,messageId:messageId||null})

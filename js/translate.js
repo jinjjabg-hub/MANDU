@@ -131,7 +131,7 @@ async function translateEx(text,targetLang,opts){
   for(let attempt=0;attempt<=waits.length;attempt++){
     try{
       const idToken=await currentUser.getIdToken();
-      const res=await fetch('https://mandu-server.onrender.com/api/translate',{
+      const res=await fetch(SERVER_URL+'/api/translate',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
         body:JSON.stringify(payload)
@@ -227,7 +227,7 @@ async function submitTranslationReport(w,reason){
   for(let attempt=0;attempt<2&&!ok;attempt++){
     try{
       const idToken=await currentUser.getIdToken();
-      const res=await fetch('https://mandu-server.onrender.com/api/translate/report',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:body});
+      const res=await fetch(SERVER_URL+'/api/translate/report',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},body:body});
       ok=res.ok;
     }catch(e){}
     if(!ok&&attempt<1)await new Promise(function(r){setTimeout(r,3000);});
@@ -389,7 +389,7 @@ function getLinkPreview(url){
     let d=null;
     try{
       const idToken=await currentUser.getIdToken();
-      const res=await fetch('https://mandu-server.onrender.com/api/preview',{
+      const res=await fetch(SERVER_URL+'/api/preview',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
         body:JSON.stringify({url:url})
