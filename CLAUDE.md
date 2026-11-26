@@ -11,6 +11,7 @@
 | `style.css` | 앱 디자인 전체 |
 | `i18n.js` | 화면 다국어 문구 `UI_T`(17개 언어), 손님 화면 문구 `GUEST_T`, `_L()` 문구 번역 `L_T`와 `_L` 함수 |
 | `js/core.js` | `whenAllLoaded` 장치, 앱 초기화(Firebase 설정), 공통 상태 변수, 주소(URL) 값 읽기, 온보딩, 테마, 아이콘 스타일, 내 링크·QR |
+| `js/error-report.js` | 화면 오류를 서버(`/api/errors/report`)로 알리기 — 운영자 화면 "최근 7일 오류"에서 본다. `core.js` 바로 뒤 |
 | `js/account.js` | 만두 ID, 푸시 알림 준비, 이메일 로그인·가입·인증, 회원 탈퇴, 개인정보처리방침, ID 자동 생성, 로그인 상태 처리(`onAuthStateChanged`), 공개 명함, 브라우저 언어 감지 |
 | `js/settings.js` | 카드북 연결 동의, ID 검색 허용, 로그인 후 화면 갱신, 언어 저장, 화면 전환(`show`·`switchTab`) |
 | `js/discover.js` | 탐색(Discover) 탭 |

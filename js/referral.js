@@ -145,7 +145,7 @@ async function openTranslationSim(){
     '<div style="font-weight:800;margin:16px 0 4px;">실제 기록(지금 방식으로 실제 차감된 것)</div>'+
     '<div>번역 '+n(d.actual.events)+'건 · '+n(d.actual.chars)+'자 (채팅 '+n(d.actual.chat_chars)+'자) · 캐시 적중 '+n(d.actual.cache_hits)+'건</div>'+
     '<div style="margin-top:12px;color:var(--outline);font-size:12px;">시뮬레이션은 메시지마다 번역한다고 가정해서, 앱 안 사전·캐시로 건너뛴 번역이 있는 실제 기록보다 조금 클 수 있어요. 원가는 구글 100만 자당 $20, AI(Haiku 5.5) 토큰 단가, 환율 1,400원 기준 추정치예요.</div>';
-  _appendRouteStats(body).then(function(){return _appendLoginStats(body);});
+  _appendRouteStats(body).then(function(){return _appendLoginStats(body);}).then(function(){return _appendErrorStats(body);});
 }
 // 운영자 전용: 번역 경로별 호출 수 (지난 30일) — "읽을 때 번역"을 없애도 되는지 판단용 (서버 /api/admin/route-stats)
 // 채팅의 읽을 때 번역(read_shared·read_chat·read_older)이 한동안 0에 가까우면 지난 메시지가 다 보낼 때 번역으로 넘어간 것이다.
@@ -188,6 +188,26 @@ async function _appendLoginStats(body){
     '<div style="margin-bottom:6px;">전체 계정 '+n(d.total)+'개 · 최근 '+d.activeDays+'일 로그인 '+n(d.activeTotal)+'명</div>'+
     '<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">'+rows+'</table></div>'+
     '<div style="margin-top:8px;color:var(--outline);font-size:12px;">한 사람이 여러 방법을 연결했으면 각 방법에 모두 세요. "이 방법만·최근"이 0인 방법은 꺼도 지금 쓰는 사람이 로그인 못 하게 되지 않아요. 전화번호·Apple은 Render 환경변수 LOGIN_PROVIDERS 에서 빼면 꺼져요.</div>';
+  body.appendChild(sec);
+}
+// 운영자 전용: 최근 7일 오류 TOP (서버 /api/admin/errors, mandu-server server/error_stats.py)
+async function _appendErrorStats(body){
+  const r=await _serverGet('/api/admin/errors?days=7');
+  if(!r.ok||!body.isConnected)return;
+  const d=r.data,n=function(v){return Math.round(v||0).toLocaleString();};
+  const KIND={js:'화면',promise:'화면(비동기)',server:'서버'};
+  const sec=document.createElement('div');
+  let html='<div style="font-weight:800;margin:20px 0 4px;">최근 7일 오류</div>'+
+    '<div style="margin-bottom:6px;">오류 '+n(d.total)+'번 · 종류 '+n(d.kinds)+'개</div>';
+  if(!(d.rows||[]).length)html+='<div style="color:var(--outline);">기록된 오류가 없어요 (서버 업데이트 이후부터 쌓여요)</div>';
+  (d.rows||[]).slice(0,20).forEach(function(x){
+    html+='<div style="padding:8px 10px;border-radius:10px;background:var(--surface-container);margin:6px 0;">'+
+      '<div><b>'+n(x.total)+'번</b> · '+_esc(KIND[x.kind]||x.kind)+(x.path?' · '+_esc(x.path):'')+(x.src?' · '+_esc(x.src):'')+'</div>'+
+      '<div style="word-break:break-all;">'+_esc(x.msg)+'</div>'+
+      (x.last?'<div style="color:var(--outline);font-size:12px;">마지막 '+_esc(new Date(x.last).toLocaleString())+'</div>':'')+'</div>';
+  });
+  html+='<div style="margin-top:8px;color:var(--outline);font-size:12px;">횟수가 많은 오류부터 보여요. 내용을 복사해 Claude에게 보여 주면 고칠 수 있어요.</div>';
+  sec.innerHTML=html;
   body.appendChild(sec);
 }
 // 운영자 전용: 구글 전용 언어(몽골어·태국어·힌디어)를 AI로 옮겨도 되는지 — 같은 문장을 두 엔진으로 번역하고 한국어로 되돌려 비교
