@@ -14,7 +14,7 @@ async function loadStoreDashboard(box){
   if(!d||!d.ok){box.textContent=_L('매장 현황을 불러오지 못했어요','Could not load store stats');return;}
   box.textContent='';
   const fmt=function(n){return Math.round(n||0).toLocaleString();};
-  const md=function(iso){const t=new Date(iso);return isNaN(t)?'':(t.getMonth()+1)+'/'+t.getDate();};
+  const md=function(iso){const t=new Date(iso);return isNaN(t.getTime())?'':(t.getMonth()+1)+'/'+t.getDate();};
   const el=function(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;};
   const known=(d.langs||[]).filter(function(x){return x.lang!=='?';});
 
