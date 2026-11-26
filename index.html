@@ -20,6 +20,32 @@
 </script>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'">
+<script>
+// 오류 수집(Sentry, tm-link/mandu-web) — 아래 Loader 주소가 '처음 오류가 날 때' Sentry 프로그램을 불러온다(평소 속도 영향 거의 없음).
+// 자체 오류 집계(js/error-report.js → 서버 '최근 7일 오류')는 그대로 두고 Sentry 에도 함께 보낸다.
+// 개인정보: 사용자 정보는 안 보내고, 화면 행동 기록(누른 글자·콘솔 등 breadcrumb)은 끄고,
+//           주소의 ? 뒤 값(초대 코드·가게 ID·추천 코드 등)은 지운다.
+window.sentryOnLoad=function(){
+  var S=window.Sentry;if(!S||!S.init)return;
+  var strip=function(u){return String(u||'').split(/[?#]/)[0];};
+  S.init({
+    environment:'production',
+    sendDefaultPii:false,
+    beforeBreadcrumb:function(){return null;},
+    beforeSend:function(ev){
+      try{
+        if(ev.request){ev.request.url=strip(ev.request.url);delete ev.request.query_string;delete ev.request.headers;delete ev.request.cookies;}
+        delete ev.user;
+        ((ev.exception&&ev.exception.values)||[]).forEach(function(v){
+          ((v.stacktrace&&v.stacktrace.frames)||[]).forEach(function(f){if(f.filename)f.filename=strip(f.filename);if(f.abs_path)f.abs_path=strip(f.abs_path);});
+        });
+      }catch(e){}
+      return ev;
+    }
+  });
+};
+</script>
+<script src="https://js.sentry-cdn.com/084ca1d5eaf48630f0854bf98c582e1c.min.js" crossorigin="anonymous"></script>
 <!-- 화면 확대 막기: 큰 글씨 설정 휴대폰에서 입력칸을 누르면 화면이 저절로 확대된 채 남아 대화 입력창이 화면 밖으로 밀려났다(2026-11 신고).
      interactive-widget: 키보드가 올라오면 화면 높이를 줄여 입력창이 키보드 위에 보이게 한다. -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, interactive-widget=resizes-content">
