@@ -1170,7 +1170,7 @@ function openInBrowser(){
     <button class="sheet-close" onclick="closePlanSheet()"><span class="ms">close</span></button>
   </div>
   <div style="padding:0 16px 16px;overflow-y:auto;">
-    <div class="plan-charge-rule" data-i18n="plan_charge_rule">번역 글자는 보낸 메시지 글자 수 × 번역된 언어 수만큼 차감돼요.</div>
+    <div class="plan-charge-rule" id="plan-charge-rule" style="display:none;" data-i18n="plan_charge_rule">번역 글자는 보낸 메시지 글자 수 × 번역된 언어 수만큼 차감돼요.</div>
     <div id="plan-status-wrap" style="font-size:13px;color:var(--outline);margin-bottom:16px;text-align:center;">현재 <strong id="plan-current-label">무료</strong> · 이번 달 <strong id="plan-used-label">0자</strong> 사용</div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;" id="plan-cards"></div>
     <div id="plan-legal-notice" style="font-size:11.5px;color:var(--outline);line-height:1.6;margin-bottom:16px;text-align:center;">매월 같은 날 자동결제 · 언제든 해지 가능 · 결제하면 <a href="/terms.html" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:underline;">이용약관</a>과 <a href="/refund.html" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:underline;">환불정책</a>에 동의하는 것으로 봐요. 결제 후 유료 한도로 번역을 쓰면 청약 철회가 제한될 수 있어요.</div>
@@ -1254,7 +1254,7 @@ function openInBrowser(){
 <script src="js/chat-tools.js?v=7"></script>
 <script src="js/mydict.js?v=2"></script>
 <script src="js/ui-lang.js?v=2"></script>
-<script src="js/billing.js?v=7"></script>
+<script src="js/billing.js?v=8"></script>
 <script src="js/open-in-app.js?v=1"></script>
 <script src="js/send-translate.js?v=2"></script>
 <script src="js/store-dashboard.js?v=1"></script>
