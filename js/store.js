@@ -143,6 +143,7 @@ async function showStoreSettings(){
     '<div class="store-hd"><button onclick="closeStoreSettings()"><span class="ms">arrow_back</span></button><span>'+_L('매장 설정','Store settings')+'</span></div>'+
     '<div class="store-body">'+
       '<div class="store-sec sdash" id="store-dash"></div>'+
+      '<div class="store-sec" id="store-glossary"></div>'+
       '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('테이블 QR 인쇄물','Table QR print')+'</span></div>'+
         '<div class="store-sec-desc">'+_L('테이블·계산대에 세워 두는 A6 안내판이에요. 손님이 찍으면 로그인 없이 바로 자기 언어로 대화해요.','An A6 sign for tables and the counter. Customers scan it and chat in their own language, no sign-up needed.')+'</div>'+
         '<div class="store-qr-btns"><button onclick="saveQrPrintImage()"><span class="ms">download</span>'+_L('이미지 저장','Save image')+'</button>'+
@@ -189,6 +190,7 @@ async function showStoreSettings(){
   });
   _storeRenderQuick();_storeRenderStaff();
   loadStoreDashboard(document.getElementById('store-dash'));   // js/store-dashboard.js
+  loadStoreGlossary(document.getElementById('store-glossary')); // js/store-glossary.js (외국인 손님에게 보일 매장 이름)
   const gd=document.getElementById('store-guest-daily');
   STORE_GUEST_DAILY_OPTIONS.forEach(function(n){const o=document.createElement('option');o.value=String(n);o.textContent=fmtChars(n)+(n===2000?_L(' (기본)',' (default)'):'');gd.appendChild(o);});
   gd.value=String(_storeDraft.guestDaily);

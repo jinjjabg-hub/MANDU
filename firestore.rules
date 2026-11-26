@@ -418,6 +418,20 @@ service cloud.firestore {
       }
     }
 
+    // 번역 캐시(translation_cache)·절감 통계(cache_stats) — 서버(Admin SDK)만 읽고 쓴다. 앱은 읽기·쓰기 모두 금지.
+    //   (mandu-server server/translation_cache.py. 운영자는 /api/admin/cache-stats 로 본다)
+    match /translation_cache/{key} {
+      allow read, write: if false;
+    }
+    match /cache_stats/{day} {
+      allow read, write: if false;
+    }
+    // 매장 이름 용어집 — 저장·읽기 모두 서버만. 사장님 본인 확인은 서버가 로그인 토큰으로 한다(문서 id = 본인 uid).
+    //   (mandu-server server/store_glossary.py — /api/store/glossary)
+    match /store_glossary/{storeUid} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

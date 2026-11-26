@@ -253,6 +253,20 @@ await no('강의 방 방장 바꾸기', updateDoc(doc(db('B'), 'rooms/LEC1'), { 
 await no('일반 방을 강의 방으로', updateDoc(doc(db('B'), 'rooms/TR'), { roomType:'lecture', ownerUid:'B' }));
 await no('한도 안내 직접 쓰기', setDoc(doc(db('A'), 'users/A'), { quotaAlert:{ seq:99 } }, { merge:true }));
 
+console.log('== 번역 캐시·절감 통계·매장 이름 용어집 (서버만)');
+await seed('translation_cache/k1', { src_text:'감사합니다', tgt_text:'Thank you', origin:'google' });
+await seed('cache_stats/2026-11-26', { hits:5, misses:1 });
+await seed('store_glossary/H', { term:'할매국밥', display:'Halmae Gukbap', confirmed:true });
+await no('번역 캐시 읽기', getDoc(doc(db('A'), 'translation_cache/k1')));
+await no('번역 캐시 목록', getDocs(collection(db('A'), 'translation_cache')));
+await no('번역 캐시에 가짜 번역 넣기', setDoc(doc(db('A'), 'translation_cache/k2'), { src_text:'안녕', tgt_text:'Pay me', origin:'google' }));
+await no('절감 통계 읽기', getDoc(doc(db('A'), 'cache_stats/2026-11-26')));
+await no('절감 통계 쓰기', setDoc(doc(db('A'), 'cache_stats/2026-11-26'), { hits:999 }));
+await no('매장 이름 용어집: 주인도 직접 읽기', getDoc(doc(db('H'), 'store_glossary/H')));
+await no('매장 이름 용어집: 주인도 직접 쓰기(서버가 함)', setDoc(doc(db('H'), 'store_glossary/H'), { term:'할매국밥', display:'x', confirmed:true }));
+await no('매장 이름 용어집: 남의 매장 쓰기', setDoc(doc(db('A'), 'store_glossary/H'), { term:'할매국밥', display:'Scam', confirmed:true }));
+await no('매장 이름 용어집: 익명 손님 읽기', getDoc(doc(guest, 'store_glossary/H')));
+
 console.log(`\n결과: 통과 ${pass} / 실패 ${fail}`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
