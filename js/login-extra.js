@@ -36,10 +36,10 @@ function appleLogin(){
 }
 // 카카오: 카카오 로그인 창으로 갔다가 ?code=...&state=... 로 돌아온다
 function _kakaoRedirectUri(){return location.origin+'/';}
-function kakaoLogin(){
+function kakaoLogin(mode){
   if(!_loginCfg.kakaoClientId)return;
   const state=Math.random().toString(36).slice(2)+Date.now().toString(36);
-  try{sessionStorage.setItem('mandu_kakao_state',state);}catch(e){}
+  try{sessionStorage.setItem('mandu_kakao_state',state);sessionStorage.setItem('mandu_kakao_mode',mode==='link'?'link':'login');}catch(e){}
   // 손님 링크(?u=가게ID)에서 로그인하면, 돌아온 뒤 그 가게와의 대화로 바로 이어지도록 기억해 둔다
   try{sessionStorage.setItem('mandu_kakao_from',JSON.stringify({u:guestManduidParam||'',host:hostUID||'',dm:forceDM}));}catch(e){}
   location.href='https://kauth.kakao.com/oauth/authorize?response_type=code'+
@@ -50,7 +50,9 @@ async function handleKakaoReturn(){
   const q=new URLSearchParams(location.search);
   const code=q.get('code'),state=q.get('state'),err=q.get('error');
   if(!code&&!err)return;
-  let saved=null;try{saved=sessionStorage.getItem('mandu_kakao_state');sessionStorage.removeItem('mandu_kakao_state');}catch(e){}
+  let saved=null,mode='login';
+  try{saved=sessionStorage.getItem('mandu_kakao_state');sessionStorage.removeItem('mandu_kakao_state');
+    mode=sessionStorage.getItem('mandu_kakao_mode')||'login';sessionStorage.removeItem('mandu_kakao_mode');}catch(e){}
   if(!saved||saved!==state)return; // 우리가 보낸 요청이 아니면 무시
   try{
     const from=JSON.parse(sessionStorage.getItem('mandu_kakao_from')||'{}');sessionStorage.removeItem('mandu_kakao_from');
@@ -60,11 +62,17 @@ async function handleKakaoReturn(){
   }catch(e){}
   history.replaceState(null,'',location.pathname); // 주소창에서 코드 지우기
   if(err){if(err!=='access_denied')showToast(_L('카카오 로그인에 실패했어요','Kakao sign-in failed'));return;}
+  if(mode==='link'){_kakaoLinkReturn(code);return;}
   showToast(_L('카카오 로그인 중…','Signing in with Kakao…'));
   for(let attempt=0;attempt<3;attempt++){
     try{
       const res=await fetch(SERVER_URL+'/api/auth/kakao',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({code:code,redirectUri:_kakaoRedirectUri()})});
+      if(res.status===409){ // 같은 이메일로 가입된 계정이 있다 → 어느 계정으로 들어갈지 묻는다
+        let d=null;try{d=(await res.json()).detail;}catch(e){}
+        if(d&&d.code==='EMAIL_MATCH'&&d.ticket){_askKakaoEmailMatch(d);return;}
+        break;
+      }
       if(res.status>=400&&res.status<500){break;} // 코드는 한 번만 쓸 수 있어 다시 시도해도 소용없음
       if(!res.ok)throw new Error('http '+res.status);
       const d=await res.json();
@@ -181,3 +189,65 @@ function askDisplayName(){
   });
 }
 
+
+// ── 카카오 로그인 연결 (서버: mandu-server server/kakao_link.py) ─────────────
+// 카카오로 들어왔는데 같은 이메일로 가입된 계정(구글 등)이 있으면, 그 계정으로 들어갈지 묻는다.
+function _askKakaoEmailMatch(d){
+  const go=async function(choice){
+    showToast(_L('카카오 로그인 중…','Signing in with Kakao…'));
+    const r=await _serverPost('/api/auth/kakao/ticket',{ticket:d.ticket,choice:choice},false);
+    if(!r.ok||!r.data||!r.data.token){showToast(_L('카카오 로그인에 실패했어요. 다시 시도해주세요','Kakao sign-in failed. Please try again.'));return;}
+    await auth.signInWithCustomToken(r.data.token);
+    if(r.data.linked)showToast(_L('이제 카카오로도 이 계정에 로그인할 수 있어요','You can now sign in to this account with Kakao too.'));
+  };
+  _modSheet(_L('같은 이메일({email})로 가입된 만두 계정이 있어요. 그 계정으로 로그인할까요?','A MANDU account with the same email ({email}) already exists. Sign in to that account?',{email:String(d.email||'')}),[
+    {icon:'login',label:_L('기존 계정으로 로그인 (카카오 연결)','Sign in to existing account (link Kakao)'),fn:function(){go('link');}},
+    {icon:'person_add',label:d.hasKakaoAccount?_L('지금 카카오 계정으로 계속','Continue with my Kakao account'):_L('새 계정으로 계속','Continue with a new account'),fn:function(){go('new');}}
+  ]);
+}
+// 설정 → 카카오 로그인 연결 (로그인한 회원, 카카오 계정·손님 제외)
+let _kakaoLinked=null;
+function _waitAuthUser(){
+  return new Promise(function(resolve){
+    if(auth.currentUser){resolve(auth.currentUser);return;}
+    const off=auth.onAuthStateChanged(function(u){off();resolve(u);});
+  });
+}
+async function initKakaoLinkRow(){
+  const card=document.getElementById('kakao-link-card'),lbl=document.getElementById('kakao-link-section');
+  const show=!!(currentUser&&!currentUser.isAnonymous&&currentUser.uid.indexOf('kakao_')!==0&&_loginCfg.kakaoClientId&&_loginCfg.logins.indexOf('kakao')>=0);
+  if(card)card.style.display=show?'':'none';
+  if(lbl)lbl.style.display=show?'':'none';
+  if(!show)return;
+  const t=function(id,v){const el=document.getElementById(id);if(el)el.textContent=v;};
+  t('kakao-link-section',_L('로그인','Sign-in'));
+  t('kakao-link-label',_L('카카오 로그인 연결','Kakao sign-in'));
+  try{const s=await db.collection('users').doc(currentUser.uid).get();_kakaoLinked=!!((s.data()||{}).kakaoLink||{}).id;}catch(e){_kakaoLinked=false;}
+  t('kakao-link-state',_kakaoLinked?_L('연결됨','Linked'):_L('연결하기','Link'));
+  t('kakao-link-sub',_kakaoLinked?_L('카카오로 로그인해도 이 계정으로 들어와요','Signing in with Kakao opens this account'):_L('연결하면 카카오로 로그인해도 이 계정으로 들어와요','Link so that Kakao sign-in opens this account'));
+}
+async function toggleKakaoLink(){
+  if(!currentUser||currentUser.isAnonymous)return;
+  if(!_kakaoLinked){kakaoLogin('link');return;}
+  if(!confirm(_L('카카오 연결을 해제할까요? 해제하면 카카오로는 이 계정에 들어올 수 없어요','Unlink Kakao? You will no longer be able to sign in to this account with Kakao.')))return;
+  const r=await _serverPost('/api/auth/kakao/unlink',{},true);
+  showToast(r.ok?_L('카카오 연결을 해제했어요','Kakao unlinked.'):_L('카카오 연결에 실패했어요. 다시 시도해 주세요','Could not link Kakao. Please try again.'));
+  initKakaoLinkRow();
+}
+async function _kakaoLinkReturn(code){
+  const u=await _waitAuthUser();
+  if(!u||u.isAnonymous){showToast(_L('카카오 연결에 실패했어요. 다시 시도해 주세요','Could not link Kakao. Please try again.'));return;}
+  currentUser=u;
+  const r=await _serverPost('/api/auth/kakao/link',{code:code,redirectUri:_kakaoRedirectUri()},true);
+  const d=(r.data&&r.data.detail)||{};
+  if(r.ok){showToast(_L('이제 카카오로도 이 계정에 로그인할 수 있어요','You can now sign in to this account with Kakao too.'));}
+  else if(d.code==='ALREADY_LINKED'){showToast(_L('이 카카오 계정은 이미 다른 만두 계정에 연결돼 있어요','This Kakao account is already linked to another MANDU account.'));}
+  else if(d.code==='OLD_ACCOUNT'&&d.ticket){
+    const id=d.oldManduid?'@'+d.oldManduid:'';
+    if(confirm(_L('카카오로 따로 만든 계정({id})이 있어요. 연결하면 그 계정에는 더 이상 카카오로 들어갈 수 없어요. 연결할까요?','There is a separate account created with Kakao ({id}). If you link, you can no longer sign in to it with Kakao. Link anyway?',{id:id}))){
+      const r2=await _serverPost('/api/auth/kakao/ticket',{ticket:d.ticket,choice:'link'},true);
+      showToast(r2.ok?_L('이제 카카오로도 이 계정에 로그인할 수 있어요','You can now sign in to this account with Kakao too.'):_L('카카오 연결에 실패했어요. 다시 시도해 주세요','Could not link Kakao. Please try again.'));
+    }
+  }else{showToast(_L('카카오 연결에 실패했어요. 다시 시도해 주세요','Could not link Kakao. Please try again.'));}
+  initKakaoLinkRow();
+}

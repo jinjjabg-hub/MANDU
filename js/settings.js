@@ -107,6 +107,7 @@ function updateUIAfterLogin(){
   initOnline();
   updateQRImages();
   watchQuotaAlert(); // 사장님 한도 임박 안내 (js/send-translate.js)
+  initKakaoLinkRow(); // 설정 → 카카오 로그인 연결 (js/login-extra.js)
 }
 
 function saveLang(){

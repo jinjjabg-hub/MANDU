@@ -253,6 +253,9 @@ await no('강의 방 방장 바꾸기', updateDoc(doc(db('B'), 'rooms/LEC1'), { 
 await no('일반 방을 강의 방으로', updateDoc(doc(db('B'), 'rooms/TR'), { roomType:'lecture', ownerUid:'B' }));
 await no('한도 안내 직접 쓰기', setDoc(doc(db('A'), 'users/A'), { quotaAlert:{ seq:99 } }, { merge:true }));
 
+await no('카카오 연결 표시 직접 쓰기', setDoc(doc(db('A'), 'users/A'), { kakaoLink:{ id:'1' } }, { merge:true }));
+await no('카카오 연결 기록 직접 쓰기', setDoc(doc(db('A'), 'kakao_links/1'), { uid:'A' }));
+await no('카카오 표 읽기', getDoc(doc(db('A'), 'kakao_pending/t')));
 console.log(`\n결과: 통과 ${pass} / 실패 ${fail}`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
