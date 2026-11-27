@@ -128,6 +128,15 @@ function closeAttachMenu(){
 }
 
 // ── 음성 입력 (브라우저 내장 Web Speech API, 별도 비용 없음) ──
+// 듣는 언어 = 대화방의 '내 언어'(번역 언어). 예전엔 휴대폰 기본 언어로 들어서, 중국어로 설정해도 한국어 휴대폰이면 한글로 적혔다.
+const VOICE_LANG_TAGS={ko:'ko-KR',en:'en-US',ja:'ja-JP',zh:'zh-CN','zh-CN':'zh-CN','zh-TW':'zh-TW',es:'es-ES',fr:'fr-FR',de:'de-DE',
+  vi:'vi-VN',th:'th-TH',mn:'mn-MN',hi:'hi-IN',pt:'pt-BR',ar:'ar-SA',id:'id-ID',it:'it-IT',da:'da-DK',ru:'ru-RU'};
+function _voiceLang(){
+  const el=document.getElementById('my-lang');
+  let l=(el&&el.value)||'';
+  if(!l&&currentUser){try{l=localStorage.getItem('mandu_lang_'+currentUser.uid)||'';}catch(e){}}
+  return VOICE_LANG_TAGS[l]||navigator.language||'ko-KR';
+}
 let _voiceRecognition=null,_isListening=false;
 function toggleVoiceInput(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -139,7 +148,7 @@ function toggleVoiceInput(){
     return;
   }
   _voiceRecognition=new SR();
-  _voiceRecognition.lang=navigator.language||'ko-KR';
+  _voiceRecognition.lang=_voiceLang();
   _voiceRecognition.interimResults=true;
   _voiceRecognition.continuous=false;
   const baseText=input.value?input.value+' ':'';
