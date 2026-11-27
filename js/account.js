@@ -226,14 +226,19 @@ async function emailLogin(){
   const email=document.getElementById('email-input').value.trim();
   const pw=document.getElementById('pw-input').value;
   if(!email||!pw){setEmailMsg('email-login-msg',_L('이메일과 비밀번호를 입력해주세요','Please enter your email and password'),true);return;}
+  // 만두 ID(@없는 아이디)를 넣는 경우가 많다 — 로그인은 가입할 때 쓴 이메일로만 된다
+  if(email.indexOf('@')<0){setEmailMsg('email-login-msg',_L('만두 ID가 아니라 가입할 때 쓴 이메일 주소를 넣어 주세요','Enter the email address you signed up with (not your Mandu ID)'),true);return;}
   setEmailMsg('email-login-msg',_L('로그인 중...','Logging in...'),false);
   try{
     await auth.signInWithEmailAndPassword(email,pw);
   }catch(e){
-    const msgs={'auth/user-not-found':_L('등록되지 않은 이메일이에요','This email is not registered'),'auth/wrong-password':_L('비밀번호가 틀렸어요','Wrong password'),
+    // 구글·카카오·애플로 가입한 사람이 이메일로 로그인하면 '틀렸어요'가 나온다 → 그 버튼을 쓰라고 알려 준다
+    const wrong=_L('이메일 또는 비밀번호가 틀렸어요. Google·카카오·Apple로 가입했다면 그 버튼으로 로그인해 주세요','Wrong email or password. If you signed up with Google, Kakao or Apple, use that button.');
+    const msgs={'auth/user-not-found':wrong,'auth/wrong-password':wrong,'auth/invalid-credential':wrong,'auth/invalid-login-credentials':wrong,
       'auth/invalid-email':_L('이메일 형식이 올바르지 않아요','Invalid email format'),'auth/too-many-requests':_L('잠시 후 다시 시도해주세요','Please try again later'),
-      'auth/invalid-credential':_L('이메일 또는 비밀번호가 틀렸어요','Wrong email or password')};
-    setEmailMsg('email-login-msg',msgs[e.code]||_L('로그인 실패: ','Login failed: ')+e.message,true);
+      'auth/network-request-failed':_L('인터넷 연결을 확인하고 다시 시도해 주세요','Check your internet connection and try again.')};
+    if(!msgs[e.code]){try{_reportError('js','[이메일 로그인] '+String(e.code||e.message||'?').slice(0,80),'');}catch(x){}}
+    setEmailMsg('email-login-msg',msgs[e.code]||_L('로그인 실패: ','Login failed: ')+(e.code||e.message),true);
   }
 }
 async function emailSignup(){
@@ -535,8 +540,15 @@ auth.onAuthStateChanged(async function(user){
   }
   }catch(authErr){
     // onAuthStateChanged 에러 → 로그인 화면으로 강제 이동
+    // 예전엔 아무 안내 없이 로그인 화면으로 돌아가서 "로그인했는데 또 로그인하래요"처럼 보였다 → 이유를 보여 주고 운영자 화면 오류에도 남긴다
     console.error('Auth error:',authErr);
+    const code=String((authErr&&(authErr.code||authErr.message))||'?').slice(0,80);
+    try{_reportError('js','[로그인 처리] '+code,'');}catch(e){}
     try{show('login-screen');}catch(e){}
+    try{
+      const m=_L('로그인 처리 중 문제가 생겼어요 ({code}). 다시 시도해 주세요','Something went wrong while signing in ({code}). Please try again.',{code:code});
+      setEmailMsg('email-login-msg',m,true);showToast(m);
+    }catch(e){}
   }
 });
 });
@@ -627,19 +639,43 @@ async function loadGuestHostInfo(){
   _setGuestHost(await _readPublicProfile(hostUID));
 }
 
+// 손님 "바로 대화 시작하기" 버튼 — 누른 뒤 대화방이 열릴 때까지 "연결 중…"을 보여 준다.
+// 왜: 인터넷이 느리면 아무 표시 없이 기다리게 돼 멈춘 것처럼 보였다. 실패하거나 20초가 넘으면 "다시 시도하기"로 바꾼다.
+let _guestStartTimer=null;
+function _guestStartBusy(on,retry){
+  const b=document.getElementById('guest-start-btn');if(!b)return;
+  if(_guestStartTimer){clearTimeout(_guestStartTimer);_guestStartTimer=null;}
+  b.disabled=!!on;b.style.opacity=on?'0.6':'';
+  b.textContent=_G(on?'connecting':(retry?'retry':'start'));
+  if(on)_guestStartTimer=setTimeout(function(){
+    _guestStartTimer=null;
+    const gs=document.getElementById('guest-screen');
+    if(gs&&gs.style.display!=='none'){_guestStartBusy(false,true);showToast(_G('slow'));}
+  },20000);
+}
+function _guestStartFail(where,e){
+  console.warn('손님 입장 실패:',where,e);
+  _guestStartBusy(false,true);
+  showToast(_G('error')+((e&&e.code)?' ('+e.code+')':''));
+  try{_reportError('js','[손님 입장] '+where+' '+String((e&&(e.code||e.message))||e||''),'');}catch(x){}
+}
 async function startGuestChat(){
   const name=document.getElementById('guest-name-input').value.trim();
   if(!name){showToast(_G('name_req'));return;}
+  const b=document.getElementById('guest-start-btn');if(b&&b.disabled)return;
+  _guestStartBusy(true);
   try{
     // 로그인 직후 바로 대화방이 만들어지므로, 이름을 먼저 저장해 둬야 방에 손님 이름이 들어간다
     localStorage.setItem('mandu_guest_name',name);
+    // "다시 시도"일 때: 이미 손님 계정이 있으면 로그인 상태 처리가 다시 돌지 않으므로 대화방을 직접 연다
+    if(auth.currentUser&&auth.currentUser.isAnonymous){currentUser=auth.currentUser;await openGuestRoom();return;}
     await auth.signInAnonymously();
     await db.collection('users').doc(auth.currentUser.uid).set({
       uid:auth.currentUser.uid,displayName:name,photoURL:'',email:'',
       isGuest:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
     localStorage.setItem('mandu_guest_name',name);
-  }catch(e){showToast(_G('error'));}
+  }catch(e){_guestStartFail('signin',e);}
 }
 
 // ── 브라우저 언어 자동 감지 (게스트 입장 시 UX/번역 언어를 자동으로 맞추기 위함) ──
@@ -678,14 +714,16 @@ function _initGuestLang(uid){
 }
 
 async function openGuestRoom(){
-  if(!currentUser||!hostUID)return;
+  if(!currentUser)return;
+  if(!hostUID){_guestStartFail('nohost',null);return;}
   try{
     const host=await _getProfile(hostUID);
-    if(!host){showToast(_G('error'));show('login-screen');return;}
+    if(!host){_guestStartFail('noprofile',null);return;}
     // 휴대폰 언어 → 화면 언어 + 번역 언어 초기 설정 (게스트가 이미 바꾼 언어는 그대로)
     _initGuestLang(currentUser.uid);
     await openStoreRoom(host,hostUID);
-  }catch(e){showToast(_G('error'));}
+    _guestStartBusy(false);
+  }catch(e){_guestStartFail('room',e);}
 }
 
 function upgradeToGoogle(){
