@@ -193,8 +193,23 @@ function updateReadReceipt(readBy){
   else{el.textContent='✓';el.className='read-receipt';}
 }
 
+// 구글 로그인 실패 — 이유를 알려 준다 (예전엔 아무 안내 없이 끝나서 왜 안 되는지 알 수 없었다)
+function _googleLoginErr(e){
+  console.error('구글 로그인 실패:',e);
+  const code=(e&&e.code)||'';
+  if(code==='auth/popup-closed-by-user'||code==='auth/cancelled-popup-request'||code==='auth/user-cancelled')return;
+  const m={
+    'auth/popup-blocked':_L('로그인 창이 막혔어요. 팝업 차단을 풀거나 Chrome·Safari에서 열어 주세요','The sign-in window was blocked. Allow pop-ups or open in Chrome/Safari.'),
+    'auth/network-request-failed':_L('인터넷 연결을 확인하고 다시 시도해 주세요','Check your internet connection and try again.'),
+    'auth/operation-not-supported-in-this-environment':_L('이 화면에서는 Google 로그인을 쓸 수 없어요. Chrome·Safari에서 열어 주세요','Google sign-in is not available here. Please open in Chrome/Safari.'),
+    'auth/unauthorized-domain':_L('이 화면에서는 Google 로그인을 쓸 수 없어요. Chrome·Safari에서 열어 주세요','Google sign-in is not available here. Please open in Chrome/Safari.'),
+    'auth/web-storage-unsupported':_L('브라우저의 쿠키·사이트 데이터 저장이 꺼져 있어 로그인할 수 없어요','Sign-in needs cookies/site data, which are turned off in this browser.'),
+    'auth/account-exists-with-different-credential':_L('이 이메일은 다른 방법으로 가입돼 있어요. 처음 가입한 방법으로 로그인해 주세요','This email is registered with another sign-in method. Please use that method.')
+  };
+  showToast(m[code]||_L('Google 로그인에 실패했어요 ({code})','Google sign-in failed ({code})',{code:code||'?'}));
+}
 // 카카오톡·네이버 등 앱 안 브라우저는 구글이 로그인을 막는다(정책) → 버튼은 보여주고, 누르면 Chrome·Safari로 다시 연다
-document.getElementById('loginBtn').onclick=function(){if(window.MANDU_INAPP){openInBrowser();return;}auth.signInWithPopup(provider);};
+document.getElementById('loginBtn').onclick=function(){if(window.MANDU_INAPP){openInBrowser();return;}auth.signInWithPopup(provider).catch(_googleLoginErr);};
 
 // ── 이메일 로그인/회원가입 ─────────────────────────────────
 function togglePwVisible(){
@@ -692,7 +707,7 @@ function upgradeToGoogle(){
         isGuest:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
       },{merge:true});
     })
-    .catch(function(){if(!window.MANDU_INAPP)auth.signInWithPopup(provider);});
+    .catch(function(){if(!window.MANDU_INAPP)auth.signInWithPopup(provider).catch(_googleLoginErr);});
 }
 // 손님 화면 → 로그인 화면(구글·카카오·이메일 등 모든 방식). 로그인하면 이 가게와의 대화로 바로 이어진다.
 function showLoginFromGuest(){

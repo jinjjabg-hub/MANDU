@@ -96,7 +96,7 @@ function openInBrowser(){
 <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="i18n.js?v=12"></script>
+<script src="i18n.js?v=13"></script>
 <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
@@ -543,6 +543,17 @@ function openInBrowser(){
           <button id="usage-log-btn" onclick="toggleUsageLog()" style="width:100%;padding:10px;margin-bottom:10px;border-radius:12px;border:1px solid var(--outline-variant);background:var(--surface);color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;"><span class=ms-i>receipt_long</span> <span data-l="This month's usage">이번 달 사용 내역</span></button>
           <div id="usage-log-panel" style="display:none;margin-bottom:12px;font-size:12px;line-height:1.55;color:var(--on-surface);"></div>
           <button data-icon="upgrade" id="usage-upgrade-btn" onclick="showPlanSheet()" style="width:100%;padding:12px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">플랜 업그레이드</button>
+        </div>
+      </div>
+      <div class="settings-section-label" id="kakao-link-section" style="display:none;">로그인</div>
+      <div class="settings-card" id="kakao-link-card" style="display:none;">
+        <div class="settings-row" onclick="toggleKakaoLink()">
+          <div class="settings-icon-wrap"><span class="ms">chat_bubble</span></div>
+          <div class="settings-row-info">
+            <div class="settings-row-label" id="kakao-link-label">카카오 로그인 연결</div>
+            <div class="settings-row-sub" id="kakao-link-sub"></div>
+          </div>
+          <div class="settings-chevron" id="kakao-link-state"></div>
         </div>
       </div>
       <div class="settings-section-label" id="ai-tr-section-label" style="display:none;">번역</div>
@@ -1266,13 +1277,13 @@ function openInBrowser(){
 
 <script src="js/core.js?v=2"></script>
 <script src="js/error-report.js?v=2"></script>
-<script src="js/account.js?v=6"></script>
-<script src="js/settings.js?v=4"></script>
+<script src="js/account.js?v=7"></script>
+<script src="js/settings.js?v=5"></script>
 <script src="js/discover.js?v=3"></script>
 <script src="js/rooms.js?v=4"></script>
 <script src="js/store.js?v=4"></script>
 <script src="js/photo-translate.js?v=2"></script>
-<script src="js/login-extra.js?v=3"></script>
+<script src="js/login-extra.js?v=4"></script>
 <script src="js/chat.js?v=10"></script>
 <script src="js/translate-base.js?v=3"></script>
 <script src="js/referral.js?v=7"></script>
