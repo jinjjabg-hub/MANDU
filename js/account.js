@@ -117,6 +117,7 @@ async function createManduid(){
     currentManduid=id;
     updateUIAfterLogin();
     showMain();
+    if(joinCode){joinByInvite();}
     showToast(t('welcome_toast').replace('{id}',id));
     setTimeout(afterNewAccountReferral,1200);
   }catch(e){
@@ -233,6 +234,7 @@ function setEmailMsg(id,msg,isError){
   const el=document.getElementById(id);if(!el)return;
   el.textContent=msg;el.style.color=isError?'#e53935':'#2e7d32';
 }
+function _isGmail(email){return /@(gmail|googlemail)\.com$/i.test(String(email||'').trim());}
 async function emailLogin(){
   const email=document.getElementById('email-input').value.trim();
   const pw=document.getElementById('pw-input').value;
@@ -266,7 +268,7 @@ async function emailSignup(){
     await cred.user.updateProfile({displayName:name,photoURL:''});
     // 인증 메일은 로그인 처리(onAuthStateChanged)가 인증 대기 화면을 띄우면서 한 번 보낸다
   }catch(e){
-    const msgs={'auth/email-already-in-use':_L('이미 사용 중인 이메일이에요','This email is already in use'),
+    const msgs={'auth/email-already-in-use':_isGmail(email)?_L('이미 가입된 Gmail이에요. 로그인 화면에서 \'Google로 시작하기\'로 들어와 주세요','This Gmail is already registered. Please use \'Continue with Google\' on the sign-in screen'):_L('이미 사용 중인 이메일이에요','This email is already in use'),
       'auth/invalid-email':_L('이메일 형식이 올바르지 않아요','Invalid email format'),'auth/weak-password':_L('비밀번호가 너무 짧아요','Password is too short')};
     setEmailMsg('email-signup-msg',msgs[e.code]||_L('가입 실패: ','Sign-up failed: ')+e.message,true);
   }
@@ -420,6 +422,12 @@ async function selectInitialLang(lang){
   applyUILanguage(lang);
   try{
     const autoId=await autoCreateManduid(user);
+    if(autoId===false){_pendingNewUser=null;return;} // 기존 계정으로 로그인하러 감
+    if(!autoId){ // 이메일이 없는 계정(카카오 이메일 미동의·전화번호 등) → ID를 직접 고르게 한다
+      _pendingNewUser=null;show('id-screen');
+      showToast(_L('친구가 나를 찾을 만두 ID를 정해 주세요','Choose the MANDU ID friends will use to find you'));
+      return;
+    }
     currentManduid=autoId;
     updateUIAfterLogin();
     showMain();
@@ -433,11 +441,26 @@ async function selectInitialLang(lang){
   _pendingNewUser=null;
 }
 
+// 돌려주는 값: 만든 ID · null(지을 이름이 없음 → 직접 고르기) · false(기존 계정으로 로그인하러 감)
 async function autoCreateManduid(user){
-  const base=buildManduidBase(user.email||'',user.displayName||'');
+  // 카카오 로그인은 파이어베이스 계정에 이메일이 없어서, 서버가 알려 준 카카오 이메일 앞부분(idHint)을 먼저 쓴다 (js/login-extra.js)
+  let hint='';try{hint=sessionStorage.getItem('mandu_id_hint')||'';sessionStorage.removeItem('mandu_id_hint');}catch(e){}
+  const mail=user.email||(hint?hint+'@kakao':'');
+  const base=buildManduidBase(mail,user.displayName||'');
+  if(!base)return null;
+  const fromMail=!!_idClean(mail.split('@')[0]); // 이메일 앞부분으로 지은 ID일 때만 '내 계정인가요?'를 묻는다
   let id=base,n=0;
   while(n<=999){
     const snap=await db.collection('manduid_index').doc(id).get();
+    // 이메일 앞부분이 같은 ID가 이미 있으면 → 다른 방법(구글·카카오·이메일)으로 먼저 가입한 본인일 수 있다. 한 번 물어본다.
+    // (아이디가 같다고 자동으로 합치지는 않는다 — 남이 같은 앞부분 이메일을 만들어 남의 계정에 들어오는 일을 막기 위해)
+    if(n===0&&fromMail&&snap.exists&&snap.data().uid!==user.uid){
+      if(confirm(_L('@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속','The ID @{id} already exists.\nIs it your account created with another sign-in method (Google, Kakao or email)?\n\nOK: go sign in to that account\nCancel: continue with a new account',{id:id}))){
+        await auth.signOut();
+        alert(_L('예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → \'카카오 로그인 연결\'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.','Please sign in with the method you used before.\nThen go to Settings → \'Kakao sign-in\' to link Kakao to the same account.'));
+        return false;
+      }
+    }
     if(!snap.exists){
       await db.collection('manduid_index').doc(id).set({uid:user.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
       await db.collection('users').doc(user.uid).set({manduid:id},{merge:true});
@@ -753,7 +776,14 @@ async function openGuestRoom(){
   }catch(e){_guestStartFail('room',e);}
 }
 
+// 손님 화면 위쪽 '가입하기' — 예전엔 Google만 됐다. 이제 Google(지금 대화 그대로)·카카오·이메일 중에서 고른다.
 function upgradeToGoogle(){
+  _modSheet(_L('어떻게 가입할까요?','How would you like to sign up?'),[
+    {icon:'account_circle',label:_L('Google로 가입 (지금 대화 그대로)','Sign up with Google (keep this chat)'),fn:_linkGuestGoogle},
+    {icon:'login',label:_L('카카오·이메일로 가입 / 로그인','Sign up or sign in with Kakao or email'),fn:showLoginFromGuest}
+  ]);
+}
+function _linkGuestGoogle(){
   // 앱 안 브라우저는 구글 팝업이 막혀서, 지금 대화를 이어 가입하려면 기본 브라우저로 열어야 한다
   if(window.MANDU_INAPP){
     if(confirm(_L('구글로 가입하려면 Chrome·Safari에서 열어야 해요. 지금 열까요?\n(취소하면 카카오·이메일로 로그인할 수 있어요)','To sign up with Google, open this in Chrome/Safari. Open now?\n(Cancel to sign in with Kakao or email)')))openInBrowser();
@@ -772,7 +802,14 @@ function upgradeToGoogle(){
         isGuest:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
       },{merge:true});
     })
-    .catch(function(){if(!window.MANDU_INAPP)auth.signInWithPopup(provider).catch(_googleLoginErr);});
+    .catch(function(e){
+      const code=(e&&e.code)||'';
+      // 이 Google 계정은 이미 만두 회원 → 그 계정으로 로그인 (예전엔 로그인 창을 한 번 더 띄우다 '창이 막혔어요' 오류가 났다)
+      if((code==='auth/credential-already-in-use'||code==='auth/email-already-in-use')&&e.credential){
+        auth.signInWithCredential(e.credential).catch(_googleLoginErr);return;
+      }
+      _googleLoginErr(e);
+    });
 }
 // 손님 화면 → 로그인 화면(구글·카카오·이메일 등 모든 방식). 로그인하면 이 가게와의 대화로 바로 이어진다.
 function showLoginFromGuest(){

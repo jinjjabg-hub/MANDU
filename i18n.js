@@ -484,3 +484,187 @@ const L_T_LOGIN={
 }
 };
 Object.keys(L_T_LOGIN).forEach(function(l){L_T[l]=Object.assign(L_T[l]||{},L_T_LOGIN[l]);});
+// ── 로그인 재정비 문구 (손님 가입 방법 고르기·Gmail 안내·만두 ID 직접 정하기) — 위 L_T 에 합친다 ──
+const L_T_LOGIN2={
+"ja": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "友だちがあなたを見つけるMANDU IDを決めてください",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "@{id} というIDはすでにあります。\n以前ほかの方法(Google・Kakao・メール)で登録したあなたのアカウントですか?\n\nOK: そのアカウントでログインする\nキャンセル: 新しいアカウントで続ける",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "以前登録した方法でログインしてください。\nログイン後、設定 → 「Kakaoログイン連携」を押すと、次からKakaoでも同じアカウントに入れます。",
+"어떻게 가입할까요?": "どの方法で登録しますか?",
+"Google로 가입 (지금 대화 그대로)": "Googleで登録(今の会話のまま)",
+"카카오·이메일로 가입 / 로그인": "Kakao・メールで登録 / ログイン",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Googleで登録した場合は、上の「Googleで始める」を押してください",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "すでに登録済みのGmailです。ログイン画面で「Googleで始める」から入ってください",
+"카카오 로그인 준비 중…": "Kakaoログインを準備中…",
+"지금은 카카오 로그인을 쓸 수 없어요": "現在Kakaoログインは使えません"
+},
+"zh": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "请设定好友用来找到你的MANDU ID",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "ID @{id} 已存在。\n这是你以前用其他方式(Google・Kakao・邮箱)注册的账号吗?\n\n确定:去登录那个账号\n取消:继续使用新账号",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "请用以前注册的方式登录。\n登录后在 设置 → “Kakao登录关联” 中关联,以后用Kakao也能进入同一账号。",
+"어떻게 가입할까요?": "你想怎样注册?",
+"Google로 가입 (지금 대화 그대로)": "用Google注册(保留当前对话)",
+"카카오·이메일로 가입 / 로그인": "用Kakao・邮箱注册 / 登录",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "如果你用Google注册过,请点上方的“使用Google继续”",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "此Gmail已注册。请在登录界面点“使用Google继续”进入",
+"카카오 로그인 준비 중…": "正在准备Kakao登录…",
+"지금은 카카오 로그인을 쓸 수 없어요": "目前无法使用Kakao登录"
+},
+"vi": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "Hãy chọn MANDU ID để bạn bè tìm thấy bạn",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "ID @{id} đã tồn tại.\nĐây có phải tài khoản bạn đã đăng ký trước đây bằng cách khác (Google·Kakao·email) không?\n\nOK: đi đăng nhập tài khoản đó\nHủy: tiếp tục với tài khoản mới",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "Hãy đăng nhập bằng cách bạn đã đăng ký trước đây.\nSau khi đăng nhập, vào Cài đặt → 'Liên kết đăng nhập Kakao' để lần sau đăng nhập Kakao cũng vào cùng tài khoản.",
+"어떻게 가입할까요?": "Bạn muốn đăng ký bằng cách nào?",
+"Google로 가입 (지금 대화 그대로)": "Đăng ký bằng Google (giữ cuộc trò chuyện này)",
+"카카오·이메일로 가입 / 로그인": "Đăng ký / đăng nhập bằng Kakao hoặc email",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Nếu bạn đã đăng ký bằng Google, hãy nhấn 'Tiếp tục với Google' ở trên",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Gmail này đã được đăng ký. Hãy vào bằng 'Tiếp tục với Google' ở màn hình đăng nhập",
+"카카오 로그인 준비 중…": "Đang chuẩn bị đăng nhập Kakao…",
+"지금은 카카오 로그인을 쓸 수 없어요": "Hiện không thể đăng nhập bằng Kakao"
+},
+"th": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "ตั้ง MANDU ID ที่เพื่อนใช้ค้นหาคุณ",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "มี ID @{id} อยู่แล้ว\nเป็นบัญชีของคุณที่เคยสมัครด้วยวิธีอื่น (Google·Kakao·อีเมล) หรือไม่?\n\nตกลง: ไปเข้าสู่ระบบบัญชีนั้น\nยกเลิก: ใช้บัญชีใหม่ต่อ",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "โปรดเข้าสู่ระบบด้วยวิธีที่เคยสมัครไว้\nหลังเข้าสู่ระบบ ไปที่ การตั้งค่า → 'เชื่อมต่อการเข้าสู่ระบบ Kakao' ครั้งต่อไปเข้าด้วย Kakao ก็จะเป็นบัญชีเดียวกัน",
+"어떻게 가입할까요?": "ต้องการสมัครด้วยวิธีใด?",
+"Google로 가입 (지금 대화 그대로)": "สมัครด้วย Google (เก็บแชทนี้ไว้)",
+"카카오·이메일로 가입 / 로그인": "สมัคร / เข้าสู่ระบบด้วย Kakao หรืออีเมล",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "ถ้าคุณสมัครด้วย Google โปรดแตะ 'ดำเนินการต่อด้วย Google' ด้านบน",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Gmail นี้สมัครไว้แล้ว โปรดเข้าด้วย 'ดำเนินการต่อด้วย Google' ที่หน้าเข้าสู่ระบบ",
+"카카오 로그인 준비 중…": "กำลังเตรียมเข้าสู่ระบบ Kakao…",
+"지금은 카카오 로그인을 쓸 수 없어요": "ขณะนี้ใช้การเข้าสู่ระบบ Kakao ไม่ได้"
+},
+"mn": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "Найзууд тань таныг олох MANDU ID-гаа сонгоно уу",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "@{id} ID аль хэдийн байна.\nТа өмнө нь өөр аргаар (Google·Kakao·имэйл) бүртгүүлсэн өөрийн бүртгэл үү?\n\nOK: тэр бүртгэлээр нэвтрэх\nБолих: шинэ бүртгэлээр үргэлжлүүлэх",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "Өмнө бүртгүүлсэн аргаараа нэвтэрнэ үү.\nНэвтэрсний дараа Тохиргоо → 'Kakao нэвтрэлт холбох'-ыг дарвал дараа нь Kakao-гаар ч мөн адил бүртгэлд орно.",
+"어떻게 가입할까요?": "Ямар аргаар бүртгүүлэх вэ?",
+"Google로 가입 (지금 대화 그대로)": "Google-ээр бүртгүүлэх (энэ чатыг хадгална)",
+"카카오·이메일로 가입 / 로그인": "Kakao·имэйлээр бүртгүүлэх / нэвтрэх",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Google-ээр бүртгүүлсэн бол дээрх 'Google-ээр үргэлжлүүлэх'-ийг дарна уу",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Энэ Gmail аль хэдийн бүртгэлтэй. Нэвтрэх хэсэгт 'Google-ээр үргэлжлүүлэх'-ээр орно уу",
+"카카오 로그인 준비 중…": "Kakao нэвтрэлтийг бэлдэж байна…",
+"지금은 카카오 로그인을 쓸 수 없어요": "Одоогоор Kakao-гаар нэвтрэх боломжгүй"
+},
+"id": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "Pilih MANDU ID agar teman bisa menemukanmu",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "ID @{id} sudah ada.\nApakah ini akunmu yang dulu dibuat dengan cara lain (Google·Kakao·email)?\n\nOK: masuk ke akun itu\nBatal: lanjut dengan akun baru",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "Silakan masuk dengan cara yang dulu kamu pakai untuk mendaftar.\nSetelah masuk, buka Pengaturan → 'Tautkan login Kakao' agar berikutnya Kakao juga masuk ke akun yang sama.",
+"어떻게 가입할까요?": "Mau daftar dengan cara apa?",
+"Google로 가입 (지금 대화 그대로)": "Daftar dengan Google (obrolan ini tetap)",
+"카카오·이메일로 가입 / 로그인": "Daftar / masuk dengan Kakao atau email",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Jika kamu mendaftar dengan Google, ketuk 'Lanjutkan dengan Google' di atas",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Gmail ini sudah terdaftar. Silakan masuk lewat 'Lanjutkan dengan Google' di layar login",
+"카카오 로그인 준비 중…": "Menyiapkan login Kakao…",
+"지금은 카카오 로그인을 쓸 수 없어요": "Login Kakao sedang tidak tersedia"
+},
+"hi": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "वह MANDU ID चुनें जिससे दोस्त आपको ढूँढ सकें",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "ID @{id} पहले से मौजूद है।\nक्या यह आपका खाता है जो आपने पहले किसी और तरीके (Google·Kakao·ईमेल) से बनाया था?\n\nOK: उस खाते में साइन इन करें\nरद्द करें: नए खाते के साथ जारी रखें",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "कृपया उसी तरीके से साइन इन करें जिससे पहले जुड़े थे।\nसाइन इन के बाद सेटिंग्स → 'Kakao साइन-इन जोड़ें' दबाएँ, फिर Kakao से भी उसी खाते में आएँगे।",
+"어떻게 가입할까요?": "आप कैसे साइन अप करना चाहेंगे?",
+"Google로 가입 (지금 대화 그대로)": "Google से साइन अप करें (यह चैट बनी रहेगी)",
+"카카오·이메일로 가입 / 로그인": "Kakao या ईमेल से साइन अप / साइन इन",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "अगर आपने Google से साइन अप किया था, तो ऊपर 'Google से जारी रखें' दबाएँ",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "यह Gmail पहले से पंजीकृत है। साइन-इन स्क्रीन पर 'Google से जारी रखें' से आएँ",
+"카카오 로그인 준비 중…": "Kakao साइन-इन तैयार हो रहा है…",
+"지금은 카카오 로그인을 쓸 수 없어요": "अभी Kakao साइन-इन उपलब्ध नहीं है"
+},
+"de": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "Wähle die MANDU-ID, unter der dich Freunde finden",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "Die ID @{id} gibt es bereits.\nIst das dein Konto, das du früher mit einer anderen Methode (Google·Kakao·E-Mail) erstellt hast?\n\nOK: bei diesem Konto anmelden\nAbbrechen: mit neuem Konto fortfahren",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "Bitte melde dich mit der Methode an, mit der du dich registriert hast.\nTippe danach auf Einstellungen → „Kakao-Anmeldung verknüpfen“, dann führt auch Kakao zum selben Konto.",
+"어떻게 가입할까요?": "Wie möchtest du dich registrieren?",
+"Google로 가입 (지금 대화 그대로)": "Mit Google registrieren (Chat bleibt erhalten)",
+"카카오·이메일로 가입 / 로그인": "Mit Kakao oder E-Mail registrieren / anmelden",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Wenn du dich mit Google registriert hast, tippe oben auf „Weiter mit Google“",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Diese Gmail-Adresse ist bereits registriert. Bitte nutze „Weiter mit Google“ auf dem Anmeldebildschirm",
+"카카오 로그인 준비 중…": "Kakao-Anmeldung wird vorbereitet…",
+"지금은 카카오 로그인을 쓸 수 없어요": "Kakao-Anmeldung ist gerade nicht verfügbar"
+},
+"fr": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "Choisissez l'ID MANDU avec lequel vos amis vous trouveront",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "L'ID @{id} existe déjà.\nEst-ce votre compte créé auparavant avec une autre méthode (Google·Kakao·e-mail) ?\n\nOK : aller se connecter à ce compte\nAnnuler : continuer avec un nouveau compte",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "Connectez-vous avec la méthode utilisée lors de l'inscription.\nEnsuite, allez dans Réglages → « Associer la connexion Kakao » pour que Kakao ouvre aussi le même compte.",
+"어떻게 가입할까요?": "Comment voulez-vous vous inscrire ?",
+"Google로 가입 (지금 대화 그대로)": "S'inscrire avec Google (garder cette conversation)",
+"카카오·이메일로 가입 / 로그인": "S'inscrire / se connecter avec Kakao ou e-mail",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Si vous vous êtes inscrit avec Google, touchez « Continuer avec Google » ci-dessus",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Ce Gmail est déjà inscrit. Utilisez « Continuer avec Google » sur l'écran de connexion",
+"카카오 로그인 준비 중…": "Préparation de la connexion Kakao…",
+"지금은 카카오 로그인을 쓸 수 없어요": "La connexion Kakao n'est pas disponible pour le moment"
+},
+"es": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "Elige el ID de MANDU con el que tus amigos te encontrarán",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "El ID @{id} ya existe.\n¿Es tu cuenta creada antes con otro método (Google·Kakao·correo)?\n\nAceptar: ir a iniciar sesión en esa cuenta\nCancelar: continuar con una cuenta nueva",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "Inicia sesión con el método que usaste al registrarte.\nLuego ve a Ajustes → 'Vincular inicio con Kakao' para que Kakao también abra la misma cuenta.",
+"어떻게 가입할까요?": "¿Cómo quieres registrarte?",
+"Google로 가입 (지금 대화 그대로)": "Registrarse con Google (mantener este chat)",
+"카카오·이메일로 가입 / 로그인": "Registrarse / iniciar sesión con Kakao o correo",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Si te registraste con Google, toca 'Continuar con Google' arriba",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Este Gmail ya está registrado. Entra con 'Continuar con Google' en la pantalla de inicio de sesión",
+"카카오 로그인 준비 중…": "Preparando inicio de sesión con Kakao…",
+"지금은 카카오 로그인을 쓸 수 없어요": "El inicio de sesión con Kakao no está disponible ahora"
+},
+"it": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "Scegli l'ID MANDU con cui gli amici ti troveranno",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "L'ID @{id} esiste già.\nÈ il tuo account creato in passato con un altro metodo (Google·Kakao·email)?\n\nOK: vai ad accedere a quell'account\nAnnulla: continua con un nuovo account",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "Accedi con il metodo usato per registrarti.\nPoi vai in Impostazioni → 'Collega accesso Kakao' così anche Kakao aprirà lo stesso account.",
+"어떻게 가입할까요?": "Come vuoi registrarti?",
+"Google로 가입 (지금 대화 그대로)": "Registrati con Google (mantieni questa chat)",
+"카카오·이메일로 가입 / 로그인": "Registrati / accedi con Kakao o email",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Se ti sei registrato con Google, tocca 'Continua con Google' qui sopra",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Questo Gmail è già registrato. Entra con 'Continua con Google' nella schermata di accesso",
+"카카오 로그인 준비 중…": "Preparazione accesso Kakao…",
+"지금은 카카오 로그인을 쓸 수 없어요": "L'accesso con Kakao non è disponibile ora"
+},
+"da": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "Vælg det MANDU-ID, dine venner kan finde dig med",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "ID'et @{id} findes allerede.\nEr det din konto, som du tidligere oprettede med en anden metode (Google·Kakao·e-mail)?\n\nOK: gå til login på den konto\nAnnuller: fortsæt med en ny konto",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "Log ind med den metode, du brugte, da du tilmeldte dig.\nGå derefter til Indstillinger → 'Tilknyt Kakao-login', så åbner Kakao også den samme konto.",
+"어떻게 가입할까요?": "Hvordan vil du tilmelde dig?",
+"Google로 가입 (지금 대화 그대로)": "Tilmeld med Google (behold denne chat)",
+"카카오·이메일로 가입 / 로그인": "Tilmeld / log ind med Kakao eller e-mail",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Hvis du tilmeldte dig med Google, så tryk på 'Fortsæt med Google' ovenfor",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Denne Gmail er allerede tilmeldt. Brug 'Fortsæt med Google' på login-skærmen",
+"카카오 로그인 준비 중…": "Forbereder Kakao-login…",
+"지금은 카카오 로그인을 쓸 수 없어요": "Kakao-login er ikke tilgængeligt lige nu"
+},
+"pt": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "Escolha o ID MANDU que seus amigos usarão para encontrar você",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "O ID @{id} já existe.\nÉ sua conta criada antes com outro método (Google·Kakao·e-mail)?\n\nOK: ir entrar nessa conta\nCancelar: continuar com uma conta nova",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "Entre com o método que você usou no cadastro.\nDepois vá em Configurações → 'Vincular login Kakao' para que o Kakao também abra a mesma conta.",
+"어떻게 가입할까요?": "Como você quer se cadastrar?",
+"Google로 가입 (지금 대화 그대로)": "Cadastrar com Google (manter esta conversa)",
+"카카오·이메일로 가입 / 로그인": "Cadastrar / entrar com Kakao ou e-mail",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Se você se cadastrou com Google, toque em 'Continuar com Google' acima",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Este Gmail já está cadastrado. Entre por 'Continuar com Google' na tela de login",
+"카카오 로그인 준비 중…": "Preparando login com Kakao…",
+"지금은 카카오 로그인을 쓸 수 없어요": "O login com Kakao não está disponível agora"
+},
+"ar": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "اختر معرّف MANDU الذي سيجدك به أصدقاؤك",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "المعرّف @{id} موجود بالفعل.\nهل هو حسابك الذي أنشأته سابقًا بطريقة أخرى (Google·Kakao·البريد)؟\n\nموافق: الذهاب لتسجيل الدخول إلى ذلك الحساب\nإلغاء: المتابعة بحساب جديد",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "سجّل الدخول بالطريقة التي استخدمتها عند التسجيل.\nبعد ذلك اذهب إلى الإعدادات ← 'ربط تسجيل الدخول عبر Kakao' ليفتح Kakao الحساب نفسه.",
+"어떻게 가입할까요?": "كيف تريد التسجيل؟",
+"Google로 가입 (지금 대화 그대로)": "التسجيل عبر Google (مع الاحتفاظ بهذه المحادثة)",
+"카카오·이메일로 가입 / 로그인": "التسجيل / تسجيل الدخول عبر Kakao أو البريد",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "إذا سجّلت عبر Google، فاضغط 'المتابعة باستخدام Google' في الأعلى",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "هذا الـGmail مسجّل بالفعل. ادخل عبر 'المتابعة باستخدام Google' في شاشة تسجيل الدخول",
+"카카오 로그인 준비 중…": "جارٍ تجهيز تسجيل الدخول عبر Kakao…",
+"지금은 카카오 로그인을 쓸 수 없어요": "تسجيل الدخول عبر Kakao غير متاح الآن"
+},
+"ru": {
+"친구가 나를 찾을 만두 ID를 정해 주세요": "Выберите MANDU ID, по которому вас найдут друзья",
+"@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속": "ID @{id} уже существует.\nЭто ваш аккаунт, созданный раньше другим способом (Google·Kakao·почта)?\n\nOK: перейти ко входу в этот аккаунт\nОтмена: продолжить с новым аккаунтом",
+"예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → '카카오 로그인 연결'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.": "Войдите тем способом, которым регистрировались.\nЗатем откройте Настройки → «Привязать вход через Kakao», и Kakao тоже будет открывать этот аккаунт.",
+"어떻게 가입할까요?": "Как вы хотите зарегистрироваться?",
+"Google로 가입 (지금 대화 그대로)": "Регистрация через Google (чат сохранится)",
+"카카오·이메일로 가입 / 로그인": "Регистрация / вход через Kakao или почту",
+"Google로 가입했다면 위의 'Google로 시작하기'를 눌러 주세요": "Если вы регистрировались через Google, нажмите «Продолжить с Google» выше",
+"이미 가입된 Gmail이에요. 로그인 화면에서 'Google로 시작하기'로 들어와 주세요": "Этот Gmail уже зарегистрирован. Войдите через «Продолжить с Google» на экране входа",
+"카카오 로그인 준비 중…": "Подготовка входа через Kakao…",
+"지금은 카카오 로그인을 쓸 수 없어요": "Вход через Kakao сейчас недоступен"
+}
+};
+Object.keys(L_T_LOGIN2).forEach(function(l){L_T[l]=Object.assign(L_T[l]||{},L_T_LOGIN2[l]);});
