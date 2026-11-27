@@ -16,17 +16,26 @@ function _myStoredLang(){
 function usesSendTranslate(roomId){return !!roomId&&!(typeof _isTesterRoom==='function'&&_isTesterRoom(roomId));}
 
 // ── 방 문서에 내 언어 적기 (서버가 보내는 순간 이 값으로 번역할 언어를 정한다) ──
+// force: 내가 직접 한 일(메시지 보내기·언어 바꾸기) — 다르면 바로 적는다.
+// force 없이(방 목록·방 화면이 바뀔 때마다 자동으로) 부를 때는 방마다 앱을 연 동안 '한 번만' 적는다.
+//  왜: 언어는 기기마다 따로 저장돼서, 같은 계정으로 PC·휴대폰을 함께 켜 두고 두 기기 언어가 다르면
+//      서로 덮어쓰기를 끝없이 반복해 Firestore 하루 사용량을 몇 시간 만에 다 썼다(2026-11-27).
+const _roomLangAutoSynced={};
 function syncMyRoomLang(roomId,data,force){
   const lang=_myStoredLang();
   if(!lang||!currentUser||!roomId||!data)return Promise.resolve();
-  if(!force&&(data.memberLangs||{})[currentUser.uid]===lang)return Promise.resolve();
+  if((data.memberLangs||{})[currentUser.uid]===lang)return Promise.resolve();
+  if(!force){
+    if(_roomLangAutoSynced[roomId])return Promise.resolve();
+    _roomLangAutoSynced[roomId]=1;
+  }
   return db.collection('rooms').doc(roomId).set({memberLangs:{[currentUser.uid]:lang}},{merge:true}).catch(function(){});
 }
 // 언어를 바꾸면 내 모든 방에 새 언어를 적는다
 function syncAllRoomLangs(){
   if(!currentUser)return;
   db.collection('rooms').where('members','array-contains',currentUser.uid).get().then(function(snap){
-    snap.forEach(function(d){syncMyRoomLang(d.id,d.data());});
+    snap.forEach(function(d){syncMyRoomLang(d.id,d.data(),true);});
   }).catch(function(){});
   if(currentRoomId&&_currentRoomData)updateRoomLangNote(_currentRoomData);
 }
