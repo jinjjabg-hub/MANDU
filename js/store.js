@@ -146,7 +146,9 @@ async function showStoreSettings(){
       '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('테이블 QR 인쇄물','Table QR print')+'</span></div>'+
         '<div class="store-sec-desc">'+_L('테이블·계산대에 세워 두는 A6 안내판이에요. 손님이 찍으면 로그인 없이 바로 자기 언어로 대화해요.','An A6 sign for tables and the counter. Customers scan it and chat in their own language, no sign-up needed.')+'</div>'+
         '<div class="store-qr-btns"><button onclick="saveQrPrintImage()"><span class="ms">download</span>'+_L('이미지 저장','Save image')+'</button>'+
-        '<button onclick="printQrStand()"><span class="ms">print</span>'+_L('인쇄·PDF','Print / PDF')+'</button></div></div>'+
+        '<button onclick="printQrStand()"><span class="ms">print</span>'+_L('인쇄·PDF','Print / PDF')+'</button>'+
+        '<button onclick="copyStoreLink()"><span class="ms">link</span>'+_L('매장 링크 복사','Copy store link')+'</button></div>'+
+        '<div class="store-sec-desc" style="margin-top:8px;">'+_L('이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).','This QR/link is for store customers (a store chat shared with your staff). For friends, show your own QR in your profile (1:1 chat).')+'</div></div>'+
       '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('손님 첫 화면 안내','Customer welcome screen')+'</span><div class="toggle" id="store-welcome-toggle"></div></div>'+
         '<div class="store-sec-desc">'+_L('내 QR·링크로 들어온 손님(로그인 없이)이 이름을 적기 전 첫 화면에 보이고, 대화방에 들어가면 안내 메시지로도 올라가요(손님 언어로 번역). 이벤트·메뉴 안내나 앱 설치 안내에 써 보세요.','Shown on the first screen to customers who open your QR or link without signing in, and posted in the chat as a notice when they enter (translated to their language). Use it for events, menus or an app download guide.')+'</div>'+
         '<textarea class="store-ta" id="store-welcome" maxlength="300" placeholder="'+_L('예) 어서오세요! MANDU 앱을 받으면 다음에도 바로 대화할 수 있어요.','e.g. Welcome! Get the MANDU app to chat with us anytime.')+'"></textarea>'+

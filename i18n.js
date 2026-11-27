@@ -668,3 +668,82 @@ const L_T_LOGIN2={
 }
 };
 Object.keys(L_T_LOGIN2).forEach(function(l){L_T[l]=Object.assign(L_T[l]||{},L_T_LOGIN2[l]);});
+// ── 개인 QR·매장 QR 구별 문구 — 위 L_T 에 합친다 ──
+const L_T_QR2={
+"ja": {
+"매장 링크를 복사했어요": "お店のリンクをコピーしました",
+"매장 링크 복사": "お店のリンクをコピー",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "このQR・リンクはお店のお客様用です(スタッフと一緒に見るお店のチャット)。友だちにはプロフィールの自分のQRを見せてください(1対1チャット)。"
+},
+"zh": {
+"매장 링크를 복사했어요": "已复制店铺链接",
+"매장 링크 복사": "复制店铺链接",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "此二维码・链接供店铺顾客使用(与员工共享的店铺聊天)。给朋友请出示个人资料中的我的二维码(一对一聊天)。"
+},
+"es": {
+"매장 링크를 복사했어요": "Enlace de la tienda copiado",
+"매장 링크 복사": "Copiar enlace de la tienda",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "Este QR/enlace es para clientes de la tienda (chat de la tienda compartido con tu personal). A tus amigos, muéstrales tu propio QR del perfil (chat 1 a 1)."
+},
+"fr": {
+"매장 링크를 복사했어요": "Lien de la boutique copié",
+"매장 링크 복사": "Copier le lien de la boutique",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "Ce QR/lien est destiné aux clients de la boutique (chat de la boutique partagé avec votre équipe). Pour vos amis, montrez votre propre QR dans votre profil (chat 1:1)."
+},
+"de": {
+"매장 링크를 복사했어요": "Geschäftslink kopiert",
+"매장 링크 복사": "Geschäftslink kopieren",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "Dieser QR-Code/Link ist für Kunden des Geschäfts (Geschäftschat mit deinem Personal). Freunden zeigst du deinen eigenen QR-Code im Profil (1:1-Chat)."
+},
+"vi": {
+"매장 링크를 복사했어요": "Đã sao chép liên kết cửa hàng",
+"매장 링크 복사": "Sao chép liên kết cửa hàng",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "QR/liên kết này dành cho khách của cửa hàng (phòng chat cửa hàng cùng nhân viên). Với bạn bè, hãy cho xem QR của bạn trong hồ sơ (trò chuyện 1:1)."
+},
+"th": {
+"매장 링크를 복사했어요": "คัดลอกลิงก์ร้านแล้ว",
+"매장 링크 복사": "คัดลอกลิงก์ร้าน",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "QR/ลิงก์นี้สำหรับลูกค้าของร้าน (แชทร้านที่เห็นร่วมกับพนักงาน) สำหรับเพื่อน ให้แสดง QR ของคุณในโปรไฟล์ (แชท 1:1)"
+},
+"mn": {
+"매장 링크를 복사했어요": "Дэлгүүрийн холбоосыг хууллаа",
+"매장 링크 복사": "Дэлгүүрийн холбоос хуулах",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "Энэ QR/холбоос нь дэлгүүрийн үйлчлүүлэгчдэд зориулагдсан (ажилтнуудтай хамт харах дэлгүүрийн чат). Найзууддаа профайл дээрх өөрийн QR-ыг үзүүлнэ үү (1:1 чат)."
+},
+"hi": {
+"매장 링크를 복사했어요": "स्टोर लिंक कॉपी हो गया",
+"매장 링크 복사": "स्टोर लिंक कॉपी करें",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "यह QR/लिंक स्टोर के ग्राहकों के लिए है (स्टाफ़ के साथ साझा स्टोर चैट)। दोस्तों को अपनी प्रोफ़ाइल का QR दिखाएँ (1:1 चैट)।"
+},
+"pt": {
+"매장 링크를 복사했어요": "Link da loja copiado",
+"매장 링크 복사": "Copiar link da loja",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "Este QR/link é para clientes da loja (chat da loja compartilhado com sua equipe). Para amigos, mostre o seu próprio QR do perfil (chat 1:1)."
+},
+"ar": {
+"매장 링크를 복사했어요": "تم نسخ رابط المتجر",
+"매장 링크 복사": "نسخ رابط المتجر",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "رمز QR/الرابط هذا مخصص لعملاء المتجر (محادثة المتجر مع موظفيك). للأصدقاء، اعرض رمز QR الخاص بك في ملفك الشخصي (محادثة فردية)."
+},
+"id": {
+"매장 링크를 복사했어요": "Tautan toko disalin",
+"매장 링크 복사": "Salin tautan toko",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "QR/tautan ini untuk pelanggan toko (obrolan toko bersama staf). Untuk teman, tunjukkan QR milikmu di profil (obrolan 1:1)."
+},
+"it": {
+"매장 링크를 복사했어요": "Link del negozio copiato",
+"매장 링크 복사": "Copia link del negozio",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "Questo QR/link è per i clienti del negozio (chat del negozio condivisa con il personale). Agli amici mostra il tuo QR del profilo (chat 1:1)."
+},
+"da": {
+"매장 링크를 복사했어요": "Butikslink kopieret",
+"매장 링크 복사": "Kopiér butikslink",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "Denne QR-kode/link er til butikkens kunder (butikschat sammen med dit personale). Vis venner din egen QR-kode i profilen (1:1-chat)."
+},
+"ru": {
+"매장 링크를 복사했어요": "Ссылка магазина скопирована",
+"매장 링크 복사": "Скопировать ссылку магазина",
+"이 QR·링크는 매장 손님용이에요(직원과 함께 보는 매장 대화방). 친구·지인에게는 프로필의 내 QR을 보여 주세요(1:1 대화).": "Этот QR/ссылка — для клиентов магазина (чат магазина вместе с сотрудниками). Друзьям показывайте свой QR из профиля (чат 1:1)."
+}
+};
+Object.keys(L_T_QR2).forEach(function(l){L_T[l]=Object.assign(L_T[l]||{},L_T_QR2[l]);});

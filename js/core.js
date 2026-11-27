@@ -51,7 +51,9 @@ let guestManduidParam=urlParams.get('u'); // 새 방식 (카카오 로그인에�
     localStorage.setItem('mandu_ref',JSON.stringify({id:r,at:Date.now()}));
   }catch(e){}
 })();
-let forceDM=urlParams.get('dm')==='1'; // 비즈홈 링크: 직원 등록과 상관없이 1:1 개인톡방으로 연다
+let forceDM=urlParams.get('dm')==='1'; // 개인 QR·링크·비즈홈 링크: 직원 등록과 상관없이 1:1 개인톡방으로 연다
+// 매장 QR(테이블 인쇄물): 직원 등록과 상관없이 매장 대화방으로 연다. 둘 다 없는 예전 링크(?u=ID)는 직원 등록 여부로 정한다.
+let forceStore=!forceDM&&urlParams.get('store')==='1';
 const joinCode=(urlParams.get('join')||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,40)||null; // 그룹 초대 링크·QR
 isGuest=!!(hostUID||guestManduidParam||joinCode);
 
@@ -158,10 +160,20 @@ function showToast(msg){
 }
 
 // ── 링크 생성 (핵심 변경) ─────────────────────────────────
-function getMyLink(){
+// QR은 두 종류: 개인(친구 추가처럼 1:1, &dm=1) · 매장(손님 상담방, &store=1 — 매장 설정의 테이블 QR)
+function _myLinkBase(){
   if(currentManduid) return BASE_URL+'?u='+currentManduid;
   if(currentUser) return BASE_URL+'?host='+currentUser.uid;
-  return BASE_URL;
+  return '';
+}
+function getMyLink(){const b=_myLinkBase();return b?b+'&dm=1':BASE_URL;}
+function getMyStoreLink(){const b=_myLinkBase();return b?b+'&store=1':BASE_URL;}
+function copyStoreLink(){
+  if(!currentUser){showToast(t('toast_login_required'));return;}
+  const link=getMyStoreLink();
+  navigator.clipboard.writeText(link)
+    .then(function(){showToast(_L('매장 링크를 복사했어요','Store link copied'));})
+    .catch(function(){prompt(_L('매장 링크 복사','Copy store link')+':',link);});
 }
 
 function copyMyLink(){
