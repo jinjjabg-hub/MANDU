@@ -379,11 +379,22 @@ function showPrivacyPolicy(){
 }
 
 // ── MANDU ID 자동 생성 ────────────────────────────────────
-function buildManduidBase(email){
-  let b=(email||'').split('@')[0].toLowerCase()
-    .replace(/[.\-+]/g,'_').replace(/[^a-z0-9_]/g,'')
+// 이메일 앞부분 → 없으면 이름(영문일 때) → 그래도 없으면 mandu_ + 무작위 5글자 (예: mandu_k7p2x)
+// 왜: 카카오·전화번호 가입은 이메일이 없어서 예전엔 모두 user, user1 … user9 처럼 번호만 붙어 남의 아이디처럼 보였다.
+function _idClean(v){
+  return String(v||'').toLowerCase()
+    .replace(/[.\-+\s]/g,'_').replace(/[^a-z0-9_]/g,'')
     .replace(/^[_0-9]+/,'').replace(/_+/g,'_').replace(/^_|_$/g,'');
-  if(!b)b='user';
+}
+function _randomIdTail(n){
+  const c='abcdefghjkmnpqrstuvwxyz23456789';let s='';   // 헷갈리는 글자(i·l·o·0·1)는 뺀다
+  for(let i=0;i<n;i++)s+=c[Math.floor(Math.random()*c.length)];
+  return s;
+}
+function buildManduidBase(email,name){
+  let b=_idClean((email||'').split('@')[0]);
+  if(!b||b==='user')b=_idClean(name);
+  if(!b||b==='user')b='mandu_'+_randomIdTail(5);
   if(b.length<3)b=b+'_mandu';
   return b.substring(0,18);
 }
@@ -409,7 +420,7 @@ async function selectInitialLang(lang){
 }
 
 async function autoCreateManduid(user){
-  const base=buildManduidBase(user.email||'');
+  const base=buildManduidBase(user.email||'',user.displayName||'');
   let id=base,n=0;
   while(n<=999){
     const snap=await db.collection('manduid_index').doc(id).get();
