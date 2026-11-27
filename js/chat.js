@@ -651,6 +651,13 @@ function loadMessages(keepLimit){
   unsubMsg=q.orderBy('createdAt','asc').limitToLast(msgLimit)
     .onSnapshot(function(snap){
       const changes=snap.docChanges().filter(function(c){return c.type==='added';});
+      // 내가 보낸 메시지가 서버에 저장되면 진짜 보낸 시각으로 읽음 숫자를 다시 센다
+      snap.docChanges().forEach(function(c){
+        if(c.type!=='modified')return;
+        const md=c.doc.data();if(md.uid!==currentUser.uid||!md.createdAt||!md.createdAt.toMillis)return;
+        const el=container.querySelector('[data-mid="'+c.doc.id.replace(/"/g,'')+'"]');
+        if(el){el.dataset.ts=String(md.createdAt.toMillis());_paintReceipt(el);}
+      });
       // 보낼 때 번역: 서버가 메시지에 번역을 붙이면(수정됨) 그 자리에 표시
       snap.docChanges().forEach(function(c){
         if(c.type!=='modified')return;
@@ -702,11 +709,15 @@ function loadMessages(keepLimit){
           banner.appendChild(btn);
         }
       }else{
+        let gotOthers=false;
         changes.forEach(function(c){
           const md=Object.assign(c.doc.data(),{_id:c.doc.id});
           renderMsg(md);
+          if(md.uid!==currentUser.uid)gotOthers=true;
           if(md.uid&&md.uid!==currentUser.uid&&!isRoomMuted(currentRoomId))playNotificationSound(currentRoomId);
         });
+        // 방을 열어 둔 채 받은 메시지도 '읽음'으로 기록한다 (예전엔 방을 다시 열어야만 읽음이 됐다)
+        if(gotOthers&&!document.hidden)markRead(currentRoomId);
       }
       const wasFirst=firstLoad;
       firstLoad=false;

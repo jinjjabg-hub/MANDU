@@ -184,14 +184,25 @@ function markRead(roomId){
   db.collection('rooms').doc(roomId).set(update,{merge:true});
 }
 
+// 읽음 표시: 내 메시지마다 '아직 안 읽은 사람 수'를 숫자로 보여 준다(모두 읽으면 ✓✓).
+// readBy.{uid} = 그 사람이 이 방을 마지막으로 본 시각 → 메시지 보낸 시각보다 뒤면 읽은 것.
+// 메시지를 보낸 뒤 들어온 멤버(joinedAt이 더 늦음)는 그 메시지를 볼 수 없으니 세지 않는다.
+let _roomReadBy={};
+function _tsMs(v){return v&&typeof v.toMillis==='function'?v.toMillis():0;}
+function _paintReceipt(w){
+  const el=w&&w.querySelector('.read-receipt');if(!el||!currentUser)return;
+  const ts=Number(w.dataset.ts||0)||Date.now();
+  const joined=(_currentRoomData&&_currentRoomData.joinedAt)||{};
+  const others=currentRoomMembers.filter(function(u){return u!==currentUser.uid&&!(_tsMs(joined[u])>ts);});
+  if(!others.length){el.textContent='';el.className='read-receipt';return;}
+  const unread=others.filter(function(u){return _tsMs(_roomReadBy[u])<ts;}).length;
+  if(unread>0){el.textContent=String(unread);el.className='read-receipt unread';}
+  else{el.textContent='✓✓';el.className='read-receipt read';}
+}
 function updateReadReceipt(readBy){
-  if(!lastMyMsgWrap)return;
-  const others=currentRoomMembers.filter(function(u){return u!==currentUser.uid;});
-  const n=others.filter(function(u){return readBy&&readBy[u];}).length;
-  let el=lastMyMsgWrap.querySelector('.read-receipt');
-  if(!el){el=document.createElement('div');el.className='read-receipt';lastMyMsgWrap.appendChild(el);}
-  if(n>0){el.textContent='✓✓';el.className='read-receipt read';}
-  else{el.textContent='✓';el.className='read-receipt';}
+  _roomReadBy=readBy||{};
+  const box=document.getElementById('messages');if(!box)return;
+  box.querySelectorAll('.read-receipt').forEach(function(el){_paintReceipt(el.parentNode);});
 }
 
 // 구글 로그인 실패 — 이유를 알려 준다 (예전엔 아무 안내 없이 끝나서 왜 안 되는지 알 수 없었다)
@@ -228,18 +239,19 @@ async function emailLogin(){
   const email=document.getElementById('email-input').value.trim();
   const pw=document.getElementById('pw-input').value;
   if(!email||!pw){setEmailMsg('email-login-msg',_L('이메일과 비밀번호를 입력해주세요','Please enter your email and password'),true);return;}
+  // 만두 ID(@없는 아이디)를 넣는 경우가 많다 — 로그인은 가입할 때 쓴 이메일로만 된다
+  if(email.indexOf('@')<0){setEmailMsg('email-login-msg',_L('만두 ID가 아니라 가입할 때 쓴 이메일 주소를 넣어 주세요','Enter the email address you signed up with (not your Mandu ID)'),true);return;}
   setEmailMsg('email-login-msg',_L('로그인 중...','Logging in...'),false);
   try{
     await auth.signInWithEmailAndPassword(email,pw);
   }catch(e){
-    const msgs={'auth/user-not-found':_L('등록되지 않은 이메일이에요','This email is not registered'),'auth/wrong-password':_L('비밀번호가 틀렸어요','Wrong password'),
+    // 구글·카카오·애플로 가입한 사람이 이메일로 로그인하면 '틀렸어요'가 나온다 → 그 버튼을 쓰라고 알려 준다
+    const wrong=_L('이메일 또는 비밀번호가 틀렸어요. Google·카카오·Apple로 가입했다면 그 버튼으로 로그인해 주세요','Wrong email or password. If you signed up with Google, Kakao or Apple, use that button.');
+    const msgs={'auth/user-not-found':wrong,'auth/wrong-password':wrong,'auth/invalid-credential':wrong,'auth/invalid-login-credentials':wrong,
       'auth/invalid-email':_L('이메일 형식이 올바르지 않아요','Invalid email format'),'auth/too-many-requests':_L('잠시 후 다시 시도해주세요','Please try again later'),
-      'auth/invalid-credential':_L('이메일 또는 비밀번호가 틀렸어요','Wrong email or password')};
-    let m=msgs[e.code]||_L('로그인 실패: ','Login failed: ')+e.message;
-    // Google로 가입한 Gmail은 비밀번호가 없다 → 이메일 칸에 Gmail을 넣고 틀렸다고 나오면 Google 버튼을 알려 준다
-    if(_isGmail(email)&&(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'))
-      m+=' · '+_L('Google로 가입했다면 위의 \'Google로 시작하기\'를 눌러 주세요','If you signed up with Google, tap \'Continue with Google\' above');
-    setEmailMsg('email-login-msg',m,true);
+      'auth/network-request-failed':_L('인터넷 연결을 확인하고 다시 시도해 주세요','Check your internet connection and try again.')};
+    if(!msgs[e.code]){try{_reportError('js','[이메일 로그인] '+String(e.code||e.message||'?').slice(0,80),'');}catch(x){}}
+    setEmailMsg('email-login-msg',msgs[e.code]||_L('로그인 실패: ','Login failed: ')+(e.code||e.message),true);
   }
 }
 async function emailSignup(){
@@ -320,6 +332,9 @@ async function resendVerifyEmail(){
 // 메일 앱에서 인증하고 돌아오면 자동으로 확인
 whenAllLoaded(function(){   // 모든 js/ 파일을 불러온 뒤 등록 (CLAUDE.md "불러오는 순서")
 document.addEventListener('visibilitychange',function(){
+  // 대화방을 열어 둔 채 다른 앱에 갔다 돌아오면 그사이 받은 메시지를 '읽음'으로 기록한다
+  const cs=document.getElementById('chat-screen');
+  if(document.visibilityState==='visible'&&cs&&cs.style.display==='flex'&&currentRoomId)markRead(currentRoomId);
   const el=document.getElementById('verify-screen');
   if(document.visibilityState==='visible'&&el&&el.style.display==='flex'&&auth.currentUser){
     auth.currentUser.reload().then(function(){if(auth.currentUser&&auth.currentUser.emailVerified)checkEmailVerified();}).catch(function(){});
@@ -380,12 +395,22 @@ function showPrivacyPolicy(){
 }
 
 // ── MANDU ID 자동 생성 ────────────────────────────────────
-// 이메일 @ 앞부분으로 ID 이름을 짓는다. 쓸 글자가 없으면 '' (예전엔 'user'가 돼 user5 같은 ID가 생겼다)
-function buildManduidBase(email){
-  let b=(email||'').split('@')[0].toLowerCase()
-    .replace(/[.\-+]/g,'_').replace(/[^a-z0-9_]/g,'')
+// 이메일 앞부분 → 없으면 이름(영문일 때) → 그래도 없으면 mandu_ + 무작위 5글자 (예: mandu_k7p2x)
+// 왜: 카카오·전화번호 가입은 이메일이 없어서 예전엔 모두 user, user1 … user9 처럼 번호만 붙어 남의 아이디처럼 보였다.
+function _idClean(v){
+  return String(v||'').toLowerCase()
+    .replace(/[.\-+\s]/g,'_').replace(/[^a-z0-9_]/g,'')
     .replace(/^[_0-9]+/,'').replace(/_+/g,'_').replace(/^_|_$/g,'');
-  if(!b)return '';
+}
+function _randomIdTail(n){
+  const c='abcdefghjkmnpqrstuvwxyz23456789';let s='';   // 헷갈리는 글자(i·l·o·0·1)는 뺀다
+  for(let i=0;i<n;i++)s+=c[Math.floor(Math.random()*c.length)];
+  return s;
+}
+function buildManduidBase(email,name){
+  let b=_idClean((email||'').split('@')[0]);
+  if(!b||b==='user')b=_idClean(name);
+  if(!b||b==='user')b='mandu_'+_randomIdTail(5);
   if(b.length<3)b=b+'_mandu';
   return b.substring(0,18);
 }
@@ -418,16 +443,18 @@ async function selectInitialLang(lang){
 
 // 돌려주는 값: 만든 ID · null(지을 이름이 없음 → 직접 고르기) · false(기존 계정으로 로그인하러 감)
 async function autoCreateManduid(user){
-  // 카카오 로그인은 파이어베이스 계정에 이메일이 없어서, 서버가 알려 준 카카오 이메일 앞부분(idHint)을 쓴다 (js/login-extra.js)
+  // 카카오 로그인은 파이어베이스 계정에 이메일이 없어서, 서버가 알려 준 카카오 이메일 앞부분(idHint)을 먼저 쓴다 (js/login-extra.js)
   let hint='';try{hint=sessionStorage.getItem('mandu_id_hint')||'';sessionStorage.removeItem('mandu_id_hint');}catch(e){}
-  const base=buildManduidBase(user.email||hint);
+  const mail=user.email||(hint?hint+'@kakao':'');
+  const base=buildManduidBase(mail,user.displayName||'');
   if(!base)return null;
+  const fromMail=!!_idClean(mail.split('@')[0]); // 이메일 앞부분으로 지은 ID일 때만 '내 계정인가요?'를 묻는다
   let id=base,n=0;
   while(n<=999){
     const snap=await db.collection('manduid_index').doc(id).get();
     // 이메일 앞부분이 같은 ID가 이미 있으면 → 다른 방법(구글·카카오·이메일)으로 먼저 가입한 본인일 수 있다. 한 번 물어본다.
     // (아이디가 같다고 자동으로 합치지는 않는다 — 남이 같은 앞부분 이메일을 만들어 남의 계정에 들어오는 일을 막기 위해)
-    if(n===0&&snap.exists&&snap.data().uid!==user.uid){
+    if(n===0&&fromMail&&snap.exists&&snap.data().uid!==user.uid){
       if(confirm(_L('@{id} 아이디가 이미 있어요.\n혹시 예전에 다른 방법(Google·카카오·이메일)으로 가입한 내 계정인가요?\n\n확인: 그 계정으로 로그인하러 가기\n취소: 새 계정으로 계속','The ID @{id} already exists.\nIs it your account created with another sign-in method (Google, Kakao or email)?\n\nOK: go sign in to that account\nCancel: continue with a new account',{id:id}))){
         await auth.signOut();
         alert(_L('예전에 가입한 방법으로 로그인해 주세요.\n로그인한 뒤 설정 → \'카카오 로그인 연결\'을 누르면, 다음부터 카카오로도 같은 계정에 들어와요.','Please sign in with the method you used before.\nThen go to Settings → \'Kakao sign-in\' to link Kakao to the same account.'));
@@ -561,8 +588,15 @@ auth.onAuthStateChanged(async function(user){
   }
   }catch(authErr){
     // onAuthStateChanged 에러 → 로그인 화면으로 강제 이동
+    // 예전엔 아무 안내 없이 로그인 화면으로 돌아가서 "로그인했는데 또 로그인하래요"처럼 보였다 → 이유를 보여 주고 운영자 화면 오류에도 남긴다
     console.error('Auth error:',authErr);
+    const code=String((authErr&&(authErr.code||authErr.message))||'?').slice(0,80);
+    try{_reportError('js','[로그인 처리] '+code,'');}catch(e){}
     try{show('login-screen');}catch(e){}
+    try{
+      const m=_L('로그인 처리 중 문제가 생겼어요 ({code}). 다시 시도해 주세요','Something went wrong while signing in ({code}). Please try again.',{code:code});
+      setEmailMsg('email-login-msg',m,true);showToast(m);
+    }catch(e){}
   }
 });
 });
@@ -653,19 +687,43 @@ async function loadGuestHostInfo(){
   _setGuestHost(await _readPublicProfile(hostUID));
 }
 
+// 손님 "바로 대화 시작하기" 버튼 — 누른 뒤 대화방이 열릴 때까지 "연결 중…"을 보여 준다.
+// 왜: 인터넷이 느리면 아무 표시 없이 기다리게 돼 멈춘 것처럼 보였다. 실패하거나 20초가 넘으면 "다시 시도하기"로 바꾼다.
+let _guestStartTimer=null;
+function _guestStartBusy(on,retry){
+  const b=document.getElementById('guest-start-btn');if(!b)return;
+  if(_guestStartTimer){clearTimeout(_guestStartTimer);_guestStartTimer=null;}
+  b.disabled=!!on;b.style.opacity=on?'0.6':'';
+  b.textContent=_G(on?'connecting':(retry?'retry':'start'));
+  if(on)_guestStartTimer=setTimeout(function(){
+    _guestStartTimer=null;
+    const gs=document.getElementById('guest-screen');
+    if(gs&&gs.style.display!=='none'){_guestStartBusy(false,true);showToast(_G('slow'));}
+  },20000);
+}
+function _guestStartFail(where,e){
+  console.warn('손님 입장 실패:',where,e);
+  _guestStartBusy(false,true);
+  showToast(_G('error')+((e&&e.code)?' ('+e.code+')':''));
+  try{_reportError('js','[손님 입장] '+where+' '+String((e&&(e.code||e.message))||e||''),'');}catch(x){}
+}
 async function startGuestChat(){
   const name=document.getElementById('guest-name-input').value.trim();
   if(!name){showToast(_G('name_req'));return;}
+  const b=document.getElementById('guest-start-btn');if(b&&b.disabled)return;
+  _guestStartBusy(true);
   try{
     // 로그인 직후 바로 대화방이 만들어지므로, 이름을 먼저 저장해 둬야 방에 손님 이름이 들어간다
     localStorage.setItem('mandu_guest_name',name);
+    // "다시 시도"일 때: 이미 손님 계정이 있으면 로그인 상태 처리가 다시 돌지 않으므로 대화방을 직접 연다
+    if(auth.currentUser&&auth.currentUser.isAnonymous){currentUser=auth.currentUser;await openGuestRoom();return;}
     await auth.signInAnonymously();
     await db.collection('users').doc(auth.currentUser.uid).set({
       uid:auth.currentUser.uid,displayName:name,photoURL:'',email:'',
       isGuest:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true});
     localStorage.setItem('mandu_guest_name',name);
-  }catch(e){showToast(_G('error'));}
+  }catch(e){_guestStartFail('signin',e);}
 }
 
 // ── 브라우저 언어 자동 감지 (게스트 입장 시 UX/번역 언어를 자동으로 맞추기 위함) ──
@@ -706,14 +764,16 @@ function _initGuestLang(uid){
 }
 
 async function openGuestRoom(){
-  if(!currentUser||!hostUID)return;
+  if(!currentUser)return;
+  if(!hostUID){_guestStartFail('nohost',null);return;}
   try{
     const host=await _getProfile(hostUID);
-    if(!host){showToast(_G('error'));show('login-screen');return;}
+    if(!host){_guestStartFail('noprofile',null);return;}
     // 휴대폰 언어 → 화면 언어 + 번역 언어 초기 설정 (게스트가 이미 바꾼 언어는 그대로)
     _initGuestLang(currentUser.uid);
     await openStoreRoom(host,hostUID);
-  }catch(e){showToast(_G('error'));}
+    _guestStartBusy(false);
+  }catch(e){_guestStartFail('room',e);}
 }
 
 // 손님 화면 위쪽 '가입하기' — 예전엔 Google만 됐다. 이제 Google(지금 대화 그대로)·카카오·이메일 중에서 고른다.
