@@ -111,7 +111,7 @@ async function deleteDictEntry(key){
 }
 
 // ── 목록 렌더 ────────────────────────────────────────
-const LANG_NAMES={ko:'한국어',en:'English',ja:'日本語',zh:'中文',es:'Español',fr:'Français',de:'Deutsch',vi:'Tiếng Việt',th:'ภาษาไทย',mn:'Монгол',hi:'हिन्दी',pt:'Português',ar:'العربية',id:'Indonesia',it:'Italiano',da:'Dansk',ru:'Русский'};
+const LANG_NAMES={ko:'한국어',en:'English',ja:'日本語',zh:'中文',es:'Español',fr:'Français',de:'Deutsch',vi:'Tiếng Việt',th:'ภาษาไทย',mn:'Монгол',hi:'हिन्दी',pt:'Português',ar:'العربية',id:'Indonesia',it:'Italiano',da:'Dansk',ru:'Русский','zh-TW':'繁體中文',tr:'Türkçe'};
 function renderDictList(){
   const list=document.getElementById('dict-list');
   const keys=Object.keys(myDictCache);
