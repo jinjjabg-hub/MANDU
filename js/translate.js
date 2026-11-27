@@ -313,9 +313,10 @@ function renderMsg(d,skipTranslate){
   _attachMsgMenu(b,d,mine);
   if(!d.imageUrl&&!d.fileUrl&&d.text)attachLinkPreview(w,d.text);
   if(mine){
-    if(lastMyMsgWrap){const p=lastMyMsgWrap.querySelector('.read-receipt');if(p)p.remove();}
     lastMyMsgWrap=w;
+    w.dataset.ts=String(d.createdAt&&d.createdAt.toMillis?d.createdAt.toMillis():Date.now());
     const r=document.createElement('div');r.className='read-receipt';w.appendChild(r);
+    _paintReceipt(w);   // 안 읽은 사람 수 (js/account.js)
     _showTesterSeen(w,d);
   }
   if(stickerSrc&&!skipTranslate)return; // 스티커는 번역할 글자가 없다

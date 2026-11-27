@@ -318,6 +318,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--background);col
 .dict-empty{padding:40px 20px;text-align:center;color:var(--outline);font-size:14px;}
 .dict-preview{font-size:12px;color:var(--primary);padding:6px 16px;font-weight:600;min-height:24px;}
 .read-receipt.read{color:var(--primary);}
+.read-receipt.unread{color:var(--primary);font-weight:800;font-size:11px;letter-spacing:0;}
 .signout-btn{display:block;width:calc(100% - 40px);margin:0 20px 32px;padding:14px;background:none;border:1.5px solid #ffcdd2;border-radius:14px;color:var(--error);font-size:15px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;}
 .fab{position:fixed;bottom:90px;right:20px;width:56px;height:56px;background:var(--primary);color:#fff;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(107,56,212,.4);z-index:100;}
 .fab .ms{font-size:26px !important;font-variation-settings:'FILL' 0,'wght' 600;}
