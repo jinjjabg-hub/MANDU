@@ -183,14 +183,25 @@ function markRead(roomId){
   db.collection('rooms').doc(roomId).set(update,{merge:true});
 }
 
+// 읽음 표시: 내 메시지마다 '아직 안 읽은 사람 수'를 숫자로 보여 준다(모두 읽으면 ✓✓).
+// readBy.{uid} = 그 사람이 이 방을 마지막으로 본 시각 → 메시지 보낸 시각보다 뒤면 읽은 것.
+// 메시지를 보낸 뒤 들어온 멤버(joinedAt이 더 늦음)는 그 메시지를 볼 수 없으니 세지 않는다.
+let _roomReadBy={};
+function _tsMs(v){return v&&typeof v.toMillis==='function'?v.toMillis():0;}
+function _paintReceipt(w){
+  const el=w&&w.querySelector('.read-receipt');if(!el||!currentUser)return;
+  const ts=Number(w.dataset.ts||0)||Date.now();
+  const joined=(_currentRoomData&&_currentRoomData.joinedAt)||{};
+  const others=currentRoomMembers.filter(function(u){return u!==currentUser.uid&&!(_tsMs(joined[u])>ts);});
+  if(!others.length){el.textContent='';el.className='read-receipt';return;}
+  const unread=others.filter(function(u){return _tsMs(_roomReadBy[u])<ts;}).length;
+  if(unread>0){el.textContent=String(unread);el.className='read-receipt unread';}
+  else{el.textContent='✓✓';el.className='read-receipt read';}
+}
 function updateReadReceipt(readBy){
-  if(!lastMyMsgWrap)return;
-  const others=currentRoomMembers.filter(function(u){return u!==currentUser.uid;});
-  const n=others.filter(function(u){return readBy&&readBy[u];}).length;
-  let el=lastMyMsgWrap.querySelector('.read-receipt');
-  if(!el){el=document.createElement('div');el.className='read-receipt';lastMyMsgWrap.appendChild(el);}
-  if(n>0){el.textContent='✓✓';el.className='read-receipt read';}
-  else{el.textContent='✓';el.className='read-receipt';}
+  _roomReadBy=readBy||{};
+  const box=document.getElementById('messages');if(!box)return;
+  box.querySelectorAll('.read-receipt').forEach(function(el){_paintReceipt(el.parentNode);});
 }
 
 // 구글 로그인 실패 — 이유를 알려 준다 (예전엔 아무 안내 없이 끝나서 왜 안 되는지 알 수 없었다)
@@ -319,6 +330,9 @@ async function resendVerifyEmail(){
 // 메일 앱에서 인증하고 돌아오면 자동으로 확인
 whenAllLoaded(function(){   // 모든 js/ 파일을 불러온 뒤 등록 (CLAUDE.md "불러오는 순서")
 document.addEventListener('visibilitychange',function(){
+  // 대화방을 열어 둔 채 다른 앱에 갔다 돌아오면 그사이 받은 메시지를 '읽음'으로 기록한다
+  const cs=document.getElementById('chat-screen');
+  if(document.visibilityState==='visible'&&cs&&cs.style.display==='flex'&&currentRoomId)markRead(currentRoomId);
   const el=document.getElementById('verify-screen');
   if(document.visibilityState==='visible'&&el&&el.style.display==='flex'&&auth.currentUser){
     auth.currentUser.reload().then(function(){if(auth.currentUser&&auth.currentUser.emailVerified)checkEmailVerified();}).catch(function(){});
