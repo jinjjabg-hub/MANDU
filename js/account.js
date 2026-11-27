@@ -557,7 +557,7 @@ auth.onAuthStateChanged(async function(user){
     if(hostUID&&hostUID!==user.uid){
       const hd=await _getProfile(hostUID);
       if(hd){
-        if(!forceDM&&_storeStaff(hd,hostUID).length){await openStoreRoom(hd,hostUID);}else{await startDM(hd);}
+        if(forceStore||(!forceDM&&_storeStaff(hd,hostUID).length)){await openStoreRoom(hd,hostUID);}else{await startDM(hd);}
         return;
       }
     }

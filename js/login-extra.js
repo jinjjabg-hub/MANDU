@@ -57,7 +57,7 @@ function kakaoLogin(mode){
   const state=Math.random().toString(36).slice(2)+Date.now().toString(36);
   try{sessionStorage.setItem('mandu_kakao_state',state);sessionStorage.setItem('mandu_kakao_mode',mode==='link'?'link':'login');}catch(e){}
   // 손님 링크(?u=가게ID)에서 로그인하면, 돌아온 뒤 그 가게와의 대화로 바로 이어지도록 기억해 둔다
-  try{sessionStorage.setItem('mandu_kakao_from',JSON.stringify({u:guestManduidParam||'',host:hostUID||'',dm:forceDM}));}catch(e){}
+  try{sessionStorage.setItem('mandu_kakao_from',JSON.stringify({u:guestManduidParam||'',host:hostUID||'',dm:forceDM,st:forceStore}));}catch(e){}
   location.href='https://kauth.kakao.com/oauth/authorize?response_type=code'+
     '&client_id='+encodeURIComponent(_loginCfg.kakaoClientId)+
     '&redirect_uri='+encodeURIComponent(_kakaoRedirectUri())+'&state='+encodeURIComponent(state);
@@ -75,6 +75,7 @@ async function handleKakaoReturn(){
     if(from.u)guestManduidParam=from.u;
     if(from.host)hostUID=from.host;
     if(from.dm)forceDM=true;
+    if(from.st&&!from.dm)forceStore=true;
   }catch(e){}
   history.replaceState(null,'',location.pathname); // 주소창에서 코드 지우기
   if(err){if(err!=='access_denied')showToast(_L('카카오 로그인에 실패했어요','Kakao sign-in failed'));return;}

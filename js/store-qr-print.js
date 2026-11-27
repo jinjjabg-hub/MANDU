@@ -46,7 +46,7 @@ function buildQrPrintCanvas(){
   _qrWrap(ctx,'Scan to chat with us in your language',W-200).forEach(function(l,i){ctx.fillText(l,W/2,370+i*62);});
   // QR (인쇄 인식률을 위해 검정, 오류 복원 높음)
   const holder=document.createElement('div');
-  try{new QRCode(holder,{text:getMyLink(),width:640,height:640,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});}catch(e){return null;}
+  try{new QRCode(holder,{text:getMyStoreLink(),width:640,height:640,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});}catch(e){return null;}
   const qc=holder.querySelector('canvas');if(!qc)return null;
   const qs=640,qx=(W-qs)/2,qy=480;
   ctx.fillStyle='#fff';ctx.strokeStyle=P;ctx.lineWidth=8;
