@@ -469,7 +469,7 @@ async function sendMessage(){
   // 보낼 때 번역: 서버가 방 멤버 언어마다 1번 번역해 메시지에 붙인다 (js/send-translate.js). AI 테스터 방은 예전 방식.
   const sendTr=usesSendTranslate(currentRoomId);
   const roomIdNow=currentRoomId;
-  if(sendTr&&_currentRoomData)await syncMyRoomLang(roomIdNow,_currentRoomData);
+  if(sendTr&&_currentRoomData)await syncMyRoomLang(roomIdNow,_currentRoomData,true); // 보낼 때는 이 기기 언어로
   const msgData={
     text:text,uid:currentUser.uid,
     displayName:currentUser.displayName||localStorage.getItem('mandu_guest_name')||'게스트',

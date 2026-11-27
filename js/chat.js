@@ -615,10 +615,14 @@ function openRoom(roomId,name,photo,isGroup){
 }
 
 // 방에 적힌 내 이름·사진이 지금 프로필과 다르면 내 칸만 고친다 (남의 이름은 그 사람만 바꿀 수 있어서, 각자 자기 것을 맞춘다)
+// 방마다 앱을 연 동안 한 번만 — 두 기기의 이름·사진 정보가 다르면(한쪽이 예전 값) 서로 덮어쓰기를 끝없이 반복할 수 있어서
+const _roomNameSynced={};
 function _syncMyMemberName(roomId,data){
   if(!currentUser||currentUser.isAnonymous||!currentUser.displayName)return;
   const me=currentUser.uid,nm=(data.memberNames||{})[me],ph=(data.memberPhotos||{})[me];
   if(nm===currentUser.displayName&&(ph||'')===(currentUser.photoURL||''))return;
+  if(_roomNameSynced[roomId])return;
+  _roomNameSynced[roomId]=1;
   db.collection('rooms').doc(roomId).set({memberNames:{[me]:currentUser.displayName},memberPhotos:{[me]:currentUser.photoURL||''}},{merge:true}).catch(function(){});
 }
 
