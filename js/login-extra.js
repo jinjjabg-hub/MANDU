@@ -4,13 +4,20 @@
 // 어떤 버튼을 보여줄지는 서버(/api/ping 의 logins)가 알려준다. 마지막 값은 기기에 저장해 두고 바로 보여준다.
 // 전화번호·Apple 은 파이어베이스가 처리하고, 카카오는 서버가 확인한 뒤 파이어베이스 토큰을 내준다.
 let _loginCfg={logins:[],kakaoClientId:null};
-try{_loginCfg=Object.assign(_loginCfg,JSON.parse(localStorage.getItem('mandu_login_cfg')||'{}'));}catch(e){}
+// 서버에서 설정을 한 번이라도 받았는지. 처음 여는 휴대폰(손님 QR 등)은 아직 모르므로 카카오 버튼을 일단 보여 준다
+// (예전엔 서버가 깨어날 때까지 카카오 버튼이 안 보여서 로그인 방법이 빠진 것처럼 보였다)
+let _loginCfgKnown=false;
+try{const c=localStorage.getItem('mandu_login_cfg');if(c){_loginCfg=Object.assign(_loginCfg,JSON.parse(c));_loginCfgKnown=true;}}catch(e){}
 function initLoginOptions(cfg){
   if(cfg){
+    _loginCfgKnown=true;
     _loginCfg={logins:Array.isArray(cfg.logins)?cfg.logins:[],kakaoClientId:cfg.kakaoClientId||null};
     try{localStorage.setItem('mandu_login_cfg',JSON.stringify(_loginCfg));}catch(e){}
   }
-  const on=function(k){return _loginCfg.logins.indexOf(k)>=0&&(k!=='kakao'||!!_loginCfg.kakaoClientId);};
+  const on=function(k){
+    if(k==='kakao'&&!_loginCfgKnown)return true;
+    return _loginCfg.logins.indexOf(k)>=0&&(k!=='kakao'||!!_loginCfg.kakaoClientId);
+  };
   const set=function(id,show){const el=document.getElementById(id);if(el)el.style.display=show?'flex':'none';};
   set('kakao-login-btn',on('kakao'));set('apple-login-btn',on('apple'));set('phone-login-btn',on('phone'));
   set('extra-logins',on('kakao')||on('apple')||on('phone'));
@@ -37,7 +44,16 @@ function appleLogin(){
 // 카카오: 카카오 로그인 창으로 갔다가 ?code=...&state=... 로 돌아온다
 function _kakaoRedirectUri(){return location.origin+'/';}
 function kakaoLogin(mode){
-  if(!_loginCfg.kakaoClientId)return;
+  if(!_loginCfg.kakaoClientId){
+    // 서버 설정을 아직 못 받았다 → 받아 온 뒤 이어서 (서버가 자고 있으면 몇 초 걸린다)
+    showToast(_L('카카오 로그인 준비 중…','Preparing Kakao sign-in…'));
+    fetch(SERVER_URL+'/api/ping',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+      initLoginOptions(d);
+      if(_loginCfg.kakaoClientId)kakaoLogin(mode);
+      else showToast(_L('지금은 카카오 로그인을 쓸 수 없어요','Kakao sign-in is not available right now'));
+    }).catch(function(){showToast(_L('카카오 로그인에 실패했어요. 다시 시도해주세요','Kakao sign-in failed. Please try again.'));});
+    return;
+  }
   const state=Math.random().toString(36).slice(2)+Date.now().toString(36);
   try{sessionStorage.setItem('mandu_kakao_state',state);sessionStorage.setItem('mandu_kakao_mode',mode==='link'?'link':'login');}catch(e){}
   // 손님 링크(?u=가게ID)에서 로그인하면, 돌아온 뒤 그 가게와의 대화로 바로 이어지도록 기억해 둔다
@@ -76,6 +92,7 @@ async function handleKakaoReturn(){
       if(res.status>=400&&res.status<500){break;} // 코드는 한 번만 쓸 수 있어 다시 시도해도 소용없음
       if(!res.ok)throw new Error('http '+res.status);
       const d=await res.json();
+      _saveIdHint(d.idHint);
       await auth.signInWithCustomToken(d.token);
       return;
     }catch(e){
@@ -85,6 +102,8 @@ async function handleKakaoReturn(){
   }
   showToast(_L('카카오 로그인에 실패했어요. 다시 시도해주세요','Kakao sign-in failed. Please try again.'));
 }
+// 카카오 이메일 앞부분(서버가 알려 줌) → 처음 가입할 때 만두 ID 이름으로 쓴다 (js/account.js autoCreateManduid)
+function _saveIdHint(h){try{if(h&&typeof h==='string')sessionStorage.setItem('mandu_id_hint',h.slice(0,30));else sessionStorage.removeItem('mandu_id_hint');}catch(e){}}
 // 전화번호
 const PHONE_CODES=[['+82','🇰🇷'],['+81','🇯🇵'],['+86','🇨🇳'],['+84','🇻🇳'],['+66','🇹🇭'],['+976','🇲🇳'],['+62','🇮🇩'],['+91','🇮🇳'],['+63','🇵🇭'],['+855','🇰🇭'],['+977','🇳🇵'],['+998','🇺🇿'],['+1','🇺🇸'],['+44','🇬🇧'],['+49','🇩🇪'],['+33','🇫🇷'],['+34','🇪🇸'],['+39','🇮🇹'],['+45','🇩🇰'],['+55','🇧🇷'],['+966','🇸🇦'],['+7','🇷🇺']];
 let _phoneConfirm=null,_recaptcha=null;
@@ -197,6 +216,7 @@ function _askKakaoEmailMatch(d){
     showToast(_L('카카오 로그인 중…','Signing in with Kakao…'));
     const r=await _serverPost('/api/auth/kakao/ticket',{ticket:d.ticket,choice:choice},false);
     if(!r.ok||!r.data||!r.data.token){showToast(_L('카카오 로그인에 실패했어요. 다시 시도해주세요','Kakao sign-in failed. Please try again.'));return;}
+    _saveIdHint(r.data.idHint);
     await auth.signInWithCustomToken(r.data.token);
     if(r.data.linked)showToast(_L('이제 카카오로도 이 계정에 로그인할 수 있어요','You can now sign in to this account with Kakao too.'));
   };
