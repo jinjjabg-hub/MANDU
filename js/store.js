@@ -168,6 +168,7 @@ async function showStoreSettings(){
         '<div class="store-add"><input class="store-in" id="store-quick-input" maxlength="300"><button onclick="_storeAddQuick()">'+_L('추가','Add')+'</button></div></div>'+
       '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('함께 응대할 직원','Staff')+'</span></div>'+
         '<div class="store-sec-desc">'+_L('선택한 친구는 내 QR·링크로 들어온 손님과의 대화방에 함께 들어가 누구든 답할 수 있어요. 앞으로 새로 들어오는 손님부터 적용돼요. (최대 10명)','Selected friends join chats with customers who come through your QR or link, so anyone can reply. Applies to customers who enter from now on. (Up to 10)')+'</div>'+
+        '<input class="store-in" id="store-staff-q" type="search" maxlength="40" autocomplete="off" style="margin:6px 0 8px;" placeholder="'+_L('이름 또는 @아이디로 검색','Search by name or @ID')+'" oninput="_storeRenderStaff()">'+
         '<div id="store-staff-list"></div></div>'+
       '<div class="store-sec"><div class="store-sec-hd"><span>'+_L('손님 1명당 하루 번역','Daily translation per customer')+'</span></div>'+
         '<div class="store-sec-desc">'+_L('손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)','Translations of customer and staff messages all use your quota (characters × languages translated). Set how much one customer can use per day to prevent abuse. (about 30 characters per message)')+'</div>'+
@@ -225,7 +226,22 @@ function _storeRenderStaff(){
   _watchProfiles(_storeDraft.staff);
   const friends=allUsers.filter(function(u){return myContactUids.has(u.uid)||_storeDraft.staff.indexOf(u.uid)>=0;});
   if(!friends.length){list.innerHTML='<div class="store-sec-desc">'+_L('먼저 친구 탭에서 직원을 친구로 추가해 주세요.','Add your staff as friends first.')+'</div>';return;}
-  friends.forEach(function(u){
+  // 친구가 많으면(수백~천 명) 스크롤로 찾기 어렵다 → 고른 직원은 항상 맨 위, 나머지는 검색으로 찾는다
+  const qEl=document.getElementById('store-staff-q');
+  const q=(qEl&&qEl.value||'').trim().toLowerCase().replace(/^@/,'');
+  const picked=friends.filter(function(u){return _storeDraft.staff.indexOf(u.uid)>=0;});
+  const SHOW_MAX=q?50:20;
+  const rest=friends.filter(function(u){
+    if(_storeDraft.staff.indexOf(u.uid)>=0)return false;
+    if(!q)return true;
+    return String(u.displayName||'').toLowerCase().indexOf(q)>=0||String(u.manduid||'').toLowerCase().indexOf(q)>=0;
+  }).sort(function(a,b){return String(a.displayName||'').localeCompare(String(b.displayName||''));});
+  const shown=picked.concat(rest.slice(0,SHOW_MAX));
+  if(q&&!rest.length){
+    const em=document.createElement('div');em.className='store-sec-desc';
+    em.textContent=_L('"{q}"에 맞는 친구가 없어요','No friends match "{q}"',{q:q});list.appendChild(em);
+  }
+  shown.forEach(function(u){
     const on=_storeDraft.staff.indexOf(u.uid)>=0;
     const it=document.createElement('div');it.className='store-item pick'+(on?' on':'');
     const ic=document.createElement('span');ic.className='ms';ic.textContent=on?'check_circle':'radio_button_unchecked';it.appendChild(ic);
@@ -239,6 +255,11 @@ function _storeRenderStaff(){
     };
     list.appendChild(it);
   });
+  if(rest.length>SHOW_MAX){
+    const more=document.createElement('div');more.className='store-sec-desc';more.style.marginTop='6px';
+    more.textContent=_L('친구 {n}명 더 있어요. 이름이나 @아이디로 검색해 주세요','{n} more friends. Search by name or @ID',{n:rest.length-SHOW_MAX});
+    list.appendChild(more);
+  }
 }
 async function saveStoreSettings(){
   if(!currentUser||!_storeDraft)return;
