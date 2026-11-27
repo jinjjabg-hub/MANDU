@@ -706,13 +706,15 @@ async function startGuestChat(){
 // ── 브라우저 언어 자동 감지 (게스트 입장 시 UX/번역 언어를 자동으로 맞추기 위함) ──
 // fallback: 지원 언어가 하나도 없을 때 돌려줄 값 (기본 'en' — 미지원 언어 = 외국인일 확률 높음, null이면 '못 찾음')
 function detectBrowserLang(fallback){
-  const supported=['ko','en','ja','zh','es','fr','de','vi','th','mn','hi','pt','ar','id','it','da','ru'];
+  const supported=['ko','en','ja','zh','es','fr','de','vi','th','mn','hi','pt','ar','id','it','da','ru','tr'];
   // 지원 목록에 없지만 가까운 언어로 보여주는 편이 나은 경우 (노르웨이어 → 덴마크어, 말레이어·옛 인도네시아어 코드 → 인도네시아어 등)
   const alias={nb:'da',no:'da',nn:'da',in:'id',ms:'id',jv:'id',gl:'es',ca:'es'};
   let langs=[];
   try{langs=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||'']).slice();}catch(e){}
   for(let i=0;i<langs.length;i++){
-    let code=String(langs[i]||'').toLowerCase().split(/[-_]/)[0];
+    const full=String(langs[i]||'').toLowerCase().replace('_','-');
+    if(/^zh-(tw|hk|mo|hant)/.test(full))return 'zh-TW'; // 대만·홍콩·마카오 = 번체
+    let code=full.split('-')[0];
     if(alias[code])code=alias[code];
     if(supported.indexOf(code)!==-1)return code;
   }
