@@ -3,7 +3,7 @@
 const BASE_URL='https://mandu.bizmy.net/';
 // 서버(mandu-server, Render) 주소 — 서버를 옮기면 여기 한 곳만 바꾼다. 모든 js/ 파일이 이 값을 쓴다.
 const SERVER_URL='https://mandu-server.onrender.com';
-const LANG_FLAGS={ko:'🇰🇷',en:'🇺🇸',ja:'🇯🇵',zh:'🇨🇳',es:'🇪🇸',fr:'🇫🇷',de:'🇩🇪',vi:'🇻🇳',th:'🇹🇭',mn:'🇲🇳',hi:'🇮🇳',pt:'🇧🇷',ar:'🇸🇦',id:'🇮🇩',it:'🇮🇹',da:'🇩🇰',ru:'🇷🇺'};
+const LANG_FLAGS={ko:'🇰🇷',en:'🇺🇸',ja:'🇯🇵',zh:'🇨🇳',es:'🇪🇸',fr:'🇫🇷',de:'🇩🇪',vi:'🇻🇳',th:'🇹🇭',mn:'🇲🇳',hi:'🇮🇳',pt:'🇧🇷',ar:'🇸🇦',id:'🇮🇩',it:'🇮🇹',da:'🇩🇰',ru:'🇷🇺','zh-TW':'🇹🇼',tr:'🇹🇷'};
 
 // 모든 js/ 파일을 다 불러온 뒤에 실행할 일.
 // 파일을 나눠 불러오므로, 로그인 상태 처리처럼 '나중에' 실행되는 코드를 불러오는 도중에 등록하면

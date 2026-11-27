@@ -40,8 +40,10 @@ function _applyHtmlL(){
     });
   });
 }
+// 번역 언어로는 고를 수 있지만 화면 문구가 아직 없는 언어 → 가까운 화면 언어로 보여 준다
+const UI_LANG_FALLBACK={'zh-TW':'zh',tr:'en'};
 function applyUILanguage(lang){
-  _uiLang=lang||'ko';
+  _uiLang=UI_LANG_FALLBACK[lang]||lang||'ko';
   try{_updateIconStyleRow();}catch(e){}
   document.documentElement.dir=(lang==='ar')?'rtl':'ltr';
   const T=UI_T[_uiLang]||UI_T.ko;
