@@ -77,6 +77,13 @@ const DEFAULT_AVATAR='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="
 function updateUIAfterLogin(){
   setTimeout(function(){try{checkTesterEnabled();}catch(e){}},1500);
   if(!currentUser||currentUser.isAnonymous)return;
+  // 화면 언어를 먼저 적용한다 — 아래 설정 글자들(_L)이 화면 언어로 그려지도록. 예전엔 나중에 적용해서
+  // 화면 언어를 프랑스어로 바꿔도 매장·추천·카드북 같은 설정 글자가 한국어(휴대폰 언어)로 남았다.
+  {
+    let l0=localStorage.getItem('mandu_lang_'+currentUser.uid);
+    if(!l0){l0=detectBrowserLang();localStorage.setItem('mandu_lang_'+currentUser.uid,l0);}
+    applyUILanguage(localStorage.getItem('mandu_ui_lang_'+currentUser.uid)||l0);
+  }
   initBlocks();initAiTranslate();initStoreLabels();initIdSearch();initReferral();
   setTimeout(syncPublicProfile,1500); // 내 프로필 문서가 구독돼 usersMap에 들어온 뒤
   setTimeout(_openSubscribeFromLink,800);
@@ -131,6 +138,8 @@ function saveUILang(){
   const lang=document.getElementById('pe-ui-lang').value;
   localStorage.setItem('mandu_ui_lang_'+currentUser.uid,lang);
   applyUILanguage(lang);
+  // 코드가 글자를 넣는 설정 줄들도 새 화면 언어로 다시 그린다
+  try{initBlocks();initAiTranslate();initStoreLabels();initIdSearch();initReferral();initKakaoLinkRow();renderGuestTtl();_updateSoundSub();checkTesterEnabled();}catch(e){}
   showToast(t('ui_lang_changed_toast'));
 }
 

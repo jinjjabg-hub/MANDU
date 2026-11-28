@@ -41,7 +41,8 @@ function _applyHtmlL(){
   });
 }
 // 번역 언어로는 고를 수 있지만 화면 문구가 아직 없는 언어 → 가까운 화면 언어로 보여 준다
-const UI_LANG_FALLBACK={'zh-TW':'zh',tr:'en'};
+// (번체 중국어·터키어는 2026-11-28에 화면 문구를 넣어서 이제 비어 있다. 새 번역 언어를 넣을 때 여기에 적는다)
+const UI_LANG_FALLBACK={};
 function applyUILanguage(lang){
   _uiLang=UI_LANG_FALLBACK[lang]||lang||'ko';
   try{_updateIconStyleRow();}catch(e){}

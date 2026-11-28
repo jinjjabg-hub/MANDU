@@ -2,7 +2,7 @@
 // index.html에서 옮김. 파일 순서가 중요하다: index.html이 불러오는 순서대로 실행된다(CLAUDE.md 참고).
 // ── 사용량 UI 렌더 ──────────────────────────────────────
 function fmtChars(n){
-  const CHAR_UNIT={ko:'자',en:'chars',ja:'字',zh:'字',es:'caracteres',fr:'caractères',de:'Zeichen',vi:'ký tự',th:'ตัวอักษร',mn:'тэмдэгт',hi:'अक्षर',pt:'caracteres',ar:'حرف',id:'karakter',it:'caratteri',da:'tegn',ru:'символов'};
+  const CHAR_UNIT={ko:'자',en:'chars',ja:'字',zh:'字',es:'caracteres',fr:'caractères',de:'Zeichen',vi:'ký tự',th:'ตัวอักษร',mn:'тэмдэгт',hi:'अक्षर',pt:'caracteres',ar:'حرف',id:'karakter',it:'caratteri',da:'tegn',ru:'символов','zh-TW':'字',tr:'karakter'};
   const unit=CHAR_UNIT[_uiLang]||CHAR_UNIT.ko;
   if(_uiLang==='ko'){
     if(n>=10000)return (n/10000).toFixed(1).replace('.0','')+'만'+unit;
@@ -310,6 +310,8 @@ const BILLING_MSG={
   da:{"packSuccess":"Optankning af {chars} gennemført","payCanceled":"Betaling annulleret","preparing":"Forbereder betaling...","processing":"Bekræfter din betaling...","success":"Betaling for {plan}-abonnementet gennemført","fail":"Betalingen mislykkedes","canceled":"Kortregistrering annulleret","guest":"Gæster kan ikke betale. Tilmeld dig først.","net":"Kunne ikke få forbindelse til serveren. Prøv igen om lidt.","notReady":"Betaling er ikke tilgængelig endnu. Prøv igen senere.","popup":"Pop-up blev blokeret. Tillad pop-ups for denne side (til højre i adresselinjen), og prøv igen."},
   ru:{"packSuccess":"Пополнение на {chars} выполнено","payCanceled":"Оплата отменена","preparing":"Готовим оплату...","processing":"Проверяем оплату...","success":"Оплата тарифа {plan} выполнена","fail":"Оплата не прошла","canceled":"Привязка карты отменена","guest":"Гости не могут оплачивать. Сначала зарегистрируйтесь.","net":"Не удалось подключиться к серверу. Попробуйте чуть позже.","notReady":"Оплата пока недоступна. Попробуйте позже.","popup":"Всплывающее окно заблокировано. Разрешите всплывающие окна для этого сайта (справа в адресной строке) и попробуйте снова."}
 };
+BILLING_MSG['zh-TW']={"packSuccess": "{chars}儲值完成", "payCanceled": "已取消付款", "preparing": "正在準備付款...", "processing": "正在確認付款...", "success": "{plan}方案付款完成", "fail": "付款失敗", "canceled": "已取消綁定信用卡", "guest": "訪客無法付款，請先註冊。", "net": "無法連線到伺服器，請稍後再試。", "notReady": "付款功能準備中，請稍後再試。", "popup": "彈出式視窗被封鎖。請在網址列右側允許本網站的彈出式視窗後再試。"};
+BILLING_MSG.tr={"packSuccess": "{chars} yükleme tamamlandı", "payCanceled": "Ödeme iptal edildi", "preparing": "Ödeme hazırlanıyor...", "processing": "Ödemeniz onaylanıyor...", "success": "{plan} plan ödemesi tamamlandı", "fail": "Ödeme başarısız oldu", "canceled": "Kart kaydı iptal edildi", "guest": "Misafirler ödeme yapamaz. Lütfen önce kaydolun.", "net": "Sunucuya ulaşılamadı. Lütfen birazdan tekrar deneyin.", "notReady": "Ödemeler henüz kullanılamıyor. Lütfen daha sonra tekrar deneyin.", "popup": "Açılır pencere engellendi. Bu site için açılır pencerelere izin verin (adres çubuğunun sağında) ve tekrar deneyin."};
 function billingMsg(key){
   const m=BILLING_MSG[_uiLang]||(_uiLang==='ko'?BILLING_MSG.ko:BILLING_MSG.en);
   return m[key]||BILLING_MSG.ko[key]||key;
