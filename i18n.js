@@ -2234,3 +2234,156 @@ const I18N_EXTRA={
 }
 };
 Object.keys(I18N_EXTRA).forEach(function(l){const x=I18N_EXTRA[l];UI_T[l]=Object.assign(UI_T[l]||{},x.UI_T);GUEST_T[l]=Object.assign(GUEST_T[l]||{},x.GUEST_T);L_T[l]=Object.assign(L_T[l]||{},x.L_T);});
+// ── 빠져 있던 문구 보충: 카드북 연결(UI_T 12개 언어)·매장 손님 하루 번역 안내(L_T) (2026-11-28) ──
+const I18N_FILL={UI_T:{
+"ja": {
+"settings_section_cardbook": "Cardbook連携",
+"settings_row_cardbook": "Cardbookで見つけてもらう",
+"settings_row_cardbook_sub": "メールアドレスで私を見つけ、Cardbookに「MANDUで連絡」ボタンを表示することを許可します",
+"cardbook_consent_on": "Cardbookからあなたを見つけられるようになりました",
+"cardbook_consent_off": "Cardbook連携をオフにしました",
+"cardbook_consent_fail": "保存できませんでした。もう一度お試しください"
+},
+"zh": {
+"settings_section_cardbook": "Cardbook 关联",
+"settings_row_cardbook": "允许 Cardbook 找到我",
+"settings_row_cardbook_sub": "允许 Cardbook 通过我的邮箱找到我，并显示“在 MANDU 联系”按钮",
+"cardbook_consent_on": "现在 Cardbook 可以找到你了",
+"cardbook_consent_off": "已关闭 Cardbook 关联",
+"cardbook_consent_fail": "无法保存，请重试"
+},
+"es": {
+"settings_section_cardbook": "Vinculación con Cardbook",
+"settings_row_cardbook": "Permitir que Cardbook me encuentre",
+"settings_row_cardbook_sub": "Permitir que Cardbook me encuentre por mi correo y muestre un botón 'Contactar en MANDU'",
+"cardbook_consent_on": "Ahora Cardbook puede encontrarte",
+"cardbook_consent_off": "Vinculación con Cardbook desactivada",
+"cardbook_consent_fail": "No se pudo guardar. Inténtalo de nuevo"
+},
+"fr": {
+"settings_section_cardbook": "Liaison Cardbook",
+"settings_row_cardbook": "Autoriser Cardbook à me trouver",
+"settings_row_cardbook_sub": "Autoriser Cardbook à me trouver grâce à mon e-mail et à afficher un bouton « Contacter sur MANDU »",
+"cardbook_consent_on": "Cardbook peut maintenant vous trouver",
+"cardbook_consent_off": "Liaison Cardbook désactivée",
+"cardbook_consent_fail": "Impossible d'enregistrer. Veuillez réessayer"
+},
+"de": {
+"settings_section_cardbook": "Cardbook-Verknüpfung",
+"settings_row_cardbook": "Von Cardbook finden lassen",
+"settings_row_cardbook_sub": "Cardbook erlauben, mich über meine E-Mail zu finden und eine Schaltfläche „Über MANDU kontaktieren“ anzuzeigen",
+"cardbook_consent_on": "Cardbook kann dich jetzt finden",
+"cardbook_consent_off": "Cardbook-Verknüpfung ausgeschaltet",
+"cardbook_consent_fail": "Speichern fehlgeschlagen. Bitte versuche es erneut"
+},
+"vi": {
+"settings_section_cardbook": "Liên kết Cardbook",
+"settings_row_cardbook": "Cho phép Cardbook tìm thấy tôi",
+"settings_row_cardbook_sub": "Cho phép Cardbook tìm tôi qua email và hiển thị nút 'Liên hệ qua MANDU'",
+"cardbook_consent_on": "Giờ Cardbook có thể tìm thấy bạn",
+"cardbook_consent_off": "Đã tắt liên kết Cardbook",
+"cardbook_consent_fail": "Không thể lưu. Vui lòng thử lại"
+},
+"th": {
+"settings_section_cardbook": "เชื่อมต่อ Cardbook",
+"settings_row_cardbook": "ให้ Cardbook ค้นหาฉันได้",
+"settings_row_cardbook_sub": "อนุญาตให้ Cardbook ค้นหาฉันด้วยอีเมลและแสดงปุ่ม 'ติดต่อทาง MANDU'",
+"cardbook_consent_on": "ตอนนี้ Cardbook ค้นหาคุณได้แล้ว",
+"cardbook_consent_off": "ปิดการเชื่อมต่อ Cardbook แล้ว",
+"cardbook_consent_fail": "บันทึกไม่สำเร็จ โปรดลองอีกครั้ง"
+},
+"mn": {
+"settings_section_cardbook": "Cardbook холболт",
+"settings_row_cardbook": "Cardbook намайг олохыг зөвшөөрөх",
+"settings_row_cardbook_sub": "Cardbook намайг имэйлээр минь олж, 'MANDU-р холбогдох' товч харуулахыг зөвшөөрөх",
+"cardbook_consent_on": "Одоо Cardbook таныг олох боломжтой",
+"cardbook_consent_off": "Cardbook холболтыг унтраалаа",
+"cardbook_consent_fail": "Хадгалж чадсангүй. Дахин оролдоно уу"
+},
+"hi": {
+"settings_section_cardbook": "Cardbook लिंक",
+"settings_row_cardbook": "Cardbook को मुझे ढूँढने दें",
+"settings_row_cardbook_sub": "Cardbook को मेरे ईमेल से मुझे ढूँढने और 'MANDU पर संपर्क करें' बटन दिखाने की अनुमति दें",
+"cardbook_consent_on": "अब Cardbook आपको ढूँढ सकता है",
+"cardbook_consent_off": "Cardbook लिंक बंद किया गया",
+"cardbook_consent_fail": "सहेजा नहीं जा सका। कृपया फिर से कोशिश करें"
+},
+"pt": {
+"settings_section_cardbook": "Vínculo com o Cardbook",
+"settings_row_cardbook": "Permitir que o Cardbook me encontre",
+"settings_row_cardbook_sub": "Permitir que o Cardbook me encontre pelo meu e-mail e mostre um botão 'Contatar no MANDU'",
+"cardbook_consent_on": "Agora o Cardbook pode encontrar você",
+"cardbook_consent_off": "Vínculo com o Cardbook desativado",
+"cardbook_consent_fail": "Não foi possível salvar. Tente novamente"
+},
+"ar": {
+"settings_section_cardbook": "ربط Cardbook",
+"settings_row_cardbook": "السماح لـ Cardbook بالعثور عليّ",
+"settings_row_cardbook_sub": "السماح لـ Cardbook بالعثور عليّ عبر بريدي الإلكتروني وعرض زر 'التواصل عبر MANDU'",
+"cardbook_consent_on": "يمكن لـ Cardbook العثور عليك الآن",
+"cardbook_consent_off": "تم إيقاف ربط Cardbook",
+"cardbook_consent_fail": "تعذّر الحفظ. يُرجى المحاولة مرة أخرى"
+},
+"id": {
+"settings_section_cardbook": "Tautan Cardbook",
+"settings_row_cardbook": "Izinkan Cardbook menemukan saya",
+"settings_row_cardbook_sub": "Izinkan Cardbook menemukan saya lewat email dan menampilkan tombol 'Hubungi di MANDU'",
+"cardbook_consent_on": "Sekarang Cardbook bisa menemukanmu",
+"cardbook_consent_off": "Tautan Cardbook dimatikan",
+"cardbook_consent_fail": "Tidak dapat menyimpan. Silakan coba lagi"
+}
+},L_T:{
+"ja": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "お客様・スタッフのメッセージの翻訳は、すべて自分の上限から「文字数 × 翻訳された言語数」分差し引かれます。お客様1人が1日に使える量を決めておくと、使いすぎを防げます。(メッセージ1件は平均約30文字)"
+},
+"zh": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "顾客和员工消息的翻译都会从你的额度中扣除（字数 × 翻译的语言数）。设定每位顾客每天可用的量可以防止滥用。（每条消息平均约30字）"
+},
+"zh-TW": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "顧客和員工訊息的翻譯都會從你的額度中扣除（字數 × 翻譯的語言數）。設定每位顧客每天可用的量可以防止濫用。（每則訊息平均約30字）"
+},
+"es": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "Las traducciones de los mensajes de clientes y personal usan tu cuota (caracteres × idiomas traducidos). Fija cuánto puede usar un cliente al día para evitar abusos. (unos 30 caracteres por mensaje)"
+},
+"fr": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "Les traductions des messages des clients et du personnel utilisent toutes votre quota (caractères × langues traduites). Fixez ce qu'un client peut utiliser par jour pour éviter les abus. (environ 30 caractères par message)"
+},
+"de": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "Übersetzungen von Kunden- und Mitarbeiternachrichten verbrauchen alle dein Kontingent (Zeichen × übersetzte Sprachen). Lege fest, wie viel ein Kunde pro Tag nutzen darf, um Missbrauch zu verhindern. (etwa 30 Zeichen pro Nachricht)"
+},
+"vi": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "Bản dịch tin nhắn của khách và nhân viên đều trừ vào hạn mức của bạn (số ký tự × số ngôn ngữ được dịch). Đặt lượng một khách được dùng mỗi ngày để tránh lạm dụng. (trung bình khoảng 30 ký tự mỗi tin nhắn)"
+},
+"th": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "การแปลข้อความของลูกค้าและพนักงานทั้งหมดจะหักจากโควตาของคุณ (จำนวนตัวอักษร × จำนวนภาษาที่แปล) กำหนดปริมาณที่ลูกค้าหนึ่งคนใช้ได้ต่อวันเพื่อป้องกันการใช้เกิน (เฉลี่ยประมาณ 30 ตัวอักษรต่อข้อความ)"
+},
+"mn": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "Үйлчлүүлэгч болон ажилтны мессежийн орчуулга бүгд таны хязгаараас (тэмдэгтийн тоо × орчуулсан хэлний тоо) хасагдана. Нэг үйлчлүүлэгч өдөрт хэр их ашиглахыг тогтоовол хэтрүүлэн ашиглахаас сэргийлнэ. (нэг мессеж дунджаар 30 орчим тэмдэгт)"
+},
+"hi": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "ग्राहकों और स्टाफ़ के संदेशों के सभी अनुवाद आपके कोटा से कटते हैं (अक्षर × अनुवादित भाषाएँ)। दुरुपयोग रोकने के लिए तय करें कि एक ग्राहक प्रतिदिन कितना उपयोग कर सकता है। (प्रति संदेश लगभग 30 अक्षर)"
+},
+"pt": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "As traduções das mensagens de clientes e funcionários usam a sua cota (caracteres × idiomas traduzidos). Defina quanto um cliente pode usar por dia para evitar abusos. (cerca de 30 caracteres por mensagem)"
+},
+"ar": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "تُخصم ترجمات رسائل العملاء والموظفين كلها من حصتك (عدد الأحرف × عدد اللغات المترجمة). حدّد ما يمكن لعميل واحد استخدامه يوميًا لمنع إساءة الاستخدام. (نحو 30 حرفًا لكل رسالة)"
+},
+"id": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "Terjemahan pesan pelanggan dan staf semuanya memakai kuota Anda (jumlah karakter × jumlah bahasa yang diterjemahkan). Tetapkan berapa banyak yang boleh dipakai satu pelanggan per hari untuk mencegah penyalahgunaan. (rata-rata sekitar 30 karakter per pesan)"
+},
+"it": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "Le traduzioni dei messaggi di clienti e personale usano tutte la tua quota (caratteri × lingue tradotte). Imposta quanto può usare un cliente al giorno per evitare abusi. (circa 30 caratteri per messaggio)"
+},
+"da": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "Oversættelser af kunders og personales beskeder bruger alle din kvote (tegn × oversatte sprog). Angiv, hvor meget én kunde må bruge om dagen, for at undgå misbrug. (ca. 30 tegn pr. besked)"
+},
+"ru": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "Переводы сообщений клиентов и сотрудников списываются с вашего лимита (символы × число языков перевода). Задайте, сколько один клиент может использовать в день, чтобы избежать злоупотреблений. (в среднем около 30 символов на сообщение)"
+},
+"tr": {
+"손님·직원 메시지의 번역은 모두 내 한도에서 글자 수 × 번역된 언어 수만큼 차감돼요. 한 손님이 하루에 쓸 수 있는 양을 정해 두면 남용을 막을 수 있어요. (메시지 1개 평균 약 30자)": "Müşteri ve personel mesajlarının tüm çevirileri sizin kotanızdan düşer (karakter × çevrilen dil sayısı). Kötüye kullanımı önlemek için bir müşterinin günde ne kadar kullanabileceğini belirleyin. (mesaj başına ortalama ~30 karakter)"
+}
+}};
+Object.keys(I18N_FILL.UI_T).forEach(function(l){UI_T[l]=Object.assign(UI_T[l]||{},I18N_FILL.UI_T[l]);});
+Object.keys(I18N_FILL.L_T).forEach(function(l){L_T[l]=Object.assign(L_T[l]||{},I18N_FILL.L_T[l]);});
