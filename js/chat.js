@@ -108,10 +108,20 @@ function handleBack(){
 
 let _roomsSoundReady=false,_roomsSoundReadyAt=0;const _roomLastSoundMs={};
 let _lastSyncedUnread=null; // 마지막으로 users/{uid}.unreadTotal 에 적은 값
+// 대화 목록 구독은 한 사람당 하나만. 예전엔 showMain()(대화방에서 뒤로 올 때마다)·화면 언어 적용 때마다 구독을 새로 열고
+// 옛 구독을 닫지 않아서, 앱을 오래 쓸수록 같은 목록을 여러 번 읽었다(Firestore 읽기·쓰기가 몇 배로 늘어남).
+let _unsubRooms=null,_roomsFor=null;
 function loadRooms(){
+  if(!currentUser)return;
+  if(_unsubRooms&&_roomsFor===currentUser.uid){   // 이미 구독 중 → 마지막 목록으로 다시 그리기만
+    if(_lastRoomsSnap&&typeof _roomsRender==='function'){try{_roomsRender(_lastRoomsSnap);}catch(e){}}
+    return;
+  }
+  if(_unsubRooms){try{_unsubRooms();}catch(e){}_unsubRooms=null;}
+  _roomsFor=currentUser.uid;
   const list=document.getElementById('room-list');
   const sub=document.getElementById('chats-sub');
-  db.collection('rooms').where('members','array-contains',currentUser.uid)
+  _unsubRooms=db.collection('rooms').where('members','array-contains',currentUser.uid)
     .onSnapshot(_roomsRender=function(snap){
       // 다른 방(지금 열어 둔 방 제외)에 상대가 새 메시지를 보내면 알림음 — 첫 로딩·내가 보낸 메시지는 제외
       if(_roomsSoundReady&&snap.docChanges&&!document.hidden){
@@ -209,6 +219,7 @@ function loadRooms(){
     },function(err){
       // 에러 콜백이 없으면 에러 발생 시(권한 거부 등) "불러오는 중..."에서 영원히 멈춤
       console.error('loadRooms 실패:',err);
+      _unsubRooms=null;_roomsFor=null; // 다음에 다시 구독할 수 있게
       sub.textContent=_L('불러오기 실패','Failed to load');
       list.innerHTML='<div class="empty-state"><div class="empty-emoji"><span class="ms">error</span></div><div class="empty-title">'+_L('채팅 목록을 불러오지 못했어요','Couldn\'t load your chats')+'</div><div class="empty-desc">'+_esc(err&&err.message?err.message:'')+'</div></div>';
     });

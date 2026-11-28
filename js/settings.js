@@ -139,7 +139,7 @@ function saveUILang(){
   localStorage.setItem('mandu_ui_lang_'+currentUser.uid,lang);
   applyUILanguage(lang);
   // 코드가 글자를 넣는 설정 줄들도 새 화면 언어로 다시 그린다
-  try{initBlocks();initAiTranslate();initStoreLabels();initIdSearch();initReferral();initKakaoLinkRow();renderGuestTtl();checkTesterEnabled();}catch(e){}
+  try{initBlocks();initAiTranslate();initStoreLabels();initIdSearch();initReferral();initKakaoLinkRow();renderGuestTtl();_updateSoundSub();checkTesterEnabled();}catch(e){}
   showToast(t('ui_lang_changed_toast'));
 }
 
